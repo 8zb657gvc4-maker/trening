@@ -1,0 +1,19 @@
+{
+  "name": "Trening",
+  "short_name": "Trening",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1520",
+  "theme_color": "#0f1520",
+  "lang": "pl",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%230f1520'/%3E%3Cg stroke='%234a9eff' stroke-width='30' stroke-linecap='round' fill='none'%3E%3Cpath d='M160 160v192M352 160v192M100 220v72M412 220v72M160 256h192'/%3E%3C/g%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
