@@ -201,6 +201,55 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .swap{background:var(--card2);border:1px solid var(--line);border-radius:9px;
   padding:9px;width:100%;font-size:12.5px;font-weight:650;color:var(--acc);margin:10px 0 4px}
 
+/* --- pasek tygodnia --- */
+.wstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:12px}
+.wd{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:7px 2px 6px;text-align:center}
+.wd.t{background:rgba(74,158,255,.16);border-color:var(--acc)}
+.wd.r{background:rgba(185,140,255,.14);border-color:var(--run)}
+.wd.now{box-shadow:0 0 0 1.5px var(--txt) inset}
+.wd.fut{opacity:.42}
+.wdn{display:block;font-size:9.5px;font-weight:700;color:var(--dim);letter-spacing:.4px}
+.wdc{display:block;font-size:13px;font-weight:800;margin-top:3px;min-height:16px;color:var(--acc)}
+.wd.r .wdc{color:var(--run)}
+
+/* --- sesja: rekord, rozgrzewka, talerze, notatki --- */
+.ex.prbox{border-color:var(--ok);box-shadow:0 0 0 1px rgba(62,207,142,.3)}
+.prtag{background:var(--ok);color:#04211a;font-size:8.5px;font-weight:800;
+  padding:2px 5px;border-radius:5px;margin-left:6px;letter-spacing:.5px}
+.exacts{display:flex;gap:7px;margin:10px 0 4px}
+.mini{background:var(--card2);border:1px solid var(--line);border-radius:8px;
+  padding:7px 11px;font-size:12px;font-weight:650;color:var(--acc);flex:1}
+.wu{background:rgba(74,158,255,.08);border-radius:8px;padding:7px 10px;
+  font-size:11.5px;color:#bcd4f0;margin-bottom:8px;line-height:1.45}
+.plt{font-size:11.5px;color:var(--dim);margin-top:8px;text-align:center}
+.plt b{color:var(--txt)}
+.plt .warn{color:var(--warn)}
+.snote{font-size:11px;color:var(--dim);font-style:italic;margin-top:2px}
+
+/* --- podsumowanie po treningu --- */
+.donebox{background:linear-gradient(150deg,rgba(62,207,142,.18),rgba(24,32,46,.4));
+  border:1px solid rgba(62,207,142,.45);border-radius:16px;padding:18px 16px;margin-bottom:12px}
+.dtitle{font-size:19px;font-weight:800;color:var(--ok);letter-spacing:-.3px}
+.dsub{font-size:13px;color:var(--dim);margin-top:3px}
+.dstats{display:flex;gap:16px;margin-top:14px}
+.dstats div{flex:1}
+.dstats b{display:block;font-size:21px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.dstats span{display:block;font-size:10.5px;color:var(--dim);margin-top:2px}
+.prcard{background:var(--card);border:1px solid rgba(62,207,142,.45);
+  border-radius:13px;padding:13px 14px;margin-bottom:9px}
+.prn{font-size:14px;font-weight:650}
+.prv{font-size:21px;font-weight:800;color:var(--ok);margin-top:4px;
+  font-variant-numeric:tabular-nums;letter-spacing:-.4px}
+.prw{font-size:11.5px;color:var(--dim);margin-top:5px;line-height:1.45}
+
+/* --- wykresy --- */
+.spark{width:100%;height:64px;display:block;margin:4px 0 2px}
+.chdr{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:13px;font-weight:650;margin-bottom:2px}
+.chdr span{font-size:12.5px;font-weight:700}
+.cfoot{display:flex;justify-content:space-between;font-size:10.5px;color:var(--dim)}
+
 /* --- mapa miesni --- */
 .bmap{width:100%;height:auto;display:block}
 .lgnd{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;
@@ -246,6 +295,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 
   <!-- HUB -->
   <div class="sub on" id="s-hub">
+    <div id="weekStrip"></div>
     <div class="tip" id="phaseTip"></div>
     <div id="coachBox"></div>
 
@@ -290,6 +340,12 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <div id="runBody"></div>
   </div>
 
+  <!-- PODSUMOWANIE PO TRENINGU -->
+  <div class="sub" id="s-sum"><div id="sumBody"></div></div>
+
+  <!-- HISTORIA ĆWICZENIA -->
+  <div class="sub" id="s-hist"><div id="histBody"></div></div>
+
   <!-- SESJA -->
   <div class="sub" id="s-ses">
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
@@ -303,6 +359,11 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
       Timer przerwy — ustaw czas</button>
     <div id="exList"></div>
     <button class="btn ghost sm" onclick="addCustom()" style="margin-bottom:11px">+ Inne ćwiczenie</button>
+    <div class="fld" style="margin-bottom:11px">
+      <label>Notatka do treningu</label>
+      <input type="text" id="sesNote" placeholder="np. bolało kolano, hałas, mało czasu"
+             oninput="SES.note=this.value;saveSes()">
+    </div>
     <button class="btn ok" onclick="finishSession()">Zakończ trening</button>
   </div>
 </div>
@@ -769,6 +830,96 @@ function slotById(id){
   for(const k of ORDER){ const s = PLAN[k].slots.find(x=>x.id===id); if(s) return s; }
   return null;
 }
+
+/* ============================================================
+   REKORDY ŻYCIOWE
+   Rekord = najwyższy szacowany 1RM w danym ćwiczeniu w całej historii.
+   `doDaty` pozwala pytać o stan sprzed konkretnego treningu, żeby
+   po zapisaniu sesji wiedzieć, co faktycznie zostało pobite.
+   ============================================================ */
+function pr(name, doDaty){
+  let best=null;
+  DB.workouts.forEach(w=>{
+    if(doDaty && w.date>=doDaty) return;
+    const e=w.exercises.find(x=>x.name===name);
+    if(!e) return;
+    const b=bestSet(e.sets);
+    if(b && (!best || e1rm(b)>e1rm(best.set))) best={set:b, date:w.date};
+  });
+  return best;
+}
+/* wszystkie wystąpienia ćwiczenia, od najnowszego */
+function historia(name){
+  const out=[];
+  for(let i=DB.workouts.length-1;i>=0;i--){
+    const w=DB.workouts[i];
+    const e=w.exercises.find(x=>x.name===name);
+    if(e && e.sets.length) out.push({date:w.date, day:w.day, sets:e.sets, note:w.note});
+  }
+  return out;
+}
+
+/* ============================================================
+   TALERZE — ile założyć na stronę
+   ============================================================ */
+const TALERZE=[25,20,15,10,5,2.5,1.25];
+function plates(total, gryf){
+  gryf = gryf==null ? 20 : gryf;
+  let side=(total-gryf)/2;
+  if(side<0) return null;
+  if(side===0) return [];
+  const out=[];
+  for(const t of TALERZE){
+    while(side >= t-1e-9){ out.push(t); side=Math.round((side-t)*100)/100; }
+  }
+  return side>1e-9 ? null : out;   /* nie da się złożyć z dostępnych talerzy */
+}
+function platesTxt(total, gryf){
+  const p=plates(total,gryf);
+  if(p===null) return null;
+  if(!p.length) return 'sam gryf';
+  const grp={};
+  p.forEach(x=>grp[x]=(grp[x]||0)+1);
+  return Object.entries(grp).sort((a,b)=>b[0]-a[0])
+    .map(([w,n])=>(n>1?n+'×':'')+fmtKg(+w)).join(' + ');
+}
+
+/* ============================================================
+   ROZGRZEWKA — rampa do ciężaru roboczego
+   ============================================================ */
+function warmup(robocze, gryf){
+  gryf = gryf==null ? 20 : gryf;
+  if(!robocze || robocze <= gryf*1.2) return [];
+  const kroki=[[0.5,5],[0.7,3],[0.85,1]];
+  const out=[{w:gryf, r:10}];
+  kroki.forEach(([p,r])=>{
+    const w=roundTo(robocze*p, 2.5);
+    if(w>gryf && w<robocze) out.push({w, r});
+  });
+  return out.filter((x,i,a)=>i===0||x.w>a[i-1].w);
+}
+
+/* ============================================================
+   MINI WYKRES — prosta linia w SVG
+   ============================================================ */
+function sparkline(punkty, kolor){
+  if(punkty.length<2) return '';
+  const W=300, H=64, pad=6;
+  const ys=punkty.map(p=>p.v);
+  const min=Math.min(...ys), max=Math.max(...ys);
+  const zakres=(max-min)||1;
+  const x=i=>pad+i*(W-2*pad)/(punkty.length-1);
+  const y=v=>H-pad-((v-min)/zakres)*(H-2*pad);
+  const d=punkty.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(p.v).toFixed(1)).join(' ');
+  const pole=d+' L'+x(punkty.length-1).toFixed(1)+' '+H+' L'+x(0).toFixed(1)+' '+H+' Z';
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="spark">'+
+    '<path d="'+pole+'" fill="'+kolor+'" opacity=".13"/>'+
+    '<path d="'+d+'" fill="none" stroke="'+kolor+'" stroke-width="2" '+
+      'stroke-linejoin="round" stroke-linecap="round"/>'+
+    punkty.map((p,i)=>'<circle cx="'+x(i).toFixed(1)+'" cy="'+y(p.v).toFixed(1)+
+      '" r="'+(i===punkty.length-1?3.2:2)+'" fill="'+kolor+'"/>').join('')+
+    '</svg>';
+}
 function isSkipped(name){ return DB.skip.indexOf(name) >= 0; }
 function toggleSkip(name){
   const i = DB.skip.indexOf(name);
@@ -1053,6 +1204,8 @@ function renderSub(){
   if(SUB==='pick') renderPick();
   if(SUB==='sug') renderSuggest();
   if(SUB==='run') renderRun();
+  if(SUB==='sum') renderSummary();
+  if(SUB==='hist') renderHist();
   if(SUB==='ses'&&SES) renderSession();
 }
 function openPick(){ setSub('pick'); }
@@ -1062,8 +1215,32 @@ function openRun(){ setSub('run'); }
 /* ============================================================
    HUB
    ============================================================ */
+/* pasek siedmiu dni bieżącego tygodnia */
+function renderWeekStrip(){
+  const w=weekNo(), [ws]=weekRange(w);
+  const D=['Pn','Wt','Śr','Cz','Pt','So','Nd'];
+  let h='<div class="wstrip">';
+  for(let i=0;i<7;i++){
+    const d=new Date(ws+'T00:00:00'); d.setDate(d.getDate()+i);
+    const dat=iso(d);
+    const tren=DB.workouts.filter(x=>x.date===dat);
+    const bieg=DB.runs.filter(x=>x.date===dat);
+    let cls='wd';
+    if(tren.length) cls+=' t';
+    else if(bieg.length) cls+=' r';
+    if(dat===today()) cls+=' now';
+    if(dat>today()) cls+=' fut';
+    const znak = tren.length ? tren.map(x=>x.day).join('') : (bieg.length?'✦':'');
+    h+='<div class="'+cls+'"><span class="wdn">'+D[i]+'</span>'+
+       '<span class="wdc">'+znak+'</span></div>';
+  }
+  h+='</div>';
+  document.getElementById('weekStrip').innerHTML=h;
+}
+
 function renderHub(){
   const w=weekNo(), p=phaseOf(w);
+  renderWeekStrip();
   document.getElementById('phaseTip').innerHTML='<b>'+PHASES[p].n+'</b> — '+PHASES[p].d;
   const s=suggestNext();
   document.getElementById('hubSugSub').textContent = s.rest
@@ -1160,10 +1337,11 @@ function startSession(day, withSug){
   if(SES && setCount(SES)>0 &&
      !confirm('Masz niezakończony trening '+SES.day+' z '+setCount(SES)+' seriami. Porzucić go i zacząć nowy?')) return;
   const w=weekNo(), p=phaseOf(w);
-  SES={date:today(), day:day, week:w, exercises: buildDay(day,p).map(it=>({
-    name:it.name, slot:it.slot.id, lab:it.slot.lab, target:it.slot.t[p],
-    sets:[], sug: withSug ? it.sug : null, pool: it.slot.pool||null
-  }))};
+  SES={date:today(), day:day, week:w, t0:Date.now(), note:'',
+    exercises: buildDay(day,p).map(it=>({
+      name:it.name, slot:it.slot.id, lab:it.slot.lab, target:it.slot.t[p],
+      sets:[], sug: withSug ? it.sug : null, pool: it.slot.pool||null
+    }))};
   saveSes();
   document.getElementById('sesName').textContent=day+' — '+PLAN[day].name;
   setSub('ses');
@@ -1180,9 +1358,17 @@ function resumeSes(){
   toast('Wznowiono trening '+s.day+(s.date!==today()?' z '+plDate(s.date):''));
   return true;
 }
+function sesCzas(){
+  if(!SES||!SES.t0) return '';
+  const m=Math.round((Date.now()-SES.t0)/60000);
+  return m<1 ? '' : ' · '+m+' min';
+}
 function renderSession(){
   document.getElementById('sesStat').textContent =
-    setCount(SES)+' serii · '+Math.round(vol(SES)).toLocaleString('pl')+' kg';
+    setCount(SES)+' serii · '+Math.round(vol(SES)).toLocaleString('pl')+' kg'+sesCzas();
+  const nEl=document.getElementById('sesNote');
+  if(nEl && nEl.value!==(SES.note||'')) nEl.value=SES.note||'';
+
   document.getElementById('exList').innerHTML = SES.exercises.map((e,i)=>{
     const L=LIB[e.name]||{};
     const last=lastFor(e.name);
@@ -1191,18 +1377,40 @@ function renderSession(){
     const sugTxt = e.sug&&e.sug.w!=null
       ? ' · Propozycja: '+e.sug.sets+' × '+e.sug.r+(e.sug.w?' @ '+fmtKg(e.sug.w)+' kg':'') : '';
     const unit = L.time?'sek':'powt';
-    return '<div class="ex'+(e.sets.length?' done':'')+'">'+
+
+    /* Czy w tej sesji bije rekord. Bez filtra daty — bieżąca sesja i tak
+       nie jest jeszcze w DB.workouts, a filtr po dacie gubiłby wcześniejszy
+       trening z tego samego dnia. */
+    const rekord=pr(e.name);
+    const teraz=bestSet(e.sets);
+    const bije = teraz && rekord && e1rm(teraz)>e1rm(rekord.set) && !L.time;
+
+    /* rozgrzewka i talerze liczone z propozycji albo ostatniego ciężaru */
+    const cel = (e.sug&&e.sug.w) || (last&&Math.max(...last.sets.map(s=>s.w||0))) || 0;
+    const wu = (!L.bw&&!L.time) ? warmup(cel) : [];
+    const wuTxt = wu.length
+      ? '<div class="wu"><b>Rozgrzewka do '+fmtKg(cel)+' kg:</b> '+
+        wu.map(x=>fmtKg(x.w)+'×'+x.r).join(' → ')+'</div>' : '';
+
+    return '<div class="ex'+(e.sets.length?' done':'')+(bije?' prbox':'')+'">'+
       '<button class="exh" onclick="toggleEx('+i+')">'+
-        '<div style="min-width:0"><div class="slab">'+esc(e.lab||'')+'</div>'+
+        '<div style="min-width:0"><div class="slab">'+esc(e.lab||'')+
+          (bije?'<span class="prtag">REKORD</span>':'')+'</div>'+
         '<div class="exn">'+esc(e.name)+'</div>'+
         '<div class="extg">Cel: '+esc(e.target)+esc(sugTxt)+'</div>'+
         '<div class="exl">'+esc(lastTxt)+'</div></div>'+
         '<div class="exc">'+(e.sets.length?'<b style="color:var(--ok)">'+e.sets.length+'</b> serii':'—')+'</div>'+
       '</button>'+
       '<div class="exb'+(e._open?' on':'')+'" id="exb'+i+'">'+
-        (e.pool&&e.pool.length>1?'<button class="swap" onclick="swapEx('+i+')">Zamień ćwiczenie ('+e.pool.length+' warianty)</button>':'')+
+        '<div class="exacts">'+
+          '<button class="mini" onclick="openHist(\''+esc(e.name).replace(/'/g,"\\'")+'\')">Historia</button>'+
+          (e.pool&&e.pool.length>1?'<button class="mini" onclick="swapEx('+i+')">Zamień ('+e.pool.length+')</button>':'')+
+        '</div>'+
+        wuTxt+
         e.sets.map((s,j)=>'<div class="srow"><div class="sn">'+(j+1)+'</div>'+
-          '<div class="sv">'+esc(fmtSet(s))+'</div>'+
+          '<div class="sv">'+esc(fmtSet(s))+
+            (s.n?'<div class="snote">'+esc(s.n)+'</div>':'')+'</div>'+
+          '<button class="sx" title="notatka" onclick="noteSet('+i+','+j+')">✎</button>'+
           '<button class="sx" onclick="delSet('+i+','+j+')">×</button></div>').join('')+
         '<div class="inrow">'+
           '<div class="fld"><label>'+(L.bw?'Dodatk. kg':'Ciężar kg')+'</label>'+
@@ -1218,9 +1426,30 @@ function renderSession(){
             '<input type="number" inputmode="numeric" id="irpe'+i+'" value="'+prefill(e,'rpe')+'">'+
             '<button onclick="bump('+i+',\'rpe\',1)">+</button></div></div>'+
         '</div>'+
+        '<div class="plt" id="plt'+i+'"></div>'+
         '<button class="btn sm" style="margin-top:11px" onclick="addSet('+i+')">Dodaj serię</button>'+
       '</div></div>';
   }).join('');
+  SES.exercises.forEach((e,i)=>{ if(e._open) odswiezTalerze(i); });
+}
+/* podpowiedź „co założyć na sztangę" pod polem ciężaru */
+function odswiezTalerze(i){
+  const box=document.getElementById('plt'+i), inp=document.getElementById('iw'+i);
+  if(!box||!inp) return;
+  const e=SES.exercises[i], L=LIB[e.name]||{};
+  const w=parseFloat(inp.value)||0;
+  if(L.bw||L.time||w<20){ box.innerHTML=''; return; }
+  const t=platesTxt(w);
+  box.innerHTML = t===null
+    ? '<span class="warn">'+fmtKg(w)+' kg nie złożysz ze standardowych talerzy</span>'
+    : 'Na stronę: <b>'+esc(t)+'</b>';
+}
+function noteSet(i,j){
+  const s=SES.exercises[i].sets[j];
+  const v=prompt('Notatka do serii '+(j+1)+':', s.n||'');
+  if(v===null) return;
+  s.n = v.trim()||null;
+  SES.exercises[i]._open=true; saveSes(); renderSession();
 }
 function swapEx(i){
   const e=SES.exercises[i];
@@ -1251,6 +1480,7 @@ function bump(i,f,d){
   const el=document.getElementById((f==='w'?'iw':f==='r'?'ir':'irpe')+i);
   let v=parseFloat(el.value)||0; v=Math.max(0,Math.round((v+d)*10)/10);
   el.value = v || (f==='rpe'?'':0);
+  if(f==='w') odswiezTalerze(i);
 }
 function addSet(i){
   const e=SES.exercises[i];
@@ -1278,17 +1508,142 @@ function cancelSession(){
   clearSes(); stopTimer(); setSub('hub');
   setTimeout(applyUpdateIfIdle, 600);
 }
+let OSTATNI=null;   /* dane do ekranu podsumowania */
+
 function finishSession(){
   if(setCount(SES)===0){ toast('Nie zapisałeś żadnej serii'); return; }
   const ex=SES.exercises.filter(e=>e.sets.length)
     .map(e=>({name:e.name, slot:e.slot, lab:e.lab, target:e.target, sets:e.sets}));
-  DB.workouts.push({date:SES.date, day:SES.day, week:SES.week, exercises:ex});
+
+  /* rekordy liczymy PRZED dopisaniem sesji do historii */
+  const rekordy=[];
+  ex.forEach(e=>{
+    const L=LIB[e.name]||{};
+    if(L.time) return;
+    /* bieżąca sesja nie jest jeszcze w DB.workouts, więc pr() bez filtra
+       daty widzi dokładnie to, co było przed nią — łącznie z wcześniejszym
+       treningiem z tego samego dnia */
+    const teraz=bestSet(e.sets), stary=pr(e.name);
+    if(teraz && (!stary || e1rm(teraz)>e1rm(stary.set)))
+      rekordy.push({name:e.name, set:teraz, stary:stary?stary.set:null, poprz:stary?stary.date:null});
+  });
+  /* poprzedni ten sam dzień — do porównania objętości */
+  const poprz=DB.workouts.filter(w=>w.day===SES.day).slice(-1)[0]||null;
+
+  const dur = SES.t0 ? Math.max(1, Math.round((Date.now()-SES.t0)/60000)) : null;
+  const wpis={date:SES.date, day:SES.day, week:SES.week, exercises:ex};
+  if(dur) wpis.dur=dur;
+  if(SES.note && SES.note.trim()) wpis.note=SES.note.trim();
+
+  DB.workouts.push(wpis);
   DB.workouts.sort((a,b)=>a.date.localeCompare(b.date));
   save();
-  const v=Math.round(vol({exercises:ex})), c=ex.reduce((a,e)=>a+e.sets.length,0);
-  clearSes(); stopTimer(); setSub('hub');
-  toast('Zapisano · '+c+' serii · '+v.toLocaleString('pl')+' kg');
-  setTimeout(applyUpdateIfIdle, 1800);   /* odłożona aktualizacja, jeśli czekała */
+
+  OSTATNI={wpis, rekordy, poprz};
+  clearSes(); stopTimer(); setSub('sum');
+}
+
+/* ============================================================
+   EKRAN PODSUMOWANIA
+   ============================================================ */
+function renderSummary(){
+  if(!OSTATNI){ setSub('hub'); return; }
+  const {wpis, rekordy, poprz}=OSTATNI;
+  const v=Math.round(vol(wpis)), c=setCount(wpis);
+  const pv=poprz?Math.round(vol(poprz)):0;
+  const zmiana = pv ? Math.round((v/pv-1)*100) : null;
+
+  let h='<div class="donebox">'+
+    '<div class="dtitle">Trening zapisany</div>'+
+    '<div class="dsub">'+wpis.day+' — '+esc(PLAN[wpis.day].name)+'</div>'+
+    '<div class="dstats">'+
+      '<div><b>'+c+'</b><span>serii</span></div>'+
+      '<div><b>'+v.toLocaleString('pl')+'</b><span>kg objętości</span></div>'+
+      (wpis.dur?'<div><b>'+wpis.dur+'</b><span>minut</span></div>':'')+
+    '</div></div>';
+
+  if(zmiana!==null)
+    h+='<div class="tip '+(zmiana>=0?'ok':'warn')+'">Objętość '+
+      (zmiana>=0?'wyższa o '+zmiana+'%':'niższa o '+Math.abs(zmiana)+'%')+
+      ' niż przy poprzednim dniu '+wpis.day+' ('+plDate(poprz.date)+', '+
+      pv.toLocaleString('pl')+' kg).</div>';
+
+  if(rekordy.length){
+    h+='<h2>Rekordy życiowe</h2>';
+    h+=rekordy.map(r=>'<div class="prcard"><div class="prn">'+esc(r.name)+'</div>'+
+      '<div class="prv">'+esc(fmtSet(r.set))+'</div>'+
+      '<div class="prw">'+(r.stary
+        ? 'Poprzedni: '+esc(fmtSet(r.stary))+' z '+plDate(r.poprz)+
+          ' · szacowany 1RM '+fmtKg(e1rm(r.stary))+' → '+fmtKg(e1rm(r.set))+' kg'
+        : 'Pierwszy zapisany wynik w tym ćwiczeniu')+'</div></div>').join('');
+  }
+
+  h+='<h2>Co zrobiłeś</h2><div class="card">';
+  h+=wpis.exercises.map(e=>{
+    const b=bestSet(e.sets);
+    return '<div class="hist"><div style="min-width:0">'+
+      '<div class="hd">'+esc(e.name)+'</div>'+
+      '<div class="hm">'+e.sets.map(fmtSet).join(' · ')+
+      (e.sets.some(s=>s.n)?'<br>'+e.sets.filter(s=>s.n).map(s=>'„'+esc(s.n)+'"').join(' · '):'')+
+      '</div></div>'+
+      '<button class="pill" onclick="openHist(\''+esc(e.name).replace(/'/g,"\\'")+'\')">wykres</button></div>';
+  }).join('')+'</div>';
+
+  if(wpis.note) h+='<div class="tip"><b>Twoja notatka:</b> '+esc(wpis.note)+'</div>';
+
+  h+='<button class="btn" onclick="exportData()">Wyślij do iCloud</button>';
+  h+='<button class="btn ghost sm" style="margin-top:9px" onclick="OSTATNI=null;setSub(\'hub\');setTimeout(applyUpdateIfIdle,600)">Gotowe</button>';
+  document.getElementById('sumBody').innerHTML=h;
+}
+
+/* ============================================================
+   HISTORIA ĆWICZENIA
+   ============================================================ */
+let HIST_EX=null;
+function openHist(name){ HIST_EX=name; setSub('hist'); }
+function renderHist(){
+  const name=HIST_EX;
+  if(!name){ setSub('hub'); return; }
+  const L=LIB[name]||{}, h0=historia(name);
+  let h='<h2>'+esc(name)+'</h2>';
+
+  if(!h0.length){
+    h+='<div class="empty">Brak historii tego ćwiczenia.</div>';
+    document.getElementById('histBody').innerHTML=h+wrocBtn();
+    return;
+  }
+
+  const rekord=pr(name);
+  if(rekord && !L.time)
+    h+='<div class="tip ok"><b>Rekord:</b> '+esc(fmtSet(rekord.set))+' ('+plDate(rekord.date)+
+       ') · szacowany 1RM '+fmtKg(e1rm(rekord.set))+' kg</div>';
+
+  const punkty=h0.slice().reverse().map(x=>({v:e1rm(bestSet(x.sets)), d:x.date}));
+  if(punkty.length>1){
+    const p0=punkty[0].v, p1=punkty[punkty.length-1].v;
+    const zm=Math.round((p1/p0-1)*100);
+    h+='<div class="card"><div class="chdr">'+
+       (L.time?'Najdłuższa seria':'Szacowany 1RM')+
+       '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+zm+'%</span></div>'+
+       sparkline(punkty,'#4a9eff')+
+       '<div class="cfoot"><span>'+plDate(punkty[0].d)+'</span>'+
+       '<span>'+plDate(punkty[punkty.length-1].d)+'</span></div></div>';
+  }
+
+  h+='<div class="card">'+h0.map(x=>{
+    const b=bestSet(x.sets);
+    return '<div class="hist"><div style="min-width:0">'+
+      '<div class="hd">'+plDate(x.date)+' <span class="pill" style="margin-left:5px">'+x.day+'</span></div>'+
+      '<div class="hm">'+x.sets.map(fmtSet).join(' · ')+
+      (x.note?'<br>„'+esc(x.note)+'"':'')+'</div></div>'+
+      '<div class="exc mono">'+(L.time?'':fmtKg(e1rm(b))+' kg')+'</div></div>';
+  }).join('')+'</div>';
+
+  document.getElementById('histBody').innerHTML=h+wrocBtn();
+}
+function wrocBtn(){
+  return '<button class="btn ghost sm" onclick="'+
+    (SES?'setSub(\'ses\')':'setSub(\'hub\')')+'">Wróć</button>';
 }
 /* ============================================================
    TIMER — liczony od znacznika czasu, nie przez zliczanie tyknięć,
@@ -1597,6 +1952,40 @@ function renderCoverage(){
     'ćwiczenie złożone nie daje pełnej serii każdemu mięśniowi. Dotknij partii, żeby zobaczyć liczbę.</div>';
   return out;
 }
+/* ============================================================
+   TRENDY — siła w bojach i waga
+   ============================================================ */
+function renderTrendy(){
+  const BOJE=['Przysiad ze sztangą','Wyciskanie leżąc','Martwy ciąg klasyczny','Podciąganie'];
+  let bloki='';
+
+  BOJE.forEach(name=>{
+    const h0=historia(name);
+    if(h0.length<2) return;
+    const pkt=h0.slice().reverse().map(x=>({v:e1rm(bestSet(x.sets)), d:x.date}));
+    const zm=Math.round((pkt[pkt.length-1].v/pkt[0].v-1)*100);
+    bloki+='<div class="card"><div class="chdr">'+esc(name)+
+      '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+zm+'%</span></div>'+
+      sparkline(pkt,'#4a9eff')+
+      '<div class="cfoot"><span>'+fmtKg(pkt[0].v)+' kg</span>'+
+      '<span>'+fmtKg(pkt[pkt.length-1].v)+' kg · szacowany 1RM</span></div></div>';
+  });
+
+  const wagi=DB.daily.filter(d=>d.weight!=null).map(d=>({v:d.weight, d:d.date}));
+  if(wagi.length>1){
+    const zm=Math.round((wagi[wagi.length-1].v-wagi[0].v)*10)/10;
+    bloki+='<div class="card"><div class="chdr">Waga'+
+      '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+fmtKg(zm)+' kg</span></div>'+
+      sparkline(wagi,'#3ecf8e')+
+      '<div class="cfoot"><span>'+fmtKg(wagi[0].v)+' kg</span>'+
+      '<span>'+fmtKg(wagi[wagi.length-1].v)+' kg</span></div></div>';
+  }
+
+  if(!bloki) return '<h2>Trendy</h2><div class="empty">Za mało danych na wykresy.<br>'+
+    'Potrzeba co najmniej dwóch sesji z tym samym bojem.</div>';
+  return '<h2>Trendy</h2>'+bloki;
+}
+
 function renderReport(){
   const w=weekNo(), p=phaseOf(w);
   const cur=DB.workouts.filter(x=>inWeek(x.date,w));
@@ -1631,6 +2020,7 @@ function renderReport(){
     '<div class="note" style="margin-top:10px">Tylko boje, bo tylko one nie rotują — akcesoria zmieniają się, więc ich nie da się porównywać tydzień do tygodnia.</div></div>';
 
   h+=renderCoverage();
+  h+=renderTrendy();
 
   const sl=avg(dCur.map(d=>d.sleep));
   const rh=avg(dCur.map(d=>d.rhr)), rhP=avg(dPrev.map(d=>d.rhr));
