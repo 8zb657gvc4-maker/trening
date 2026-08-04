@@ -931,7 +931,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.12';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.13';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1080,21 +1080,29 @@ async function srvPull(cicho){
       if(n) zmiany.push(n+' odp.');
     }
     if(zmiany.length){ save(); renderSub(); }
-    SRV.ostatni = new Date().toISOString(); SRV.blad = null; srvSave();
+    /* Uwaga: NIE ruszamy SRV.blad. To pole opisuje wysyłkę, a udane pobranie
+       nic o niej nie mówi. Wcześniej pobranie je zerowało — nieudana wysyłka
+       kończyła się komunikatem „Zsynchronizowano" i trening po cichu zostawał
+       na telefonie. Najgorszy możliwy wynik: fałszywe potwierdzenie. */
+    SRV.pobrano = new Date().toISOString(); SRV.bladPob = null; srvSave();
     if(!cicho) toast(zmiany.length ? 'Pobrano: '+zmiany.join(', ') : 'Nic nowego');
     return true;
   }catch(e){
-    SRV.blad = 'brak połączenia'; srvSave();
+    SRV.bladPob = 'brak połączenia'; srvSave();
     if(!cicho) toast('Brak połączenia z serwerem'); return false;
   }
 }
 async function srvSync(){
   if(!srvGotowy()){ toast('Najpierw wpisz adres i token'); return; }
   toast('Synchronizuję…');
-  await srvPush(true);
-  await srvPull(true);
+  const wyslano = await srvPush(true);
+  const pobrano = await srvPull(true);
   renderData();
-  toast(SRV.blad ? SRV.blad : 'Zsynchronizowano');
+  /* komunikat opisuje oba kierunki osobno — „Zsynchronizowano" przy nieudanej
+     wysyłce było kłamstwem, które kosztowało nas cały wieczór testów */
+  if(!wyslano) toast('Nie wysłano: ' + (SRV.blad || 'nieznany błąd'));
+  else if(!pobrano && SRV.bladPob) toast('Wysłano, ale nie pobrano: ' + SRV.bladPob);
+  else toast('Zsynchronizowano');
 }
 
 /* ============================================================
