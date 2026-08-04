@@ -799,10 +799,10 @@ const DOMYSLNY_PLAN = {
 const DOMYSLNY_ORDER = ['A','B','C','D'];
 
 const DOMYSLNE_PHASES = [
-  {n:'Reaktywacja',    d:'Tygodnie 1–2. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
-  {n:'Budowa',         d:'Tygodnie 3–5. Główna faza. RPE 7–8, dochodzi martwy ciąg. Tu robi się masa.'},
-  {n:'Deload',         d:'Tydzień 6. Objętość w dół, ciężary −30%. Nie pomijaj — to on decyduje o mocy tygodni 7–8.'},
-  {n:'Intensyfikacja', d:'Tygodnie 7–8. RPE 8–9, niższe zakresy powtórzeń. Masa przekłada się na ciężar na sztandze.'}
+  {n:'Reaktywacja',    rpe:6, d:'Tygodnie 1–2. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
+  {n:'Budowa',         rpe:8, d:'Tygodnie 3–5. Główna faza. RPE 7–8, dochodzi martwy ciąg. Tu robi się masa.'},
+  {n:'Deload',         rpe:5, d:'Tydzień 6. Objętość w dół, ciężary −30%. Nie pomijaj — to on decyduje o mocy tygodni 7–8.'},
+  {n:'Intensyfikacja', rpe:9, d:'Tygodnie 7–8. RPE 8–9, niższe zakresy powtórzeń. Masa przekłada się na ciężar na sztandze.'}
 ];
 
 const DOMYSLNE_RUNS = [
@@ -887,7 +887,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.2';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.4';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1314,10 +1314,17 @@ function suggestLoad(name, slot, phase){
       why:'Ostatnio '+top.map(s=>s.r).join('/')+' powt. Dorzuć jedno w najsłabszej serii.'};
   }
 
-  /* autoregulacja: zakres domknięty, ale kosztem większym niż plan */
-  if(full && minR>=mx && rpe!=null && rpe>=9.5)
+  /* Autoregulacja: zakres domknięty, ale kosztem większym niż przewiduje faza.
+     Próg jest RELATYWNY do celu fazy, nie sztywny. Wcześniej blokada wchodziła
+     dopiero przy RPE 9,5 — więc w fazie reaktywacji, gdzie celem jest RPE 6,
+     seria zrobiona na RPE 8 i tak dawała +5 kg. To dokładnie odwrotność tego,
+     po co jest faza reaktywacji. */
+  const celRPE = (PHASES[phase] && PHASES[phase].rpe) || 8;
+  if(full && minR>=mx && rpe!=null && rpe >= Math.min(9.5, celRPE+1.5))
     return {w:wTop, r:mn, sets, tag:'hold',
-      why:'Ostatnio '+prev+' — zakres domknięty, ale przy RPE '+fmtKg(rpe)+', czyli na styk. Powtórz ten sam ciężar; dokładanie teraz kupiłbyś zmęczeniem, nie siłą.'};
+      why:'Ostatnio '+prev+' — zakres domknięty, ale przy RPE '+fmtKg(rpe)+
+        ', a faza „'+PHASES[phase].n+'” przewiduje RPE '+celRPE+
+        '. To było trudniejsze, niż powinno. Powtórz ten sam ciężar i zejdź z wysiłkiem, zamiast dokładać.'};
 
   if(full && minR>=mx)
     return {w:roundTo(wTop+L.inc,2.5), r:mn, sets, tag:'up',
@@ -2659,7 +2666,11 @@ async function exportData(){
      Do eksportu dokładamy `meta` z aktualną biblioteką ćwiczeń i regionami:
      bez tego skrypty rysujące mapę mięśni musiałyby zgadywać mapowanie
      i rozjechałyby się przy każdej zmianie planu. */
-  const doZapisu=Object.assign({}, DB, {meta:{wersja:WERSJA, lib:LIB, reg:REG}});
+  /* `exportedAt` pozwala odbiorcy wybrać naprawdę najnowszy plik.
+     iOS przy zapisie dorabia „ 2” do nazwy zamiast nadpisywać, a daty
+     modyfikacji z iCloud bywają mylące — znacznik w środku jest pewny. */
+  const doZapisu=Object.assign({}, DB,
+    {meta:{wersja:WERSJA, exportedAt:new Date().toISOString(), lib:LIB, reg:REG}});
   const json=JSON.stringify(doZapisu,null,2);
   const name='trening.json';
   try{
