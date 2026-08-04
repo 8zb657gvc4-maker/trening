@@ -931,7 +931,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.9';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.10';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1854,6 +1854,11 @@ function delWorkout(id){
     setCount(w)+' serii, '+Math.round(vol(w)).toLocaleString('pl')+' kg';
   if(!confirm('Usunąć ten trening?\n\n'+opis+'\n\nTego nie da się cofnąć.')) return;
   DB.workouts=DB.workouts.filter(x=>x.id!==id);
+  /* Plan na jutro był policzony z historią, która właśnie się zmieniła —
+     zostawienie go znaczyłoby proponowanie ciężarów opartych na treningu,
+     którego już nie ma. Liczymy od nowa; korekta trenera przepada świadomie,
+     bo dotyczyła nieistniejącej już sesji. */
+  DB.nastepny = planNastepnego();
   save();
   if(OSTATNI && OSTATNI.wpis && OSTATNI.wpis.id===id) OSTATNI=null;
   renderSub();
