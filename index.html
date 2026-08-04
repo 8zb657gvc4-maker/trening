@@ -222,6 +222,11 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   padding:7px 11px;font-size:12px;font-weight:650;color:var(--acc);flex:1}
 .wu{background:rgba(74,158,255,.08);border-radius:8px;padding:7px 10px;
   font-size:11.5px;color:#bcd4f0;margin-bottom:8px;line-height:1.45}
+.wubtn{display:block;width:100%;margin-top:7px;background:rgba(74,158,255,.18);
+  border:1px solid rgba(74,158,255,.4);border-radius:7px;padding:7px;
+  font-size:11.5px;font-weight:700;color:var(--acc)}
+.srow.wus{opacity:.58}
+.srow.wus .sn{background:transparent;border:1px dashed var(--line);color:var(--acc)}
 .plt{font-size:11.5px;color:var(--dim);margin-top:8px;text-align:center}
 .plt b{color:var(--txt)}
 .plt .warn{color:var(--warn)}
@@ -878,7 +883,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-03.6';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.1';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1010,8 +1015,19 @@ function toast(m){
 }
 function roundTo(x,step){ return Math.round(x/step)*step; }
 function fmtKg(x){ return (Math.round(x*10)/10).toString().replace('.',','); }
-function vol(w){ return w.exercises.reduce((a,e)=>a+e.sets.reduce((b,s)=>b+(s.w||0)*(s.r||0),0),0); }
-function setCount(w){ return w.exercises.reduce((a,e)=>a+e.sets.length,0); }
+/* ============================================================
+   SERIE ROZGRZEWKOWE
+   Oznaczone `wu:true`. Są widoczne w sesji i w historii, ale
+   NIE liczą się nigdzie, gdzie mogłyby zafałszować obraz:
+   ani do progresji (inaczej „20 kg × 5" przed wyciskaniem
+   wyglądałoby jak nieudana seria i silnik obniżyłby ciężar),
+   ani do objętości, pokrycia partii czy rekordów.
+   ============================================================ */
+function robocze(sets){ return (sets||[]).filter(s=>!s.wu); }
+
+function vol(w){ return w.exercises.reduce((a,e)=>a+robocze(e.sets).reduce((b,s)=>b+(s.w||0)*(s.r||0),0),0); }
+function setCount(w){ return w.exercises.reduce((a,e)=>a+robocze(e.sets).length,0); }
+function wuCount(w){ return w.exercises.reduce((a,e)=>a+(e.sets||[]).filter(s=>s.wu).length,0); }
 
 /* szacowany 1RM wg Epleya — wspólna miara „siły" serii */
 function e1rm(s){
@@ -1020,18 +1036,22 @@ function e1rm(s){
   return w>0 ? w*(1+r/30) : r;
 }
 function bestSet(sets){
-  if(!sets.length) return null;
-  return sets.reduce((a,b)=> e1rm(b)>e1rm(a) ? b : a);
+  const r = robocze(sets);          /* rozgrzewka nigdy nie jest „najlepszą serią” */
+  if(!r.length) return null;
+  return r.reduce((a,b)=> e1rm(b)>e1rm(a) ? b : a);
 }
 function fmtSet(s){
   if(!s.w) return s.r+' powt.';
   return fmtKg(s.w)+' kg × '+s.r + (s.rpe?' @'+s.rpe:'');
 }
 function avg(arr){ const v=arr.filter(x=>x!=null&&!isNaN(x)); return v.length? v.reduce((a,b)=>a+b,0)/v.length : null; }
+/* zwraca wyłącznie serie robocze — na tym opiera się progresja */
 function lastFor(name){
   for(let i=DB.workouts.length-1;i>=0;i--){
     const e = DB.workouts[i].exercises.find(x=>x.name===name);
-    if(e && e.sets.length) return {sets:e.sets, date:DB.workouts[i].date};
+    if(!e) continue;
+    const r = robocze(e.sets);
+    if(r.length) return {sets:r, date:DB.workouts[i].date};
   }
   return null;
 }
@@ -1175,7 +1195,8 @@ function regionSets(days){
     w.exercises.forEach(e=>{
       const L = LIB[e.name];
       if(!L) return;
-      Object.entries(L.mus).forEach(([r,wt])=>{ if(out[r]!=null) out[r]+= e.sets.length*wt; });
+      const ile = robocze(e.sets).length;   /* rozgrzewka nie buduje objętości */
+      Object.entries(L.mus).forEach(([r,wt])=>{ if(out[r]!=null) out[r]+= ile*wt; });
     });
   });
   return out;
@@ -1516,12 +1537,34 @@ function renderHub(){
     ? '<div class="tip">'+czeka+' '+(czeka===1?'pytanie czeka':'pytania czekają')+
       ' na odpowiedź — dostaniesz ją w nocnej analizie.</div>' : '';
   const rec=DB.workouts.slice(-6).reverse();
-  document.getElementById('recent').innerHTML = rec.length ? rec.map(x=>
-    '<div class="hist"><div><div class="hd">'+x.day+' — '+esc(dayName2(x.day))+'</div>'+
-    '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii · '+Math.round(vol(x)).toLocaleString('pl')+' kg</div></div>'+
-    '<div class="pill">T'+weekNo(x.date)+'</div></div>').join('')
+  document.getElementById('recent').innerHTML = rec.length ? rec.map(x=>{
+    const wuN=wuCount(x);
+    return '<div class="hist"><div style="min-width:0">'+
+      '<div class="hd">'+x.day+' — '+esc(dayName2(x.day))+
+        (x.flag?' <span class="prtag" style="background:var(--warn);color:#2a1a05">!</span>':'')+'</div>'+
+      '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii'+
+        (wuN?' (+'+wuN+' rozgrz.)':'')+' · '+Math.round(vol(x)).toLocaleString('pl')+' kg'+
+        (x.dur?' · '+x.dur+' min':'')+'</div></div>'+
+      '<div class="pill">T'+weekNo(x.date)+'</div>'+
+      '<button class="sx" onclick="delWorkout(\''+x.id+'\')">×</button></div>';
+  }).join('')
     : '<div class="empty">Nic tu jeszcze nie ma.<br>Zacznij od „Proponowany trening".</div>';
   document.getElementById('coachBox').innerHTML = resume + coach + odpBox + czekaBox;
+}
+
+/* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
+   zmuszała do kasowania całej historii */
+function delWorkout(id){
+  const w=DB.workouts.find(x=>x.id===id);
+  if(!w){ toast('Nie znaleziono treningu'); return; }
+  const opis=w.day+' — '+dayName2(w.day)+'\n'+plDate(w.date)+'\n'+
+    setCount(w)+' serii, '+Math.round(vol(w)).toLocaleString('pl')+' kg';
+  if(!confirm('Usunąć ten trening?\n\n'+opis+'\n\nTego nie da się cofnąć.')) return;
+  DB.workouts=DB.workouts.filter(x=>x.id!==id);
+  save();
+  if(OSTATNI && OSTATNI.wpis && OSTATNI.wpis.id===id) OSTATNI=null;
+  renderSub();
+  toast('Trening usunięty');
 }
 
 /* ============================================================
@@ -1650,9 +1693,11 @@ function renderSession(){
     /* rozgrzewka i talerze liczone z propozycji albo ostatniego ciężaru */
     const cel = (e.sug&&e.sug.w) || (last&&Math.max(...last.sets.map(s=>s.w||0))) || 0;
     const wu = (!L.bw&&!L.time) ? warmup(cel) : [];
-    const wuTxt = wu.length
+    const maWu = e.sets.some(s=>s.wu);
+    const wuTxt = (wu.length && !maWu)
       ? '<div class="wu"><b>Rozgrzewka do '+fmtKg(cel)+' kg:</b> '+
-        wu.map(x=>fmtKg(x.w)+'×'+x.r).join(' → ')+'</div>' : '';
+        wu.map(x=>fmtKg(x.w)+'×'+x.r).join(' → ')+
+        '<button class="wubtn" onclick="wpiszRozgrzewke('+i+')">Wpisz jako rozgrzewkowe</button></div>' : '';
 
     return '<div class="ex'+(e.sets.length?' done':'')+(bije?' prbox':'')+'">'+
       '<button class="exh" onclick="toggleEx('+i+')">'+
@@ -1669,11 +1714,15 @@ function renderSession(){
           (e.pool&&e.pool.length>1?'<button class="mini" onclick="swapEx('+i+')">Zamień ('+e.pool.length+')</button>':'')+
         '</div>'+
         wuTxt+
-        e.sets.map((s,j)=>'<div class="srow"><div class="sn">'+(j+1)+'</div>'+
-          '<div class="sv">'+esc(fmtSet(s))+
-            (s.n?'<div class="snote">'+esc(s.n)+'</div>':'')+'</div>'+
-          '<button class="sx" title="notatka" onclick="noteSet('+i+','+j+')">✎</button>'+
-          '<button class="sx" onclick="delSet('+i+','+j+')">×</button></div>').join('')+
+        (function(){ let nr=0; return e.sets.map((s,j)=>{
+          if(!s.wu) nr++;
+          return '<div class="srow'+(s.wu?' wus':'')+'">'+
+            '<div class="sn">'+(s.wu?'R':nr)+'</div>'+
+            '<div class="sv">'+esc(fmtSet(s))+
+              (s.n?'<div class="snote">'+esc(s.n)+'</div>':'')+'</div>'+
+            '<button class="sx" title="notatka" onclick="noteSet('+i+','+j+')">✎</button>'+
+            '<button class="sx" onclick="delSet('+i+','+j+')">×</button></div>';
+        }).join(''); })()+
         '<div class="inrow">'+
           '<div class="fld"><label>'+(L.bw?'Dodatk. kg':'Ciężar kg')+'</label>'+
             '<div class="step"><button onclick="bump('+i+',\'w\',-2.5)">−</button>'+
@@ -1689,7 +1738,10 @@ function renderSession(){
             '<button onclick="bump('+i+',\'rpe\',1)">+</button></div></div>'+
         '</div>'+
         '<div class="plt" id="plt'+i+'"></div>'+
-        '<button class="btn sm" style="margin-top:11px" onclick="addSet('+i+')">Dodaj serię</button>'+
+        '<div class="btn2" style="margin-top:11px">'+
+          '<button class="btn sm" onclick="addSet('+i+')">Dodaj serię</button>'+
+          '<button class="btn ghost sm" onclick="addSet('+i+',true)">Rozgrzewkowa</button>'+
+        '</div>'+
       '</div></div>';
   }).join('');
   SES.exercises.forEach((e,i)=>{ if(e._open) odswiezTalerze(i); });
@@ -1748,16 +1800,33 @@ function bump(i,f,d){
   el.value = v || (f==='rpe'?'':0);
   if(f==='w') odswiezTalerze(i);
 }
-function addSet(i){
+function addSet(i, rozgrzewka){
   const e=SES.exercises[i];
   const w=parseFloat(document.getElementById('iw'+i).value)||0;
   const r=parseInt(document.getElementById('ir'+i).value)||0;
   const rpe=parseFloat(document.getElementById('irpe'+i).value)||null;
   if(!r){ toast('Wpisz liczbę powtórzeń'); return; }
-  e.sets.push({w:w,r:r,rpe:rpe}); e._open=true;
+  const s={w:w,r:r,rpe:rozgrzewka?null:rpe};
+  if(rozgrzewka) s.wu=true;
+  e.sets.push(s); e._open=true;
   saveSes();
-  renderSession(); startTimer(DB.settings.rest);
+  renderSession();
+  /* po rozgrzewkowej przerwa jest krótsza — nie ma po czym odpoczywać 3 minut */
+  startTimer(rozgrzewka ? Math.min(60, DB.settings.rest) : DB.settings.rest);
   if(navigator.vibrate) navigator.vibrate(35);
+}
+/* wpisuje całą rampę rozgrzewkową jednym tapnięciem */
+function wpiszRozgrzewke(i){
+  const e=SES.exercises[i], L=LIB[e.name]||{};
+  const last=lastFor(e.name);
+  const cel=(e.sug&&e.sug.w)||(last&&Math.max(...last.sets.map(s=>s.w||0)))||0;
+  const wu=warmup(cel);
+  if(!wu.length){ toast('Za mały ciężar na rampę'); return; }
+  /* wstawiamy blokiem na początek — pojedyncze unshift w pętli odwróciłoby
+     kolejność i rampa szłaby od najcięższej do najlżejszej */
+  e.sets.unshift(...wu.map(x=>({w:x.w, r:x.r, rpe:null, wu:true})));
+  e._open=true; saveSes(); renderSession();
+  toast(wu.length+' serie rozgrzewkowe dodane');
 }
 function delSet(i,j){
   SES.exercises[i].sets.splice(j,1); SES.exercises[i]._open=true;
@@ -1901,7 +1970,9 @@ function renderHist(){
     const b=bestSet(x.sets);
     return '<div class="hist"><div style="min-width:0">'+
       '<div class="hd">'+plDate(x.date)+' <span class="pill" style="margin-left:5px">'+x.day+'</span></div>'+
-      '<div class="hm">'+x.sets.map(fmtSet).join(' · ')+
+      '<div class="hm">'+robocze(x.sets).map(fmtSet).join(' · ')+
+      (x.sets.some(s=>s.wu)?' <span style="opacity:.55">(rozgrz. '+
+        x.sets.filter(s=>s.wu).map(s=>fmtKg(s.w)+'×'+s.r).join(', ')+')</span>':'')+
       (x.note?'<br>„'+esc(x.note)+'"':'')+'</div></div>'+
       '<div class="exc mono">'+(L.time?'':fmtKg(e1rm(b))+' kg')+'</div></div>';
   }).join('')+'</div>';
