@@ -716,6 +716,14 @@ const DOMYSLNA_LIB = {
   'Uginanie nóg siedząc':        {inc:2.5, mus:{dwuglowe:1},
                                   cue:'Wersja siedząca rozciąga dwugłowe mocniej niż leżąca.'},
   'Hip thrust':                  {inc:5,   mus:{posladki:1, dwuglowe:.4}},
+  'Hip thrust jednonóż':         {inc:2.5, mus:{posladki:1, dwuglowe:.4},
+                                  cue:'Jedna noga naraz wyrównuje różnice między stronami.'},
+  'Good morning':                {inc:2.5, mus:{dwuglowe:1, prostowniki:.8, posladki:.6},
+                                  cue:'Lżej niż w martwym rumuńskim — to ćwiczenie na wzorzec, nie na ciężar.'},
+  'Utrzymanie sztangi':          {inc:5, time:true, mus:{przedramie:1, plecy_gora:.3, brzuch:.3},
+                                  cue:'Chwyt ogranicza martwy ciąg i wiosłowanie wcześniej niż plecy.'},
+  'Utrzymanie hantli':           {inc:2.5, time:true, mus:{przedramie:1, plecy_gora:.4, brzuch:.4},
+                                  cue:'Hantle po bokach, tułów napięty. Łatwiej odłożyć niż sztangę.'},
   'Wspięcia na palce stojąc':    {inc:5,   mus:{lydki_stoj:1}},
   'Wspięcia na palce siedząc':   {inc:2.5, mus:{lydki_sied:1},
                                   cue:'Zgięte kolano wyłącza brzuchatego — to jedyny sposób na płaszczkowatego.'},
@@ -741,7 +749,7 @@ const DOMYSLNY_PLAN = {
     {id:'A2', lab:'Czworogłowe — maszyna', pool:['Wypychanie nogami','Hack squat'],
      t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
-    {id:'A3', lab:'Wzorzec hinge', fixed:'Martwy ciąg rumuński',
+    {id:'A3', lab:'Wzorzec hinge', pool:['Martwy ciąg rumuński','Good morning'],
      t:['3×10 RPE6','3×8-10 RPE7','2×10 RPE5','3×6-8 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[6,8]]},
     {id:'A4', lab:'Dwugłowe', pool:['Uginanie nóg leżąc','Uginanie nóg siedząc'],
@@ -789,10 +797,10 @@ const DOMYSLNY_PLAN = {
     {id:'C2', lab:'Jednonóż', pool:['Przysiad bułgarski','Wykroki chodzone'],
      t:['3×10/nogę RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    {id:'C3', lab:'Pośladki', fixed:'Hip thrust',
+    {id:'C3', lab:'Pośladki', pool:['Hip thrust','Hip thrust jednonóż'],
      t:['4×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
      s:[4,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
-    {id:'C4', lab:'Czworogłowe — izolacja', fixed:'Prostowanie nóg',
+    {id:'C4', lab:'Czworogłowe — izolacja', pool:['Prostowanie nóg','Hack squat'],
      t:['3×15','3×12-15','2×15','3×12-15'],
      s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
     {id:'C5', lab:'Łydki', pool:['Wspięcia na palce siedząc','Wspięcia na palce stojąc'],
@@ -800,7 +808,10 @@ const DOMYSLNY_PLAN = {
      s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
     {id:'C6', lab:'Tułów', pool:['Unoszenie nóg w zwisie','Allahy na wyciągu','Plank / ab wheel'],
      t:['3×10','3×12','2×10','3×12-15'],
-     s:[3,3,2,3], rr:[[10,10],[12,12],[10,10],[12,15]]}
+     s:[3,3,2,3], rr:[[10,10],[12,12],[10,10],[12,15]]},
+    {id:'C7', lab:'Chwyt', pool:['Utrzymanie sztangi','Utrzymanie hantli'],
+     t:['2×30s','2×40s','1×30s','2×45s'],
+     s:[2,2,1,2], rr:[[30,30],[40,40],[30,30],[45,45]]}
   ]},
 
   D: { name:'Góra — pull', grp:'góra', slots:[
@@ -832,10 +843,10 @@ const DOMYSLNY_PLAN = {
 const DOMYSLNY_ORDER = ['A','B','C','D'];
 
 const DOMYSLNE_PHASES = [
-  {n:'Reaktywacja',    rpe:6, d:'Tygodnie 1–2. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
-  {n:'Budowa',         rpe:8, d:'Tygodnie 3–5. Główna faza. RPE 7–8, dochodzi martwy ciąg. Tu robi się masa.'},
-  {n:'Deload',         rpe:5, d:'Tydzień 6. Objętość w dół, ciężary −30%. Nie pomijaj — to on decyduje o mocy tygodni 7–8.'},
-  {n:'Intensyfikacja', rpe:9, d:'Tygodnie 7–8. RPE 8–9, niższe zakresy powtórzeń. Masa przekłada się na ciężar na sztandze.'}
+  {n:'Reaktywacja',    rpe:6, skala:1,   d:'Tygodnie 1–2. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
+  {n:'Budowa',         rpe:8, skala:1, narastanie:true, d:'Tygodnie 3–5. Główna faza. RPE 7–8, dochodzi martwy ciąg. Tu robi się masa.'},
+  {n:'Deload',         rpe:5, skala:0.8, d:'Tydzień 6. Objętość w dół, ciężary −30%. Nie pomijaj — to on decyduje o mocy tygodni 7–8.'},
+  {n:'Intensyfikacja', rpe:9, skala:1,   d:'Tygodnie 7–8. RPE 8–9, niższe zakresy powtórzeń. Masa przekłada się na ciężar na sztandze.'}
 ];
 
 const DOMYSLNE_RUNS = [
@@ -920,7 +931,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.6';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.9';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -953,7 +964,7 @@ function clearSes(){ SES=null; try{ localStorage.removeItem(SESKEY); }catch(e){}
 function blank(){
   const d = new Date(); d.setDate(d.getDate() - ((d.getDay()+6)%7));
   return {v:4, settings:{start:iso(d), rest:90}, workouts:[], daily:[], runs:[],
-          measures:[], questions:[], pain:[], skip:[], coach:null};
+          measures:[], questions:[], pain:[], skip:[], coach:null, nastepny:null};
 }
 function load(){
   try{ const r = localStorage.getItem(KEY); DB = r ? JSON.parse(r) : blank(); }
@@ -961,6 +972,7 @@ function load(){
   if(!DB.settings) DB.settings = {start:iso(new Date()), rest:90};
   ['workouts','daily','runs','measures','questions','pain','skip'].forEach(k=>{ if(!Array.isArray(DB[k])) DB[k]=[]; });
   if(DB.coach===undefined) DB.coach = null;
+  if(DB.nastepny===undefined) DB.nastepny = null;
   delete DB.meta;   /* dokładane tylko przy eksporcie, w bazie zbędne */
   /* biegi kasowaliśmy kiedyś po dacie+rodzaju — dwa biegi Z2 tego samego dnia
      kasowały się nawzajem. Od teraz każdy ma własny identyfikator. */
@@ -1030,6 +1042,14 @@ async function srvPull(cicho){
 
     if(t.raport && t.raport !== DB.raport){ DB.raport = t.raport; zmiany.push('raport'); }
     if(t.coach){ DB.coach = t.coach; zmiany.push('uwagi'); }
+    /* Kanał trenera jest „lepki" — moja poprawka leży na serwerze, dopóki jej
+       nie nadpiszę. Bez tych dwóch warunków każde otwarcie aplikacji kasowałoby
+       świeżo policzony plan starą korektą i zostawiało pusty ekran. */
+    if(t.nastepny && t.nastepny.cwiczenia && t.nastepny.data >= today()
+       && !(DB.nastepny && DB.nastepny.data > t.nastepny.data)){
+      DB.nastepny = Object.assign({}, t.nastepny, {sprawdzony:true});
+      zmiany.push('plan na jutro');
+    }
     if(t.plan && !walidujPlan(t.plan).length){
       DB.plan = t.plan; zastosujPlan(); zmiany.push('plan');
     }
@@ -1111,7 +1131,10 @@ function iso(d){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 function today(){ return iso(new Date()); }
-function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); return iso(d); }
+function przesun(data, n){ const d=new Date(data+'T00:00:00'); d.setDate(d.getDate()+n); return iso(d); }
+/* liczone od today(), nie od zegara systemowego — inaczej wszystko, co wygasa
+   po dacie, rozjeżdża się względem reszty aplikacji i nie da się tego przetestować */
+function daysAgo(n){ return przesun(today(), -n); }
 function weekNo(dateStr){
   const s = new Date(DB.settings.start+'T00:00:00');
   const d = new Date((dateStr||today())+'T00:00:00');
@@ -1172,13 +1195,49 @@ function fmtSet(s){
   return fmtKg(s.w)+' kg × '+s.r + (s.rpe?' @'+s.rpe:'');
 }
 function avg(arr){ const v=arr.filter(x=>x!=null&&!isNaN(x)); return v.length? v.reduce((a,b)=>a+b,0)/v.length : null; }
-/* zwraca wyłącznie serie robocze — na tym opiera się progresja */
-function lastFor(name){
+/* ============================================================
+   NARASTANIE OBJĘTOŚCI
+   W fazie budowy objętość ma rosnąć z tygodnia na tydzień — to jeden
+   z głównych czynników przyrostu masy. Wcześniej tygodnie 3, 4 i 5 miały
+   identyczną liczbę serii, więc blok był płaski i cały ciężar progresji
+   spoczywał na dokładaniu kilogramów.
+   Dokładamy serię w OSTATNIM tygodniu fazy i tylko do ćwiczeń wielostawowych
+   (bój + pierwsze akcesorium), żeby sesja nie urosła o kwadrans.
+   ============================================================ */
+function tygodnieFazy(faza){
+  const out=[];
+  for(let w=1; w<=40; w++) if(phaseOf(w)===faza) out.push(w);
+  return out;
+}
+function serieSlotu(slot, faza, tydzien){
+  const baza = slot.s[faza];
+  if(!baza) return 0;
+  const f = PHASES[faza] || {};
+  if(!f.narastanie || tydzien==null) return baza;
+  const tyg = tygodnieFazy(faza);
+  const ostatni = tyg[tyg.length-1];
+  const ciezkie = !!slot.fixed || slot.id.endsWith('2');   /* bój i pierwsze akcesorium */
+  return (tydzien===ostatni && ciezkie) ? baza+1 : baza;
+}
+
+/* czy trening z danej daty wypadł w tygodniu deloadu */
+function zDeloadu(data){
+  const f = PHASES[phaseOf(weekNo(data))];
+  return !!(f && f.skala && f.skala < 1);
+}
+
+/* Zwraca wyłącznie serie robocze — na tym opiera się progresja.
+   `pomijajDeload` odcina tygodnie deloadowe: po nich progresja musi
+   wracać do ciężarów sprzed deloadu, a nie liczyć się od obniżonych.
+   Bez tego jeden lekki tydzień cofałby cały blok. */
+function lastFor(name, pomijajDeload){
   for(let i=DB.workouts.length-1;i>=0;i--){
-    const e = DB.workouts[i].exercises.find(x=>x.name===name);
+    const w = DB.workouts[i];
+    if(pomijajDeload && zDeloadu(w.date)) continue;
+    const e = w.exercises.find(x=>x.name===name);
     if(!e) continue;
     const r = robocze(e.sets);
-    if(r.length) return {sets:r, date:DB.workouts[i].date};
+    if(r.length) return {sets:r, date:w.date};
   }
   return null;
 }
@@ -1396,19 +1455,46 @@ function pickVariant(slot){
 }
 
 /* ============================================================
+   NADPISANIA Z ANALIZY — świadomie nietrwałe
+   Gdy każę zejść z ciężarem („bark boli, schodzimy o 5 kg"), to instrukcja
+   na najbliższy raz, nie nowy sufit. Bez wygaszania takie nadpisanie
+   zamrażałoby ćwiczenie na zawsze i to bez ostrzeżenia — algorytm
+   przestawałby liczyć, a wyglądałoby, jakby liczył.
+   Nadpisanie znika, gdy wykonasz to ćwiczenie po dacie analizy: instrukcja
+   została wykonana, dalej prowadzi już historia.
+   ============================================================ */
+function nadpisanieAktywne(name){
+  const c = DB.coach;
+  if(!c || !c.overrides) return null;
+  const ovr = c.overrides[name];
+  if(!ovr) return null;
+  if(!c.date) return ovr;                       /* brak daty — nie mam jak wygasić */
+  const h = historia(name);
+  const zrobione = h.some(x => x.date >= c.date);
+  return zrobione ? null : ovr;
+}
+
+/* ============================================================
    PROPOZYCJA OBCIĄŻENIA — podwójna progresja + autoregulacja RPE
    ============================================================ */
-function suggestLoad(name, slot, phase){
-  const sets = slot.s[phase];
+function suggestLoad(name, slot, phase, tydzien){
+  const sets = serieSlotu(slot, phase, tydzien);
   const [mn,mx] = slot.rr[phase];
   if(!sets) return null;
 
   const L = LIB[name] || {inc:2.5, mus:{}};
-  const ovr = DB.coach && DB.coach.overrides && DB.coach.overrides[name];
+  const ovr = nadpisanieAktywne(name);
   if(ovr) return {w:ovr.w ?? null, r:ovr.r ?? mn, sets, tag:'coach',
     why:'Nadpisane w analizie'+(DB.coach.date?' z '+plDate(DB.coach.date):'')+': '+(ovr.note||'bez komentarza')};
 
-  const last = lastFor(name);
+  const faza = PHASES[phase] || {};
+  const skala = faza.skala || 1;
+  const deload = skala < 1;
+
+  /* W deloadzie patrzymy na tygodnie sprzed niego, żeby liczyć od pełnego
+     ciężaru. Poza deloadem pomijamy tygodnie deloadowe, żeby lekki tydzień
+     nie cofał progresji całego bloku. */
+  const last = lastFor(name, !deload);
   const unit = L.time ? 's' : 'powt';
 
   if(!last) return {w:null, r:mn, sets, tag:'new',
@@ -1421,6 +1507,21 @@ function suggestLoad(name, slot, phase){
   const full = top.length >= sets;
   const rpe  = avg(top.map(s=>s.rpe));
   const prev = wTop ? fmtKg(wTop)+' kg × '+top.map(s=>s.r).join('/') : top.map(s=>s.r).join('/')+' '+unit;
+
+  /* DELOAD ma jeden cel: zejść z obciążeniem. Wcześniej silnik przechodził
+     tu zwykłą ścieżką progresji i przy domkniętym zakresie proponował
+     WIĘCEJ ciężaru w tygodniu, który miał być lżejszy. */
+  if(deload){
+    /* ćwiczenia czasowe wracają do zaplanowanego czasu, bez dokładania sekund */
+    if(L.time) return {w:wTop, r:mx, sets, tag:'down',
+      why:'Tydzień deloadu. Ostatnio '+minR+' s — wracasz do '+mx+' s i '+sets+' serii.'};
+    const lekki = L.bw && !wTop ? 0 : roundTo(wTop*skala, 2.5);
+    return {w:lekki, r:mn, sets, tag:'down',
+      why:'Tydzień deloadu. Ostatnio '+prev+' — schodzisz do '+
+        (lekki ? fmtKg(lekki)+' kg' : 'samej masy własnej')+
+        ' i robisz tylko '+sets+' serie. To nie jest cofnięcie się, tylko warunek,'+
+        ' żeby tygodnie 7–8 miały z czego wystartować.'};
+  }
 
   /* czasowe — w:0 to poprawna wartość (brak obciążenia), nie brak danych */
   if(L.time) return {w:wTop, r: minR>=mx ? mx+10 : mx, sets, tag: minR>=mx?'up':'hold',
@@ -1473,20 +1574,65 @@ function suggestLoad(name, slot, phase){
 }
 
 /* pełna propozycja dnia: wariant + obciążenie dla każdego slotu */
-function buildDay(day, phase){
+/* ============================================================
+   PLAN NASTĘPNEGO TRENINGU
+   Liczony od razu po zakończeniu sesji i zapisywany w danych, więc
+   trafia na serwer razem ze stanem. Dzięki temu mogę zobaczyć konkretne
+   ciężary, zanim je podniesiesz, i odesłać poprawki.
+   Gdy zaczynasz sesję tego dnia, aplikacja używa tego planu zamiast liczyć
+   od nowa — inaczej moje korekty rozpłynęłyby się przy starcie.
+   ============================================================ */
+function planNastepnego(){
+  const s = suggestNext(true);
+  if(s.rest || !s.day) return null;
+  const items = buildDay(s.day, s.phase, s.week);
+  return {
+    utworzony: new Date().toISOString(),
+    data: s.data, dzien: s.day, tydzien: s.week,
+    faza: (PHASES[s.phase]||{}).n || '',
+    uwagi: s.notes.filter(n=>n[1]).map(n=>n[1]),
+    sprawdzony: false,
+    cwiczenia: items.map(it=>({
+      slot: it.slot.id, name: it.name, lab: it.slot.lab,
+      serie: it.sug.sets, powt: it.sug.r, ciezar: it.sug.w,
+      tag: it.sug.tag, why: it.sug.why
+    }))
+  };
+}
+/* Plan obowiązuje wyłącznie w dniu, na który był liczony.
+   Kusiło mnie okno kilkudniowe, ale symulacja pokazała, dlaczego to zły pomysł:
+   po przerwie aplikacja podstawiałaby ciężary sprzed kilku dni, ignorując to,
+   co wydarzyło się w międzyczasie, i progresja stawała w miejscu.
+   Nieaktualny plan jest po prostu liczony od nowa. */
+function planNaDzis(day){
+  const n = DB.nastepny;
+  if(!n || !n.cwiczenia) return null;
+  if(n.dzien !== day || n.data !== today()) return null;
+  return n;
+}
+/* do pokazania na ekranie głównym wystarczy, że plan jeszcze nie minął */
+function planDoPokazania(){
+  const n = DB.nastepny;
+  return (n && n.cwiczenia && n.data >= today()) ? n : null;
+}
+
+function buildDay(day, phase, tydzien){
   return PLAN[day].slots.filter(s=>s.s[phase]>0).map(slot=>{
     const v = pickVariant(slot);
-    return {slot, name:v.name, pick:v, sug:suggestLoad(v.name, slot, phase)};
+    return {slot, name:v.name, pick:v, sug:suggestLoad(v.name, slot, phase, tydzien)};
   });
 }
 /* ============================================================
    KTÓRY DZIEŃ
    ============================================================ */
-function suggestNext(){
-  const w = weekNo(), p = phaseOf(w);
+function suggestNext(naJutro){
+  /* `naJutro` pozwala zaplanować sesję z wyprzedzeniem, zaraz po zakończeniu
+     dzisiejszej — inaczej funkcja zawsze odpowiadałaby „dziś już trenowałeś". */
+  const ref = przesun(today(), naJutro ? 1 : 0);
+  const w = weekNo(ref), p = phaseOf(w);
   const doneWeek = DB.workouts.filter(x=>inWeek(x.date,w));
   const doneDays = doneWeek.map(x=>x.day);
-  const todayDone = DB.workouts.filter(x=>x.date===today());
+  const todayDone = DB.workouts.filter(x=>x.date===ref);
   const notes = [];
 
   if(todayDone.length) return {day:null, rest:true, week:w, phase:p,
@@ -1497,12 +1643,12 @@ function suggestNext(){
 
   const last = DB.workouts[DB.workouts.length-1];
   if(last){
-    const gap = Math.round((new Date(today()+'T00:00:00')-new Date(last.date+'T00:00:00'))/864e5);
+    const gap = Math.round((new Date(ref+'T00:00:00')-new Date(last.date+'T00:00:00'))/864e5);
     if(gap>=7) notes.push(['warn','Ostatni trening '+gap+' dni temu. Zejdź o ~10% z ciężarów i potraktuj to jako wejście z powrotem, nie sprawdzian.']);
     else if(gap>=4) notes.push(['','Przerwa '+gap+' dni. Pierwsza seria wolniej, dłuższa rozgrzewka.']);
   }
 
-  const yest = DB.workouts.filter(x=>x.date===daysAgo(1)).filter(x=>PLAN[x.day]).map(x=>PLAN[x.day].grp);
+  const yest = DB.workouts.filter(x=>x.date===przesun(ref,-1)).filter(x=>PLAN[x.day]).map(x=>PLAN[x.day].grp);
   const missing = ORDER.filter(d=>!doneDays.includes(d));
   let pool = missing.length ? missing : ORDER;
   let cand = pool.filter(d=>!yest.includes(PLAN[d].grp));
@@ -1533,7 +1679,7 @@ function suggestNext(){
   const ac = rl(7), ch = rl(28)/4;
   if(ch>0 && ac/ch > 1.5)
     notes.push(['warn','Objętość biegowa z tego tygodnia to '+Math.round(ac/ch*100)+'% Twojej średniej z miesiąca. Powyżej 150% ryzyko kontuzji wyraźnie rośnie — rozważ skrócenie kolejnego biegu.']);
-  const runY = DB.runs.filter(r=>r.date===daysAgo(1));
+  const runY = DB.runs.filter(r=>r.date===przesun(ref,-1));
   if(runY.length && PLAN[day].grp==='nogi'){
     const hard = runY.some(r=>r.type==='jakość'||r.type==='test');
     notes.push([hard?'warn':'', 'Wczoraj '+(hard?'bieg jakościowy':'bieg spokojny')+
@@ -1542,7 +1688,7 @@ function suggestNext(){
            :'Spokojny bieg nie powinien przeszkodzić.')]);
   }
 
-  const d0 = DB.daily.find(x=>x.date===today()) || DB.daily.find(x=>x.date===daysAgo(1));
+  const d0 = DB.daily.find(x=>x.date===ref) || DB.daily.find(x=>x.date===przesun(ref,-1));
   if(d0){
     if(d0.sleep!=null && d0.sleep<6)
       notes.push(['bad','Sen '+d0.sleep+' h. Zostań na RPE 7, odpuść serie na maksa. Przy takim niedospaniu ryzyko kontuzji rośnie, a i tak nie zbudujesz nic więcej.']);
@@ -1564,7 +1710,7 @@ function suggestNext(){
 
   if(p===2) notes.push(['','Tydzień deloadu — ciężary i serie są celowo niższe. Nie próbuj tego nadrabiać.']);
 
-  return {day, rest:false, week:w, phase:p, head:'Dzień '+day+' — '+PLAN[day].name, why, notes};
+  return {day, rest:false, week:w, phase:p, data:ref, head:'Dzień '+day+' — '+PLAN[day].name, why, notes};
 }
 
 /* ============================================================
@@ -1658,7 +1804,9 @@ function renderHub(){
     ? '<div class="tip warn"><b>Trening '+SES.day+' w toku</b> — '+setCount(SES)+' serii zapisanych.'+
       '<div style="margin-top:9px"><button class="btn sm" onclick="setSub(\'ses\')">Wróć do treningu</button></div></div>'
     : '';
-  const coach = DB.coach && DB.coach.note
+  /* uwaga sprzed tygodnia to już nie uwaga, tylko tapeta */
+  const coachSwiezy = DB.coach && (!DB.coach.date || DB.coach.date >= daysAgo(7));
+  const coach = coachSwiezy && DB.coach.note
     ? '<div class="tip ok"><b>Uwaga z analizy'+(DB.coach.date?' ('+plDate(DB.coach.date)+')':'')+'</b><br>'+esc(DB.coach.note)+'</div>'
     : '';
   /* świeże odpowiedzi na pytania — pokazujemy trzy najnowsze */
@@ -1683,7 +1831,18 @@ function renderHub(){
       '<button class="sx" onclick="delWorkout(\''+x.id+'\')">×</button></div>';
   }).join('')
     : '<div class="empty">Nic tu jeszcze nie ma.<br>Zacznij od „Proponowany trening".</div>';
-  document.getElementById('coachBox').innerHTML = resume + coach + odpBox + czekaBox;
+  /* gotowy plan na następny trening — widoczny, zanim go zaczniesz */
+  const gp = planDoPokazania();
+  const planBox = gp
+    ? '<div class="tip '+(gp.sprawdzony?'ok':'')+'">'+
+      '<b>Plan na dzień '+gp.dzien+'</b>'+
+      (gp.sprawdzony?' · sprawdzony przez trenera':' · czeka na sprawdzenie')+'<br>'+
+      esc(gp.cwiczenia.slice(0,3).map(c=>
+        c.name+' '+c.serie+'×'+c.powt+(c.ciezar?' @'+fmtKg(c.ciezar)+' kg':'')).join(' · '))+
+      (gp.cwiczenia.length>3?' · +'+(gp.cwiczenia.length-3)+' więcej':'')+'</div>'
+    : '';
+
+  document.getElementById('coachBox').innerHTML = resume + planBox + coach + odpBox + czekaBox;
 }
 
 /* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
@@ -1732,7 +1891,7 @@ function renderSuggest(){
   h+='<div class="tip ok"><b>'+esc(s.head)+'</b><br>'+s.why.map(esc).join('<br>')+'</div>';
   h+=s.notes.filter(n=>n[1]).map(n=>'<div class="tip '+n[0]+'">'+esc(n[1])+'</div>').join('');
 
-  const items=buildDay(s.day, s.phase);
+  const items=buildDay(s.day, s.phase, s.week);
   h+='<h2>Ćwiczenia i obciążenia</h2>';
   h+=items.map(({slot,name,pick,sug})=>{
     const L=LIB[name]||{};
@@ -1771,11 +1930,19 @@ function startSession(day, withSug){
   if(SES && setCount(SES)>0 &&
      !confirm('Masz niezakończony trening '+SES.day+' z '+setCount(SES)+' seriami. Porzucić go i zacząć nowy?')) return;
   const w=weekNo(), p=phaseOf(w);
+  const gotowy = planNaDzis(day);
   SES={date:today(), day:day, week:w, t0:Date.now(), note:'',
-    exercises: buildDay(day,p).map(it=>({
-      name:it.name, slot:it.slot.id, lab:it.slot.lab, target:it.slot.t[p],
-      sets:[], sug: withSug ? it.sug : null, pool: it.slot.pool||null
-    }))};
+    exercises: buildDay(day,p,w).map(it=>{
+      /* jeśli mam zatwierdzony plan na ten dzień, biorę z niego liczby —
+         dzięki temu korekty trenera nie znikają przy starcie sesji */
+      const z = gotowy && gotowy.cwiczenia.find(x=>x.slot===it.slot.id);
+      const sug = (withSug && z)
+        ? {w:z.ciezar, r:z.powt, sets:z.serie, tag:z.tag||'hold', why:z.why||''}
+        : (withSug ? it.sug : null);
+      return {name: z ? z.name : it.name, slot:it.slot.id, lab:it.slot.lab,
+              target:it.slot.t[p], sets:[], sug:sug, pool: it.slot.pool||null};
+    })};
+  if(gotowy) toast(gotowy.sprawdzony ? 'Plan sprawdzony przez trenera' : 'Plan z wczoraj');
   saveSes();
   document.getElementById('sesName').textContent=day+' — '+dayName2(day);
   setSub('ses');
@@ -1914,7 +2081,7 @@ function swapEx(i){
   const k=(e.pool.indexOf(e.name)+1)%e.pool.length;
   e.name=e.pool[k]; e.sets=[]; e._open=true;
   const slot=slotById(e.slot);
-  if(slot) e.sug=suggestLoad(e.name, slot, phaseOf(SES.week));
+  if(slot) e.sug=suggestLoad(e.name, slot, phaseOf(SES.week), SES.week);
   saveSes(); renderSession(); toast('Zamieniono na: '+e.name);
 }
 function prefill(e,f){
@@ -2013,6 +2180,8 @@ function finishSession(){
   DB.workouts.sort((a,b)=>a.date.localeCompare(b.date));
   save();
 
+  DB.nastepny = planNastepnego();
+  save();
   OSTATNI={wpis, rekordy, poprz};
   clearSes(); stopTimer(); setSub('sum');
   if(srvGotowy()) srvPush(true).then(o=>{ if(o) renderSummary(); });
@@ -2237,11 +2406,58 @@ document.addEventListener('visibilitychange',()=>{
    BIEGANIE
    ============================================================ */
 function num(id){ const v=document.getElementById(id).value; return v===''?null:parseFloat(v); }
+/* ============================================================
+   BIEG A SIŁA
+   Plan biegowy był dotąd sztywną tabelką, niezależną od tego, co robisz
+   na siłowni. To zły układ: mocny bieg dzień po przysiadach obciąża te same
+   mięśnie, które jeszcze się nie zregenerowały, a w tygodniu deloadu
+   pełna objętość biegowa niweczy sens odciążenia.
+   Poniższe ostrzeżenia nie zmieniają planu — pokazują konflikt i zostawiają
+   decyzję. Sam plan zostaje przewidywalny.
+   ============================================================ */
+function kmWTygodniu(w){
+  return DB.runs.filter(x=>inWeek(x.date,w)).reduce((a,x)=>a+(x.dist||0),0);
+}
+function radaBiegowa(){
+  const w = weekNo(), p = phaseOf(w), f = PHASES[p] || {}, out = [];
+
+  if(f.skala && f.skala < 1)
+    out.push(['down','Tydzień deloadu — zejdź z biegami tak samo jak z ciężarami: '+
+      'zostaw środowe Z2, sobotnią jakość zamień na spokojne 20-25 minut. '+
+      'Odciążenie tylko na siłowni to odciążenie połowiczne.']);
+
+  /* nogi dziś, wczoraj albo jutro — jakość biegowa wchodzi w kolizję */
+  const nogi = d => DB.workouts.some(x=>x.date===d && PLAN[x.day] && PLAN[x.day].grp==='nogi');
+  const jutroNogi = DB.nastepny && PLAN[DB.nastepny.dzien] && PLAN[DB.nastepny.dzien].grp==='nogi'
+                    && DB.nastepny.data===przesun(today(),1);
+  if(nogi(today()))
+    out.push(['warn','Dziś był trening nóg — jeśli planujesz dziś bieg, tylko spokojny Z2. '+
+      'Interwały po przysiadach to podwójne obciążenie tej samej tkanki.']);
+  else if(nogi(przesun(today(),-1)))
+    out.push(['warn','Wczoraj nogi — mocny bieg dziś będzie się odbywał na niezregenerowanych '+
+      'czworogłowych. Przełóż jakość o dzień albo zrób ją spokojnie.']);
+  if(jutroNogi)
+    out.push(['warn','Jutro nogi — dziś odpuść jakość biegową, żeby wejść na przysiad ze świeżymi nogami.']);
+
+  /* ostrożny przyrost kilometrów: reguła 10% liczona od średniej z 3 tygodni */
+  const teraz = kmWTygodniu(w);
+  const hist = [w-1,w-2,w-3].map(kmWTygodniu).filter(x=>x>0);
+  if(hist.length >= 2 && teraz > 0){
+    const sr = hist.reduce((a,b)=>a+b,0)/hist.length;
+    if(teraz > sr*1.3)
+      out.push(['warn','W tym tygodniu masz '+teraz.toFixed(1)+' km przy średniej '+sr.toFixed(1)+' km '+
+        'z ostatnich tygodni — to skok o '+Math.round((teraz/sr-1)*100)+'%. '+
+        'Kontuzje biegowe biorą się właśnie z takich przeskoków. Resztę tygodnia przebiegaj spokojnie.']);
+  }
+  return out;
+}
+
 function renderRun(){
   const w=weekNo(), r=RUNS[Math.min(w,8)-1];
   const mine=DB.runs.filter(x=>inWeek(x.date,w));
   let h='<div class="tip rn"><b>Tydzień '+w+'</b> — dwa biegi: środa spokojnie, sobota jakość. '+
     'Nie zwiększaj tygodniowej objętości o więcej niż ~10%: kontuzje biegowe biorą się z przyrostu kilometrów, nie z tempa.</div>';
+  radaBiegowa().forEach(x=>{ h+='<div class="tip '+x[0]+'">'+esc(x[1])+'</div>'; });
   h+='<h2>Plan na ten tydzień</h2>';
   h+='<div class="card"><div class="hd" style="color:var(--run)">Środa — bieg spokojny (Z2)</div>'+
      '<div style="font-size:19px;font-weight:750;margin:7px 0 5px">'+esc(r.z2)+'</div>'+
