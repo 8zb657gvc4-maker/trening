@@ -931,7 +931,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.10';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.12';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -999,6 +999,21 @@ function srvSave(){
   try{ localStorage.setItem(SRVKEY, JSON.stringify(SRV)); }catch(e){}
 }
 function srvGotowy(){ return !!(SRV.on && SRV.adres && SRV.token); }
+
+/* Odcisk historii treningów. Sam znacznik czasu nie wystarczy: trening ma
+   tylko datę dzienną, więc nie da się odróżnić „wysłane po treningu" od
+   „wysłane rano tego samego dnia". */
+function odciskTreningow(){
+  const w = DB.workouts;
+  return w.length + ':' + (w.length ? w[w.length-1].id : '-');
+}
+/* iOS potrafi zamrozić aplikację zaraz po zakończeniu treningu — wysyłka
+   rusza, ale nie zdąży się dokończyć i ginie bez śladu: bez błędu, bez danych
+   na serwerze. Dlatego przy każdym otwarciu sprawdzamy, czy serwer ma już to,
+   co telefon, i w razie czego dosyłamy zaległość. */
+function zalegaWysylka(){
+  return srvGotowy() && DB.workouts.length > 0 && SRV.wyslany !== odciskTreningow();
+}
 function srvUrl(zasob){
   return SRV.adres.replace(/\/+$/,'') + '/' + zasob + '/' + encodeURIComponent(SRV.token);
 }
@@ -1021,7 +1036,8 @@ async function srvPush(cicho){
         : (j.blad || ('błąd '+r.status));
       srvSave(); if(!cicho) toast(SRV.blad); return false;
     }
-    SRV.ostatni = new Date().toISOString(); SRV.blad = null; srvSave();
+    SRV.ostatni = new Date().toISOString(); SRV.blad = null;
+    SRV.wyslany = odciskTreningow(); srvSave();
     if(!cicho) toast('Wysłano na serwer');
     return true;
   }catch(e){
@@ -1842,7 +1858,17 @@ function renderHub(){
       (gp.cwiczenia.length>3?' · +'+(gp.cwiczenia.length-3)+' więcej':'')+'</div>'
     : '';
 
-  document.getElementById('coachBox').innerHTML = resume + planBox + coach + odpBox + czekaBox;
+  /* stały sygnał, że dane nie płyną — inaczej łatwo trenować tygodniami
+     w przekonaniu, że trener wszystko widzi */
+  const syncBox = (!srvGotowy() && DB.workouts.length)
+    ? '<div class="tip warn"><b>Serwer nie dostaje Twoich treningów</b><br>'+
+      'Synchronizacja jest wyłączona. Włącz ją w Danych → Serwer.</div>'
+    : SRV.blad ? '<div class="tip warn"><b>Ostatnia wysyłka się nie udała</b><br>'+
+        esc(SRV.blad)+' — Dane → Synchronizuj teraz.</div>'
+    : zalegaWysylka() ? '<div class="tip warn"><b>Serwer nie ma najnowszego treningu</b><br>'+
+        'Wejdź w Dane → Synchronizuj teraz.</div>' : '';
+
+  document.getElementById('coachBox').innerHTML = syncBox + resume + planBox + coach + odpBox + czekaBox;
 }
 
 /* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
@@ -2240,11 +2266,17 @@ function renderSummary(){
 
   if(wpis.note) h+='<div class="tip"><b>Twoja notatka:</b> '+esc(wpis.note)+'</div>';
 
+  /* Wyłączona synchronizacja pokazywała wcześniej sam przycisk iCloud — bez
+     słowa wyjaśnienia. Wyglądało to jak normalny ekran, a trening po cichu
+     nie docierał do trenera. Cisza jest tu najgorszym możliwym komunikatem. */
   h+= srvGotowy()
     ? '<div class="tip '+(SRV.blad?'warn':'ok')+'">'+
       (SRV.blad ? 'Nie udało się wysłać na serwer: '+esc(SRV.blad)+'. Spróbuj w Danych → Synchronizuj teraz.'
                 : 'Wysłano na serwer. Analizę dostaniesz wieczorem.')+'</div>'
-    : '<button class="btn" onclick="exportData()">Wyślij do iCloud</button>';
+    : '<div class="tip warn"><b>Synchronizacja jest wyłączona</b><br>'+
+      'Ten trening został zapisany na telefonie, ale <b>nie trafił na serwer</b> — '+
+      'trener go nie zobaczy. Włącz ją w Danych → Serwer, albo wyślij ręcznie przez iCloud.</div>'+
+      '<button class="btn" onclick="exportData()">Wyślij do iCloud</button>';
   h+='<button class="btn ghost sm" style="margin-top:9px" onclick="OSTATNI=null;setSub(\'hub\');setTimeout(applyUpdateIfIdle,600)">Gotowe</button>';
   document.getElementById('sumBody').innerHTML=h;
 }
@@ -3264,6 +3296,9 @@ function wipe(){
    ============================================================ */
 srvLoad();
 load();
+/* dosyłamy zaległość, zanim cokolwiek pokażemy — cicho, bo to nie jest
+   zdarzenie, którym trzeba zawracać głowę, gdy się uda */
+if(zalegaWysylka()) srvPush(true).then(o=>{ if(o) renderSub(); });
 if(!resumeSes()) setSub('hub');
 else resumeTimer();   /* wraca też odliczanie przerwy, jeśli jeszcze trwa */
 window.addEventListener('beforeunload',e=>{ if(SES&&setCount(SES)>0){ e.preventDefault(); e.returnValue=''; } });
