@@ -284,6 +284,14 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .mdbox li{margin-bottom:3px}
 .mdbox code{background:var(--card2);padding:1px 5px;border-radius:4px;font-size:12px}
 .mdrow{font-size:12px;color:var(--dim);padding:3px 0;border-bottom:1px solid var(--line)}
+.mdsep{height:1px;background:var(--line);margin:12px 0}
+.mdkafle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 12px}
+.mdkafle>div{background:var(--card2);border:1px solid var(--line);border-radius:10px;
+  padding:9px 6px;text-align:center}
+.mdkafle b{display:block;font-size:17px;font-weight:800;letter-spacing:-.4px;
+  font-variant-numeric:tabular-nums}
+.mdkafle span{display:block;font-size:10px;color:var(--dim);margin-top:2px;line-height:1.25}
+.mdbox .ok{color:var(--ok)} .mdbox .warn{color:var(--warn)} .mdbox .bad{color:var(--bad)}
 .spark{width:100%;height:64px;display:block;margin:4px 0 2px}
 .chdr{display:flex;justify-content:space-between;align-items:baseline;
   font-size:13px;font-weight:650;margin-bottom:2px}
@@ -912,7 +920,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.5';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.6';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -2667,27 +2675,81 @@ function renderTrendy(){
    pomijamy. Ma być czytelnie, nie wiernie.
    ============================================================ */
 function md(tekst){
-  const linie=String(tekst).split('\n');
-  let out='', lista=false;
+  let src = String(tekst);
+
+  /* 1. Znaczniki grafik są dla generatora PDF — w telefonie nie mają
+        czego zastąpić, więc znikają zamiast straszyć jako {{mapa}}. */
+  src = src.replace(/\{\{\s*\w+\s*\}\}/g, '');
+
+  /* 2. Kafle ze statystykami przepisujemy na własny, czytelny wiersz,
+        zanim wytniemy surowy HTML. */
+  src = src.replace(/<div class="kafle">([\s\S]*?)<\/div>\s*<\/div>/g, (m)=>{
+    const poz=[...m.matchAll(/<b>(.*?)<\/b>\s*<span>(.*?)<\/span>/g)]
+      .map(x=>'@@KAFEL@@'+x[1]+'@@'+x[2]);
+    return poz.length ? poz.join('\n')+'\n' : '';
+  });
+
+  /* 3. Kolorowane statusy zachowujemy, resztę znaczników wycinamy. */
+  src = src.replace(/<span class="(ok|warn|bad)">([\s\S]*?)<\/span>/g, '@@S$1@@$2@@');
+  src = src.replace(/<\/?(?:div|span|p|br)[^>]*>/g, '');
+
   const inline = s => esc(s)
     .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
     .replace(/(^|\s)_(.+?)_(?=\s|$)/g,'$1<i>$2</i>')
-    .replace(/`(.+?)`/g,'<code>$1</code>');
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/@@S(ok|warn|bad)@@(.*?)@@/g,'<span class="$1">$2</span>');
+
+  const linie = src.split('\n');
+  let out='', lista=false, akapit=[], kafle=[];
+  const domknijAkapit = ()=>{ if(akapit.length){ out+='<p>'+inline(akapit.join(' '))+'</p>'; akapit=[]; } };
+  const domknijListe  = ()=>{ if(lista){ out+='</ul>'; lista=false; } };
+  const domknijKafle  = ()=>{
+    if(!kafle.length) return;
+    out+='<div class="mdkafle">'+kafle.map(k=>
+      '<div><b>'+inline(k[0])+'</b><span>'+inline(k[1])+'</span></div>').join('')+'</div>';
+    kafle=[];
+  };
+  const domknijWszystko = ()=>{ domknijAkapit(); domknijListe(); domknijKafle(); };
+
   linie.forEach(l=>{
     const t=l.trim();
+
+    if(t.startsWith('@@KAFEL@@')){
+      domknijAkapit(); domknijListe();
+      const cz=t.slice(9).split('@@');
+      kafle.push([cz[0]||'', cz[1]||'']); return;
+    }
+    domknijKafle();
+
     if(/^[-*]\s+/.test(t)){
+      domknijAkapit();
       if(!lista){ out+='<ul>'; lista=true; }
       out+='<li>'+inline(t.replace(/^[-*]\s+/,''))+'</li>'; return;
     }
-    if(lista){ out+='</ul>'; lista=false; }
-    if(!t) return;
-    if(/^###\s/.test(t)) out+='<h4>'+inline(t.slice(4))+'</h4>';
-    else if(/^##\s/.test(t)) out+='<h3 class="mdh">'+inline(t.slice(3))+'</h3>';
-    else if(/^#\s/.test(t)) out+='<h3 class="mdh">'+inline(t.slice(2))+'</h3>';
-    else if(/^\|/.test(t)) out+='<div class="mdrow">'+inline(t.replace(/^\||\|$/g,'').replace(/\|/g,' · '))+'</div>';
-    else out+='<p>'+inline(t)+'</p>';
+    domknijListe();
+
+    /* pusta linia kończy akapit — pojedyncze łamanie to nadal ten sam akapit,
+       inaczej raport rozsypywał się na urwane zdania */
+    if(!t){ domknijAkapit(); return; }
+
+    if(/^#{1,3}\s/.test(t)){
+      domknijAkapit();
+      const st=t.replace(/^#+\s*/,'');
+      out += /^###\s/.test(t) ? '<h4>'+inline(st)+'</h4>' : '<h3 class="mdh">'+inline(st)+'</h3>';
+      return;
+    }
+    if(/^\|/.test(t)){
+      domknijAkapit();
+      const kom=t.replace(/^\||\|$/g,'').split('|').map(x=>x.trim());
+      if(kom.every(x=>/^:?-{2,}:?$/.test(x))) return;     /* linia oddzielająca tabeli */
+      out+='<div class="mdrow">'+inline(kom.filter(Boolean).join(' · '))+'</div>';
+      return;
+    }
+    if(/^-{3,}$/.test(t)){ domknijAkapit(); out+='<div class="mdsep"></div>'; return; }
+
+    akapit.push(t);
   });
-  if(lista) out+='</ul>';
+  domknijWszystko();
   return out;
 }
 
