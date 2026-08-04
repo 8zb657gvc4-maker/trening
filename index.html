@@ -325,6 +325,14 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .dayin .fld{display:flex;flex-direction:column;justify-content:flex-end}
 .dayin .fld label{min-height:13px}
 .mono{font-variant-numeric:tabular-nums}
+.rpe{display:flex;gap:5px;margin-top:5px}
+.rpeb{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:11px;
+  padding:9px 0 7px;color:var(--dim);display:flex;flex-direction:column;align-items:center;
+  gap:1px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:.12s}
+.rpeb b{font-size:17px;font-weight:750;line-height:1}
+.rpeb span{font-size:9.5px;opacity:.75;line-height:1}
+.rpeb.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.rpeb.on span{opacity:.9}
 </style>
 </head>
 <body>
@@ -565,6 +573,8 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   </div>
   <h2>Statystyki</h2>
   <div class="card" id="stats"></div>
+  <h2>Kosz</h2>
+  <div class="card" id="koszBox"></div>
   <h2 style="color:var(--bad)">Strefa zagrożenia</h2>
   <div class="card">
     <button class="btn ghost sm" onclick="wipe()" style="color:var(--bad)">Usuń wszystkie dane</button>
@@ -931,7 +941,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.20';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.22';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -964,7 +974,7 @@ function clearSes(){ SES=null; try{ localStorage.removeItem(SESKEY); }catch(e){}
 function blank(){
   const d = new Date(); d.setDate(d.getDate() - ((d.getDay()+6)%7));
   return {v:4, settings:{start:iso(d), rest:90}, workouts:[], daily:[], runs:[],
-          measures:[], questions:[], pain:[], skip:[], coach:null, nastepny:null};
+          measures:[], questions:[], pain:[], skip:[], coach:null, nastepny:null, kosz:[]};
 }
 function load(){
   try{ const r = localStorage.getItem(KEY); DB = r ? JSON.parse(r) : blank(); }
@@ -973,6 +983,11 @@ function load(){
   ['workouts','daily','runs','measures','questions','pain','skip'].forEach(k=>{ if(!Array.isArray(DB[k])) DB[k]=[]; });
   if(DB.coach===undefined) DB.coach = null;
   if(DB.nastepny===undefined) DB.nastepny = null;
+  if(!Array.isArray(DB.kosz)) DB.kosz = [];
+  /* kosz sam się opróżnia po 30 dniach — inaczej rósłby w nieskończoność
+     i zjadał miejsce w localStorage, którego jest 5 MB */
+  const granica = daysAgo(30);
+  DB.kosz = DB.kosz.filter(x => (x.usunieto||'').slice(0,10) >= granica);
   delete DB.meta;   /* dokładane tylko przy eksporcie, w bazie zbędne */
   /* biegi kasowaliśmy kiedyś po dacie+rodzaju — dwa biegi Z2 tego samego dnia
      kasowały się nawzajem. Od teraz każdy ma własny identyfikator. */
@@ -1942,12 +1957,33 @@ function renderHub(){
 
 /* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
    zmuszała do kasowania całej historii */
+/* ============================================================
+   KOSZ
+   Usunięcie treningu przestaje być nieodwracalne. Wpis ląduje w koszu
+   na 30 dni i można go przywrócić jednym dotknięciem. Historia to jedyna
+   rzecz w tej aplikacji, której nie da się odtworzyć z żadnego innego
+   źródła — pomyłkowe skasowanie sesji sprzed miesiąca znaczyłoby utratę
+   punktu odniesienia dla całej progresji.
+   ============================================================ */
+function przywrocTrening(id){
+  const i = DB.kosz.findIndex(x => x.wpis && x.wpis.id === id);
+  if(i < 0){ toast('Nie ma go już w koszu'); return; }
+  const {wpis} = DB.kosz[i];
+  DB.kosz.splice(i, 1);
+  DB.workouts.push(wpis);
+  DB.workouts.sort((a,b) => a.date.localeCompare(b.date));
+  DB.nastepny = planNastepnego();
+  save(); renderSub();
+  toast('Przywrócono trening z '+plDate(wpis.date));
+}
+
 function delWorkout(id){
   const w=DB.workouts.find(x=>x.id===id);
   if(!w){ toast('Nie znaleziono treningu'); return; }
   const opis=w.day+' — '+dayName2(w.day)+'\n'+plDate(w.date)+'\n'+
     setCount(w)+' serii, '+Math.round(vol(w)).toLocaleString('pl')+' kg';
-  if(!confirm('Usunąć ten trening?\n\n'+opis+'\n\nTego nie da się cofnąć.')) return;
+  if(!confirm('Usunąć ten trening?\n\n'+opis+'\n\nWyląduje w koszu — przez 30 dni da się go przywrócić.')) return;
+  DB.kosz.unshift({usunieto:new Date().toISOString(), wpis:w});
   DB.workouts=DB.workouts.filter(x=>x.id!==id);
   /* Plan na jutro był policzony z historią, która właśnie się zmieniła —
      zostawienie go znaczyłoby proponowanie ciężarów opartych na treningu,
@@ -1957,7 +1993,7 @@ function delWorkout(id){
   save();
   if(OSTATNI && OSTATNI.wpis && OSTATNI.wpis.id===id) OSTATNI=null;
   renderSub();
-  toast('Trening usunięty');
+  toast('Trening w koszu — można cofnąć w Danych');
 }
 
 /* ============================================================
@@ -2141,10 +2177,20 @@ function renderSession(){
             '<div class="step"><button onclick="bump('+i+',\'r\',-1)">−</button>'+
             '<input type="number" inputmode="numeric" id="ir'+i+'" value="'+prefill(e,'r')+'">'+
             '<button onclick="bump('+i+',\'r\',1)">+</button></div></div>'+
-          '<div class="fld"><label>RPE</label>'+
-            '<div class="step"><button onclick="bump('+i+',\'rpe\',-1)">−</button>'+
-            '<input type="number" inputmode="numeric" id="irpe'+i+'" value="'+prefill(e,'rpe')+'">'+
-            '<button onclick="bump('+i+',\'rpe\',1)">+</button></div></div>'+
+        '</div>'+
+        /* RPE jako przyciski, nie licznik ze strzałkami. To jedyna wartość,
+           która zmienia się prawie co serię, a przy strzałkach zejście z 9 na 6
+           kosztowało trzy dotknięcia — w praktyce kończyło się zostawianiem
+           poprzedniej liczby. RPE, którego nikt nie poprawia, jest gorsze
+           od braku RPE, bo wygląda na dane. */
+        '<div class="fld" style="margin-top:10px"><label>RPE — ile zostało w zapasie</label>'+
+          '<div class="rpe">'+ [6,7,8,9,10].map(v=>{
+            const wybrane = String(prefill(e,'rpe'))===String(v);
+            const opis = {6:'4 powt.',7:'3',8:'2',9:'1',10:'upadek'}[v];
+            return '<button class="rpeb'+(wybrane?' on':'')+'" onclick="ustawRpe('+i+','+v+')">'+
+              '<b>'+v+'</b><span>'+opis+'</span></button>';
+          }).join('') +'</div>'+
+          '<input type="hidden" id="irpe'+i+'" value="'+prefill(e,'rpe')+'">'+
         '</div>'+
         '<div class="plt" id="plt'+i+'"></div>'+
         '<div class="btn2" style="margin-top:11px">'+
@@ -2209,6 +2255,17 @@ function bump(i,f,d){
   el.value = v || (f==='rpe'?'':0);
   if(f==='w') odswiezTalerze(i);
 }
+function ustawRpe(i, v){
+  const pole = document.getElementById('irpe'+i);
+  /* powtórne dotknięcie tej samej wartości ją zdejmuje — RPE bywa nieznane
+     i lepiej zostawić puste niż zmyślić */
+  pole.value = (String(pole.value) === String(v)) ? '' : v;
+  const box = pole.previousElementSibling;
+  if(box) [...box.children].forEach(b =>
+    b.classList.toggle('on', b.textContent.startsWith(String(pole.value)) && pole.value !== ''));
+  if(navigator.vibrate) navigator.vibrate(12);
+}
+
 function addSet(i, rozgrzewka){
   const e=SES.exercises[i];
   const w=parseFloat(document.getElementById('iw'+i).value)||0;
@@ -3261,8 +3318,27 @@ function renderSrv(){
       (SRV.ostatni ? plDate(SRV.ostatni.slice(0,10))+' '+SRV.ostatni.slice(11,16) : '—')+'</span></div>';
 }
 
+function renderKosz(){
+  const el = document.getElementById('koszBox');
+  if(!el) return;
+  if(!DB.kosz.length){
+    el.innerHTML = '<div class="empty">Pusty. Usunięte treningi czekają tu 30 dni.</div>';
+    return;
+  }
+  el.innerHTML = DB.kosz.map(x => {
+    const w = x.wpis, dni = 30 - Math.floor(
+      (new Date() - new Date(x.usunieto)) / 864e5);
+    return '<div class="hist"><div><div class="hd">'+w.day+' — '+esc(dayName2(w.day))+
+      ' · '+plDate(w.date)+'</div>'+
+      '<div class="hm">'+setCount(w)+' serii · '+Math.round(vol(w)).toLocaleString('pl')+' kg'+
+      ' · zniknie za '+Math.max(0,dni)+' dni</div></div>'+
+      '<button class="pill" onclick="przywrocTrening(\''+w.id+'\')">przywróć</button></div>';
+  }).join('');
+}
+
 function renderData(){
   renderSrv();
+  renderKosz();
   const wl=planWlasny();
   document.getElementById('planStan').innerHTML=
     '<div class="kv"><span class="k">Źródło planu</span><span class="v '+(wl?'up':'')+'">'+
@@ -3427,9 +3503,29 @@ function planDomyslny(){
   toast('Przywrócono plan domyślny');
 }
 
+/* Wyliczamy, co konkretnie przepadnie. Ogólne „usunąć wszystkie dane?"
+   niczego nie mówi — Filip kliknął to raz, żeby skasować dwa testowe treningi,
+   i stracił przy okazji siedem dni snu i HRV z Garmina, o których nie pomyślał. */
 function wipe(){
-  if(!confirm('Usunąć WSZYSTKIE dane bezpowrotnie?')) return;
-  if(!confirm('Na pewno? Zrobiłeś eksport?')) return;
+  const ile = [
+    DB.workouts.length + ' treningów',
+    DB.daily.length + ' dni z Garmina (sen, HRV, tętno)',
+    DB.runs.length + ' biegów',
+    DB.measures.length + ' pomiarów sylwetki',
+    DB.kosz.length + ' wpisów w koszu'
+  ].filter(x => !/^0 /.test(x));
+
+  if(!ile.length){ toast('Nie ma czego usuwać'); return; }
+
+  const lista = ile.map(x => '• '+x).join('\n');
+  if(!confirm('Usunąć BEZPOWROTNIE:\n\n'+lista+'\n\nKosz też zostanie opróżniony — '+
+              'tego nie da się cofnąć.')) return;
+
+  /* Ostatnia furtka: przepisanie słowa wymaga świadomej decyzji, a dwa
+     kolejne „OK" da się kliknąć odruchowo. */
+  const slowo = prompt('Aby potwierdzić, wpisz: USUWAM');
+  if((slowo||'').trim().toUpperCase() !== 'USUWAM'){ toast('Anulowano'); return; }
+
   localStorage.removeItem(KEY); clearSes(); DB=blank(); save();
   renderData(); renderSub(); toast('Wyczyszczono');
 }
