@@ -275,6 +275,15 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   border-radius:6px;padding:0 6px;line-height:1.3}
 
 /* --- wykresy --- */
+.mdbox{font-size:13.5px;line-height:1.55}
+.mdbox h3.mdh{font-size:14px;color:var(--acc);margin:12px 0 5px;text-transform:none;letter-spacing:0;border:none;padding:0}
+.mdbox h3.mdh:first-child{margin-top:0}
+.mdbox h4{font-size:12.5px;color:var(--txt);margin:10px 0 4px}
+.mdbox p{margin:0 0 7px}
+.mdbox ul{margin:0 0 8px;padding-left:16px}
+.mdbox li{margin-bottom:3px}
+.mdbox code{background:var(--card2);padding:1px 5px;border-radius:4px;font-size:12px}
+.mdrow{font-size:12px;color:var(--dim);padding:3px 0;border-bottom:1px solid var(--line)}
 .spark{width:100%;height:64px;display:block;margin:4px 0 2px}
 .chdr{display:flex;justify-content:space-between;align-items:baseline;
   font-size:13px;font-weight:650;margin-bottom:2px}
@@ -507,6 +516,22 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <button class="btn ghost sm" style="margin-top:9px" onclick="exportCsv()">Eksport CSV do arkusza</button>
     <input type="file" id="impf" accept=".json,application/json" style="display:none" onchange="importData(event)">
     <div class="note" style="margin-top:11px">„Wyślij" otwiera arkusz udostępniania — wybierz skrót zapisujący do iCloud Drive. Wczytanie pliku domyślnie <b>scala</b> dane z obecnymi, więc nie stracisz treningu zrobionego po eksporcie.</div>
+  </div>
+
+  <h2>Serwer</h2>
+  <div class="card">
+    <div id="srvStan"></div>
+    <div class="fld" style="margin-top:11px"><label>Adres Workera</label>
+      <input type="url" id="srvAdres" placeholder="https://trening.xxx.workers.dev" autocapitalize="off" autocorrect="off"></div>
+    <div class="fld" style="margin-top:10px"><label>Token</label>
+      <input type="password" id="srvToken" placeholder="wklej token" autocapitalize="off" autocorrect="off"></div>
+    <label class="skrow" style="margin-top:11px;border:none;padding:9px 0">
+      <span>Synchronizuj automatycznie</span>
+      <input type="checkbox" id="srvOn" style="accent-color:var(--ok)">
+    </label>
+    <button class="btn sm" onclick="srvZapiszUstawienia()">Zapisz ustawienia</button>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="srvSync()">Synchronizuj teraz</button>
+    <div class="note" style="margin-top:11px">Po włączeniu aplikacja wysyła stan po każdym zakończonym treningu i pobiera raport przy starcie. Token siedzi tylko w tym telefonie i nie trafia do eksportu.</div>
   </div>
 
   <h2>Plan treningowy</h2>
@@ -887,7 +912,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.4';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.5';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -938,6 +963,95 @@ function load(){
   zastosujPlan();
 }
 function uid(p){ return (p||'r')+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+/* ============================================================
+   SYNCHRONIZACJA Z SERWEREM
+   Ustawienia trzymamy POZA DB — inaczej token wędrowałby
+   w każdym eksporcie i w każdym zapisie na serwer.
+   ============================================================ */
+const SRVKEY = 'trening_serwer';
+let SRV = {adres:'', token:'', on:false, ostatni:null, blad:null};
+
+function srvLoad(){
+  try{ SRV = Object.assign(SRV, JSON.parse(localStorage.getItem(SRVKEY)||'{}')); }catch(e){}
+}
+function srvSave(){
+  try{ localStorage.setItem(SRVKEY, JSON.stringify(SRV)); }catch(e){}
+}
+function srvGotowy(){ return !!(SRV.on && SRV.adres && SRV.token); }
+function srvUrl(zasob){
+  return SRV.adres.replace(/\/+$/,'') + '/' + zasob + '/' + encodeURIComponent(SRV.token);
+}
+
+/* wysyłka stanu — po każdym zakończonym treningu i ręcznie */
+async function srvPush(cicho){
+  if(!srvGotowy()) return false;
+  try{
+    const ladunek = Object.assign({}, DB,
+      {meta:{wersja:WERSJA, exportedAt:new Date().toISOString(), lib:LIB, reg:REG}});
+    const r = await fetch(srvUrl('dane'), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(ladunek)
+    });
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok){
+      /* 409 = serwer ma nowszy stan. To nie awaria, tylko ochrona danych. */
+      SRV.blad = r.status===409
+        ? 'Serwer ma nowszy stan niż telefon — pobierz go, zanim wyślesz'
+        : (j.blad || ('błąd '+r.status));
+      srvSave(); if(!cicho) toast(SRV.blad); return false;
+    }
+    SRV.ostatni = new Date().toISOString(); SRV.blad = null; srvSave();
+    if(!cicho) toast('Wysłano na serwer');
+    return true;
+  }catch(e){
+    SRV.blad = 'brak połączenia';
+    srvSave(); if(!cicho) toast('Brak połączenia z serwerem'); return false;
+  }
+}
+
+/* pobranie tego, co przysłał trener: raport, plan, odpowiedzi na pytania */
+async function srvPull(cicho){
+  if(!srvGotowy()) return false;
+  try{
+    const r = await fetch(srvUrl('trener'), {headers:{'Accept':'application/json'}});
+    if(r.status===404){ if(!cicho) toast('Nic nowego od trenera'); return false; }
+    if(!r.ok) throw new Error('status '+r.status);
+    const t = await r.json();
+    let zmiany = [];
+
+    if(t.raport && t.raport !== DB.raport){ DB.raport = t.raport; zmiany.push('raport'); }
+    if(t.coach){ DB.coach = t.coach; zmiany.push('uwagi'); }
+    if(t.plan && !walidujPlan(t.plan).length){
+      DB.plan = t.plan; zastosujPlan(); zmiany.push('plan');
+    }
+    /* odpowiedzi dopasowujemy po id, nie podmieniamy całej listy —
+       inaczej pytania zadane po ostatniej analizie by przepadły */
+    if(Array.isArray(t.odpowiedzi)){
+      let n=0;
+      t.odpowiedzi.forEach(o=>{
+        const q = DB.questions.find(x=>x.id===o.id);
+        if(q && !q.answer && o.answer){ q.answer=o.answer; n++; }
+      });
+      if(n) zmiany.push(n+' odp.');
+    }
+    if(zmiany.length){ save(); renderSub(); }
+    SRV.ostatni = new Date().toISOString(); SRV.blad = null; srvSave();
+    if(!cicho) toast(zmiany.length ? 'Pobrano: '+zmiany.join(', ') : 'Nic nowego');
+    return true;
+  }catch(e){
+    SRV.blad = 'brak połączenia'; srvSave();
+    if(!cicho) toast('Brak połączenia z serwerem'); return false;
+  }
+}
+async function srvSync(){
+  if(!srvGotowy()){ toast('Najpierw wpisz adres i token'); return; }
+  toast('Synchronizuję…');
+  await srvPush(true);
+  await srvPull(true);
+  renderData();
+  toast(SRV.blad ? SRV.blad : 'Zsynchronizowano');
+}
 
 /* ============================================================
    SCALANIE BAZ
@@ -1893,6 +2007,7 @@ function finishSession(){
 
   OSTATNI={wpis, rekordy, poprz};
   clearSes(); stopTimer(); setSub('sum');
+  if(srvGotowy()) srvPush(true).then(o=>{ if(o) renderSummary(); });
 }
 
 /* ============================================================
@@ -1943,7 +2058,11 @@ function renderSummary(){
 
   if(wpis.note) h+='<div class="tip"><b>Twoja notatka:</b> '+esc(wpis.note)+'</div>';
 
-  h+='<button class="btn" onclick="exportData()">Wyślij do iCloud</button>';
+  h+= srvGotowy()
+    ? '<div class="tip '+(SRV.blad?'warn':'ok')+'">'+
+      (SRV.blad ? 'Nie udało się wysłać na serwer: '+esc(SRV.blad)+'. Spróbuj w Danych → Synchronizuj teraz.'
+                : 'Wysłano na serwer. Analizę dostaniesz wieczorem.')+'</div>'
+    : '<button class="btn" onclick="exportData()">Wyślij do iCloud</button>';
   h+='<button class="btn ghost sm" style="margin-top:9px" onclick="OSTATNI=null;setSub(\'hub\');setTimeout(applyUpdateIfIdle,600)">Gotowe</button>';
   document.getElementById('sumBody').innerHTML=h;
 }
@@ -2542,6 +2661,36 @@ function renderTrendy(){
   return '<h2>Trendy</h2>'+bloki;
 }
 
+/* ============================================================
+   RAPORT OD TRENERA
+   Minimalny markdown — nagłówki, pogrubienia, listy, tabele
+   pomijamy. Ma być czytelnie, nie wiernie.
+   ============================================================ */
+function md(tekst){
+  const linie=String(tekst).split('\n');
+  let out='', lista=false;
+  const inline = s => esc(s)
+    .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+    .replace(/(^|\s)_(.+?)_(?=\s|$)/g,'$1<i>$2</i>')
+    .replace(/`(.+?)`/g,'<code>$1</code>');
+  linie.forEach(l=>{
+    const t=l.trim();
+    if(/^[-*]\s+/.test(t)){
+      if(!lista){ out+='<ul>'; lista=true; }
+      out+='<li>'+inline(t.replace(/^[-*]\s+/,''))+'</li>'; return;
+    }
+    if(lista){ out+='</ul>'; lista=false; }
+    if(!t) return;
+    if(/^###\s/.test(t)) out+='<h4>'+inline(t.slice(4))+'</h4>';
+    else if(/^##\s/.test(t)) out+='<h3 class="mdh">'+inline(t.slice(3))+'</h3>';
+    else if(/^#\s/.test(t)) out+='<h3 class="mdh">'+inline(t.slice(2))+'</h3>';
+    else if(/^\|/.test(t)) out+='<div class="mdrow">'+inline(t.replace(/^\||\|$/g,'').replace(/\|/g,' · '))+'</div>';
+    else out+='<p>'+inline(t)+'</p>';
+  });
+  if(lista) out+='</ul>';
+  return out;
+}
+
 function renderReport(){
   const w=weekNo(), p=phaseOf(w);
   const cur=DB.workouts.filter(x=>inWeek(x.date,w));
@@ -2551,6 +2700,11 @@ function renderReport(){
   const rCur=DB.runs.filter(x=>inWeek(x.date,w));
   const [ws,we]=weekRange(w);
   let h='<div class="tip"><b>Tydzień '+w+'</b> · '+PHASES[p].n+' · '+plDate(ws)+' – '+plDate(we)+'</div>';
+
+  if(DB.raport){
+    h+='<h2>Od trenera</h2><div class="card mdbox">'+md(DB.raport)+'</div>';
+    if(srvGotowy()) h+='<button class="btn ghost sm" style="margin-bottom:14px" onclick="srvPull()">Sprawdź, czy jest nowszy</button>';
+  }
 
   const cv=cur.reduce((a,x)=>a+vol(x),0), pv=prev.reduce((a,x)=>a+vol(x),0);
   /* plan to 4 dni treningowe, nie 4 sesje — dwie sesje jednego dnia liczą się jako jeden dzień */
@@ -2625,7 +2779,32 @@ function renderReport(){
 /* ============================================================
    DANE
    ============================================================ */
+function srvZapiszUstawienia(){
+  SRV.adres=(document.getElementById('srvAdres').value||'').trim();
+  SRV.token=(document.getElementById('srvToken').value||'').trim();
+  SRV.on=!!document.getElementById('srvOn').checked;
+  SRV.blad=null; srvSave(); renderData();
+  toast(srvGotowy() ? 'Synchronizacja włączona' : 'Zapisano');
+}
+function renderSrv(){
+  const box=document.getElementById('srvStan');
+  if(!box) return;
+  const a=document.getElementById('srvAdres'), t=document.getElementById('srvToken'),
+        o=document.getElementById('srvOn');
+  if(a && !a.value) a.value=SRV.adres||'';
+  if(t && !t.value) t.value=SRV.token||'';
+  if(o) o.checked=!!SRV.on;
+  const stan = !SRV.adres||!SRV.token ? ['nieskonfigurowany','']
+    : SRV.blad ? [SRV.blad,'down']
+    : SRV.on ? ['włączona','up'] : ['wyłączona',''];
+  box.innerHTML =
+    '<div class="kv"><span class="k">Synchronizacja</span><span class="v '+stan[1]+'">'+esc(stan[0])+'</span></div>'+
+    '<div class="kv"><span class="k">Ostatnia wymiana</span><span class="v">'+
+      (SRV.ostatni ? plDate(SRV.ostatni.slice(0,10))+' '+SRV.ostatni.slice(11,16) : '—')+'</span></div>';
+}
+
 function renderData(){
+  renderSrv();
   const wl=planWlasny();
   document.getElementById('planStan').innerHTML=
     '<div class="kv"><span class="k">Źródło planu</span><span class="v '+(wl?'up':'')+'">'+
@@ -2800,6 +2979,7 @@ function wipe(){
 /* ============================================================
    START
    ============================================================ */
+srvLoad();
 load();
 if(!resumeSes()) setSub('hub');
 else resumeTimer();   /* wraca też odliczanie przerwy, jeśli jeszcze trwa */
@@ -2819,6 +2999,10 @@ function applyUpdateIfIdle(){
   location.reload();
   return true;
 }
+/* pobranie od trenera przy starcie — cicho, żeby brak sieci na siłowni
+   nie witał Cię komunikatem o błędzie */
+if(srvGotowy()) setTimeout(()=>srvPull(true), 800);
+
 if('serviceWorker' in navigator && location.protocol==='https:'){
   /* updateViaCache:'none' — sam plik sw.js nigdy z cache'u przeglądarki */
   navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
