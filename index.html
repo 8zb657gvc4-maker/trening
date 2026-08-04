@@ -931,7 +931,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.18';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.19';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -2528,6 +2528,61 @@ function num(id){ const v=document.getElementById(id).value; return v===''?null:
 function kmWTygodniu(w){
   return DB.runs.filter(x=>inWeek(x.date,w)).reduce((a,x)=>a+(x.dist||0),0);
 }
+/* ============================================================
+   KIEDY BIEGAĆ — plan biegowy przywiązany do siłowni
+   Wcześniej biegi stały na sztywno w środę i sobotę, niezależnie od tego,
+   kiedy wypadały nogi. Przy planie, w którym dni siłowe dobierają się
+   dynamicznie, to gwarantowało kolizje: mocny bieg dzień po przysiadach
+   obciąża te same czworogłowe, które jeszcze się nie zregenerowały.
+   Teraz dni biegowe wyliczamy z tego, co faktycznie zrobiłeś i co masz
+   zaplanowane — kalendarz jest jeden, nie dwa równoległe.
+   ============================================================ */
+function nogiDnia(data){
+  if(DB.workouts.some(w => w.date===data && PLAN[w.day] && PLAN[w.day].grp==='nogi'))
+    return 'zrobione';
+  const n = DB.nastepny;
+  if(n && n.data===data && PLAN[n.dzien] && PLAN[n.dzien].grp==='nogi')
+    return 'planowane';
+  return null;
+}
+
+/* Bieg jakościowy potrzebuje świeżych nóg z obu stron: nie tego samego dnia
+   co przysiady, nie dzień przed i nie dzień po. Spokojny Z2 jest na tyle lekki,
+   że przeszkadza tylko wtedy, gdy wypada w dniu nóg. */
+function ocenDzienBiegowy(data, typ){
+  const dzis = nogiDnia(data);
+  if(dzis) return {ok:false, powod:'nogi tego samego dnia'};
+  if(typ === 'jakosc'){
+    if(nogiDnia(przesun(data, 1)))  return {ok:false, powod:'nogi nazajutrz'};
+    if(nogiDnia(przesun(data, -1))) return {ok:false, powod:'nogi dzień wcześniej'};
+  }
+  return {ok:true};
+}
+
+function sugestiaBiegu(typ, zajete){
+  const w = weekNo();
+  const zrobiony = DB.runs.some(r => inWeek(r.date, w) &&
+    (typ === 'jakosc' ? r.type !== 'Z2' : r.type === 'Z2'));
+  if(zrobiony) return {zrobiony:true};
+
+  const przeszkody = [];
+  for(let i = 0; i < 7; i++){
+    const d = przesun(today(), i);
+    if(zajete && d === zajete) continue;
+    const o = ocenDzienBiegowy(d, typ);
+    if(o.ok) return {data:d, za:i, przeszkody};
+    if(i < 3) przeszkody.push({data:d, powod:o.powod});
+  }
+  return {brak:true, przeszkody};
+}
+
+function opisDnia(data){
+  if(data === today()) return 'dziś';
+  if(data === przesun(today(), 1)) return 'jutro';
+  const D = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
+  return D[new Date(data+'T00:00:00').getDay()] + ', ' + plDate(data);
+}
+
 function radaBiegowa(){
   const w = weekNo(), p = phaseOf(w), f = PHASES[p] || {}, out = [];
 
@@ -2536,18 +2591,10 @@ function radaBiegowa(){
       'zostaw środowe Z2, sobotnią jakość zamień na spokojne 20-25 minut. '+
       'Odciążenie tylko na siłowni to odciążenie połowiczne.']);
 
-  /* nogi dziś, wczoraj albo jutro — jakość biegowa wchodzi w kolizję */
-  const nogi = d => DB.workouts.some(x=>x.date===d && PLAN[x.day] && PLAN[x.day].grp==='nogi');
-  const jutroNogi = DB.nastepny && PLAN[DB.nastepny.dzien] && PLAN[DB.nastepny.dzien].grp==='nogi'
-                    && DB.nastepny.data===przesun(today(),1);
-  if(nogi(today()))
-    out.push(['warn','Dziś był trening nóg — jeśli planujesz dziś bieg, tylko spokojny Z2. '+
-      'Interwały po przysiadach to podwójne obciążenie tej samej tkanki.']);
-  else if(nogi(przesun(today(),-1)))
-    out.push(['warn','Wczoraj nogi — mocny bieg dziś będzie się odbywał na niezregenerowanych '+
-      'czworogłowych. Przełóż jakość o dzień albo zrób ją spokojnie.']);
-  if(jutroNogi)
-    out.push(['warn','Jutro nogi — dziś odpuść jakość biegową, żeby wejść na przysiad ze świeżymi nogami.']);
+  /* Kolizji z nogami nie zgłaszamy tutaj — od tego są daty na kartach biegów,
+     które same omijają dni siłowe. Powtarzanie tego w ostrzeżeniach znaczyłoby
+     mówić dwa razy o tym samym i rozmywać sygnały, które naprawdę wymagają
+     decyzji. Zostają rzeczy, których harmonogram nie załatwia. */
 
   /* ostrożny przyrost kilometrów: reguła 10% liczona od średniej z 3 tygodni */
   const teraz = kmWTygodniu(w);
@@ -2565,17 +2612,40 @@ function radaBiegowa(){
 function renderRun(){
   const w=weekNo(), r=RUNS[Math.min(w,8)-1];
   const mine=DB.runs.filter(x=>inWeek(x.date,w));
-  let h='<div class="tip rn"><b>Tydzień '+w+'</b> — dwa biegi: środa spokojnie, sobota jakość. '+
+  let h='<div class="tip rn"><b>Tydzień '+w+'</b> — dwa biegi: jeden spokojny, jeden jakościowy. '+
+    'Dni dobierają się same tak, żeby nie kolidowały z nogami na siłowni. '+
     'Nie zwiększaj tygodniowej objętości o więcej niż ~10%: kontuzje biegowe biorą się z przyrostu kilometrów, nie z tempa.</div>';
   radaBiegowa().forEach(x=>{ h+='<div class="tip '+x[0]+'">'+esc(x[1])+'</div>'; });
   h+='<h2>Plan na ten tydzień</h2>';
-  h+='<div class="card"><div class="hd" style="color:var(--run)">Środa — bieg spokojny (Z2)</div>'+
-     '<div style="font-size:19px;font-weight:750;margin:7px 0 5px">'+esc(r.z2)+'</div>'+
-     '<div class="note">Tempo, w którym prowadzisz rozmowę pełnymi zdaniami. Jeśli dyszysz — za szybko.'+
-     (r.z2n?' '+esc(r.z2n):'')+'</div></div>';
-  h+='<div class="card"><div class="hd" style="color:var(--run)">Sobota — jakość</div>'+
-     '<div style="font-size:19px;font-weight:750;margin:7px 0 5px">'+esc(r.q)+'</div>'+
-     '<div class="note">'+esc(r.qn)+'</div></div>';
+
+  /* Dni dobierane pod siłownię, nie pod kalendarz. Jakość planujemy pierwsza,
+     bo ma ostrzejsze wymagania — Z2 zmieści się prawie wszędzie. */
+  const sJak = sugestiaBiegu('jakosc');
+  const sZ2  = sugestiaBiegu('Z2', sJak.data);
+
+  const karta = (tytul, sug, tresc, nota) => {
+    let kiedy, klasa = 'note';
+    if(sug.zrobiony){ kiedy = '<span class="ok">zrobiony w tym tygodniu</span>'; }
+    else if(sug.data){
+      kiedy = '<b>'+opisDnia(sug.data)+'</b>';
+      if(sug.przeszkody.length)
+        kiedy += '<div class="note" style="margin-top:3px">Wcześniej się nie da: '+
+          sug.przeszkody.map(x=>opisDnia(x.data)+' — '+x.powod).join(', ')+'</div>';
+    } else {
+      kiedy = '<span class="warn">brak dobrego dnia w tym tygodniu</span>';
+    }
+    return '<div class="card"><div class="hd" style="color:var(--run)">'+tytul+'</div>'+
+      '<div style="margin:4px 0 7px">'+kiedy+'</div>'+
+      (sug.zrobiony ? '' :
+        '<div style="font-size:19px;font-weight:750;margin:5px 0">'+esc(tresc)+'</div>'+
+        '<div class="'+klasa+'">'+nota+'</div>')+
+      '</div>';
+  };
+
+  h += karta('Bieg spokojny (Z2)', sZ2, r.z2,
+    'Tempo, w którym prowadzisz rozmowę pełnymi zdaniami. Jeśli dyszysz — za szybko.'+
+    (r.z2n?' '+esc(r.z2n):''));
+  h += karta('Bieg jakościowy', sJak, r.q, esc(r.qn));
   h+='<h2>Zapisz bieg</h2><div class="card">'+
     '<div class="fld"><label>Data</label><input type="date" id="rDate" value="'+today()+'"></div>'+
     '<div class="dayin" style="margin-top:10px">'+
