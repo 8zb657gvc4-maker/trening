@@ -931,7 +931,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.17';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.18';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1057,6 +1057,28 @@ async function srvPull(cicho){
     let zmiany = [];
 
     if(t.raport && t.raport !== DB.raport){ DB.raport = t.raport; zmiany.push('raport'); }
+
+    /* Dane z Garmina — sen, HRV, tętno, Body Battery.
+       Wpis zrobiony ręcznie w telefonie jest świadomy, więc wygrywa: z serwera
+       dobieramy tylko pola, których jeszcze nie ma. Inaczej nocny import
+       kasowałby to, co sam wpisałeś rano. */
+    if(Array.isArray(t.daily) && t.daily.length){
+      let nowe = 0, uzup = 0;
+      t.daily.forEach(g => {
+        if(!g || !g.date) return;
+        const mam = DB.daily.find(x => x.date === g.date);
+        if(!mam){ DB.daily.push(Object.assign({}, g)); nowe++; return; }
+        let ruszone = false;
+        ['sleep','hrv','rhr','steps','bb','weight'].forEach(k => {
+          if(mam[k] == null && g[k] != null){ mam[k] = g[k]; ruszone = true; }
+        });
+        if(ruszone) uzup++;
+      });
+      if(nowe || uzup){
+        DB.daily.sort((a,b) => a.date.localeCompare(b.date));
+        zmiany.push('Garmin: '+nowe+' dni'+(uzup?' (+'+uzup+' uzup.)':''));
+      }
+    }
     if(t.coach){ DB.coach = t.coach; zmiany.push('uwagi'); }
     /* Kanał trenera jest „lepki" — moja poprawka leży na serwerze, dopóki jej
        nie nadpiszę. Bez zabezpieczenia każde otwarcie aplikacji kasowałoby
