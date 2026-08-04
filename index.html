@@ -931,7 +931,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.19';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.20';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -3464,6 +3464,28 @@ function applyUpdateIfIdle(){
    nie witał Cię komunikatem o błędzie */
 if(srvGotowy()) setTimeout(()=>srvPull(true), 800);
 
+/* Sprawdzenie wersji po numerze, a nie po service workerze.
+   Poprzednia wersja polegała wyłącznie na zdarzeniu `controllerchange`,
+   które odpala się dopiero, gdy zmieni się PLIK sw.js. A sw.js prawie nigdy
+   się nie zmienia — zmienia się index.html. Efekt: wgrywasz nową wersję,
+   aplikacja pobiera ją przy pełnym starcie, ale zainstalowana na ekranie
+   początkowym iOS wraca z zamrożenia zamiast startować od nowa i potrafi
+   tygodniami pokazywać stary numer. Porównanie numerów jest odporne na to
+   wszystko: pytamy serwer o plik i patrzymy, co w nim stoi. */
+async function sprawdzWersje(){
+  /* `typeof` zamiast samego odczytu — skrypty pomocnicze (testy, zrzut-lib)
+     uruchamiają ten plik poza przeglądarką, gdzie `location` nie istnieje */
+  if(typeof location === 'undefined' || location.protocol !== 'https:') return;
+  try{
+    const r = await fetch('index.html?w='+Date.now(), {cache:'no-store'});
+    if(!r.ok) return;
+    const m = (await r.text()).match(/const WERSJA = '([^']+)'/);
+    if(!m || m[1] === WERSJA) return;
+    RELOAD_PENDING = true;
+    if(!applyUpdateIfIdle()) toast('Nowa wersja '+m[1]+' — wczyta się po treningu');
+  }catch(e){ /* brak sieci na siłowni to normalka, nie błąd */ }
+}
+
 if('serviceWorker' in navigator && location.protocol==='https:'){
   /* updateViaCache:'none' — sam plik sw.js nigdy z cache'u przeglądarki */
   navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
@@ -3480,6 +3502,13 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
     if(!applyUpdateIfIdle()) toast('Nowa wersja — wczyta się po treningu');
   });
 }
+
+/* przy starcie, przy każdym powrocie do aplikacji i raz na godzinę */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible') sprawdzWersje();
+});
+setInterval(sprawdzWersje, 60*60*1000);
+setTimeout(sprawdzWersje, 1500);
 
 </script>
 </body>
