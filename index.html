@@ -659,14 +659,14 @@ const DOMYSLNE_REG = {
 const DOMYSLNA_LIB = {
   /* --- klatka --- */
   'Wyciskanie leżąc':            {inc:2.5, mus:{klatka_srodek:1, klatka_dol:.3, triceps_bocz:.4, bark_przod:.3}},
-  'Wyciskanie hantlami płasko':  {inc:2.5, mus:{klatka_srodek:1, klatka_gora:.2, bark_przod:.3, triceps_bocz:.3}},
-  'Wyciskanie hantli, skos':     {inc:2.5, mus:{klatka_gora:1, klatka_srodek:.4, bark_przod:.4, triceps_bocz:.3},
+  'Wyciskanie hantlami płasko':  {hantle:true, inc:2.5, mus:{klatka_srodek:1, klatka_gora:.2, bark_przod:.3, triceps_bocz:.3}},
+  'Wyciskanie hantli, skos':     {hantle:true, inc:2.5, mus:{klatka_gora:1, klatka_srodek:.4, bark_przod:.4, triceps_bocz:.3},
                                   cue:'Ławka 30°. Wyżej niż 45° i robota przenosi się na barki.'},
   'Wyciskanie sztangą, skos':    {inc:2.5, mus:{klatka_gora:1, klatka_srodek:.4, bark_przod:.4, triceps_bocz:.3}},
   'Wyciskanie, skos ujemny':     {inc:2.5, mus:{klatka_dol:1, klatka_srodek:.5, triceps_bocz:.4}},
   'Dipy':                        {inc:2.5, bw:true, mus:{klatka_dol:1, klatka_srodek:.4, triceps_dluga:.6, triceps_bocz:.5},
                                   cue:'Lekkie pochylenie do przodu. Ból z przodu barku = schodzisz za nisko.'},
-  'Rozpiętki płasko':            {inc:2.5, mus:{klatka_srodek:1}},
+  'Rozpiętki płasko':            {hantle:true, inc:2.5, mus:{klatka_srodek:1}},
   'Rozpiętki na maszynie':       {inc:2.5, mus:{klatka_srodek:1, klatka_gora:.2}},
   'Brama dół→góra':              {inc:2.5, mus:{klatka_gora:1},
                                   cue:'Ciągniesz od bioder w górę i do środka — to trafia w część obojczykową.'},
@@ -678,15 +678,15 @@ const DOMYSLNA_LIB = {
   'Ściąganie drążka':            {inc:2.5, mus:{plecy_pion:1, biceps:.4}},
   'Ściąganie wąsko podchwytem':  {inc:2.5, mus:{plecy_pion:.9, biceps:.6}},
   'Wiosłowanie sztangą':         {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.4, biceps:.3, prostowniki:.4}},
-  'Wiosłowanie hantlem':         {inc:2.5, mus:{plecy_poziom:1, plecy_pion:.3, biceps:.3}},
+  'Wiosłowanie hantlem':         {hantle:true, inc:2.5, mus:{plecy_poziom:1, plecy_pion:.3, biceps:.3}},
   'Wiosłowanie na maszynie':     {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.3, biceps:.3}},
   'Wiosłowanie na wyciągu':      {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.3, biceps:.3}},
 
   /* --- barki --- */
   'Wyciskanie żołnierskie':      {inc:2.5, mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.5}},
-  'Wyciskanie hantli nad głowę': {inc:2.5, mus:{bark_przod:1, bark_bok:.5, triceps_bocz:.4}},
-  'Arnold press':                {inc:2.5, mus:{bark_przod:1, bark_bok:.6}},
-  'Unoszenie hantli bokiem':     {inc:2.5, mus:{bark_bok:1}},
+  'Wyciskanie hantli nad głowę': {hantle:true, inc:2.5, mus:{bark_przod:1, bark_bok:.5, triceps_bocz:.4}},
+  'Arnold press':                {hantle:true, inc:2.5, mus:{bark_przod:1, bark_bok:.6}},
+  'Unoszenie hantli bokiem':     {hantle:true, inc:2.5, mus:{bark_bok:1}},
   'Unoszenie bokiem na wyciągu': {inc:2.5, mus:{bark_bok:1},
                                   cue:'Wyciąg trzyma napięcie w dolnej fazie, gdzie hantle je gubią.'},
   'Unoszenie bokiem na maszynie':{inc:2.5, mus:{bark_bok:1}},
@@ -699,7 +699,7 @@ const DOMYSLNA_LIB = {
                                   cue:'Ramię nad głową rozciąga głowę długą — bez tej pozycji jej nie ruszysz.'},
   'Prostowanie zza głowy wyciąg':{inc:2.5, mus:{triceps_dluga:1, triceps_bocz:.4}},
   'Uginanie ramion':             {inc:2.5, mus:{biceps:1, przedramie:.3}},
-  'Uginanie młotkowe':           {inc:2.5, mus:{biceps:.8, przedramie:1}},
+  'Uginanie młotkowe':           {hantle:true, inc:2.5, mus:{biceps:.8, przedramie:1}},
   'Uginanie na modlitewniku':    {inc:2.5, mus:{biceps:1}},
   'Uginanie na wyciągu':         {inc:2.5, mus:{biceps:1}},
 
@@ -707,8 +707,8 @@ const DOMYSLNA_LIB = {
   'Przysiad ze sztangą':         {inc:5,   mus:{czworoglowe:1, posladki:.6, prostowniki:.4}},
   'Wypychanie nogami':           {inc:5,   mus:{czworoglowe:1, posladki:.5}},
   'Hack squat':                  {inc:5,   mus:{czworoglowe:1, posladki:.3}},
-  'Przysiad bułgarski':          {inc:2.5, mus:{czworoglowe:.8, posladki:1}},
-  'Wykroki chodzone':            {inc:2.5, mus:{czworoglowe:.7, posladki:1}},
+  'Przysiad bułgarski':          {hantle:true, inc:2.5, mus:{czworoglowe:.8, posladki:1}},
+  'Wykroki chodzone':            {hantle:true, inc:2.5, mus:{czworoglowe:.7, posladki:1}},
   'Prostowanie nóg':             {inc:2.5, mus:{czworoglowe:1}},
   'Martwy ciąg klasyczny':       {inc:5,   mus:{posladki:1, prostowniki:1, dwuglowe:.8, plecy_gora:.4}},
   'Martwy ciąg rumuński':        {inc:5,   mus:{dwuglowe:1, posladki:.8, prostowniki:.6}},
@@ -722,7 +722,7 @@ const DOMYSLNA_LIB = {
                                   cue:'Lżej niż w martwym rumuńskim — to ćwiczenie na wzorzec, nie na ciężar.'},
   'Utrzymanie sztangi':          {inc:5, time:true, mus:{przedramie:1, plecy_gora:.3, brzuch:.3},
                                   cue:'Chwyt ogranicza martwy ciąg i wiosłowanie wcześniej niż plecy.'},
-  'Utrzymanie hantli':           {inc:2.5, time:true, mus:{przedramie:1, plecy_gora:.4, brzuch:.4},
+  'Utrzymanie hantli':           {hantle:true, inc:2.5, time:true, mus:{przedramie:1, plecy_gora:.4, brzuch:.4},
                                   cue:'Hantle po bokach, tułów napięty. Łatwiej odłożyć niż sztangę.'},
   'Wspięcia na palce stojąc':    {inc:5,   mus:{lydki_stoj:1}},
   'Wspięcia na palce siedząc':   {inc:2.5, mus:{lydki_sied:1},
@@ -931,7 +931,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.16';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.17';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1219,9 +1219,12 @@ function bestSet(sets){
   if(!r.length) return null;
   return r.reduce((a,b)=> e1rm(b)>e1rm(a) ? b : a);
 }
-function fmtSet(s){
+function fmtSet(s, nazwa){
   if(!s.w) return s.r+' powt.';
-  return fmtKg(s.w)+' kg × '+s.r + (s.rpe?' @'+s.rpe:'');
+  /* przy hantlach dopisujemy „×2", żeby po tygodniach nie było wątpliwości,
+     czy 10 kg znaczyło jedną hantlę, czy obie razem */
+  const h = nazwa && LIB[nazwa] && LIB[nazwa].hantle ? '×2' : '';
+  return fmtKg(s.w)+' kg'+h+' × '+s.r + (s.rpe?' @'+s.rpe:'');
 }
 function avg(arr){ const v=arr.filter(x=>x!=null&&!isNaN(x)); return v.length? v.reduce((a,b)=>a+b,0)/v.length : null; }
 /* ============================================================
@@ -2098,13 +2101,17 @@ function renderSession(){
           if(!s.wu) nr++;
           return '<div class="srow'+(s.wu?' wus':'')+'">'+
             '<div class="sn">'+(s.wu?'R':nr)+'</div>'+
-            '<div class="sv">'+esc(fmtSet(s))+
+            '<div class="sv">'+esc(fmtSet(s, e.name))+
               (s.n?'<div class="snote">'+esc(s.n)+'</div>':'')+'</div>'+
             '<button class="sx" title="notatka" onclick="noteSet('+i+','+j+')">✎</button>'+
             '<button class="sx" onclick="delSet('+i+','+j+')">×</button></div>';
         }).join(''); })()+
         '<div class="inrow">'+
-          '<div class="fld"><label>'+(L.bw?'Dodatk. kg':'Ciężar kg')+'</label>'+
+          /* Bez tego dopisku nie da się zgadnąć, czy wpisać ciężar jednej hantli,
+             czy sumę obu. Filip wpisał 20 kg mając dwie dziesiątki, a analiza
+             odczytała to jako 20 kg na rękę i uznała ciężar za absurdalnie duży.
+             Jedno słowo w etykiecie kosztuje mniej niż błędny raport. */
+          '<div class="fld"><label>'+(L.bw?'Dodatk. kg':(L.hantle?'Kg <b style="color:var(--acc)">jednej hantli</b>':'Ciężar kg'))+'</label>'+
             '<div class="step"><button onclick="bump('+i+',\'w\',-2.5)">−</button>'+
             '<input type="number" inputmode="decimal" step="0.5" id="iw'+i+'" value="'+prefill(e,'w')+'">'+
             '<button onclick="bump('+i+',\'w\',2.5)">+</button></div></div>'+
@@ -2290,9 +2297,9 @@ function renderSummary(){
   if(rekordy.length){
     h+='<h2>Rekordy życiowe</h2>';
     h+=rekordy.map(r=>'<div class="prcard"><div class="prn">'+esc(r.name)+'</div>'+
-      '<div class="prv">'+esc(fmtSet(r.set))+'</div>'+
+      '<div class="prv">'+esc(fmtSet(r.set, r.name))+'</div>'+
       '<div class="prw">'+(r.stary
-        ? 'Poprzedni: '+esc(fmtSet(r.stary))+' z '+plDate(r.poprz)+
+        ? 'Poprzedni: '+esc(fmtSet(r.stary, r.name))+' z '+plDate(r.poprz)+
           ' · szacowany 1RM '+fmtKg(e1rm(r.stary))+' → '+fmtKg(e1rm(r.set))+' kg'
         : 'Pierwszy zapisany wynik w tym ćwiczeniu')+'</div></div>').join('');
   }
@@ -2344,7 +2351,7 @@ function renderHist(){
 
   const rekord=pr(name);
   if(rekord && !L.time)
-    h+='<div class="tip ok"><b>Rekord:</b> '+esc(fmtSet(rekord.set))+' ('+plDate(rekord.date)+
+    h+='<div class="tip ok"><b>Rekord:</b> '+esc(fmtSet(rekord.set, rekord.name))+' ('+plDate(rekord.date)+
        ') · szacowany 1RM '+fmtKg(e1rm(rekord.set))+' kg</div>';
 
   const punkty=h0.slice().reverse().map(x=>({v:e1rm(bestSet(x.sets)), d:x.date}));
@@ -3083,7 +3090,7 @@ function renderReport(){
     if(!c) return null;
     const ce=e1rm(c), pe=pr?e1rm(pr):null;
     const dir=pe==null?'':ce>pe*1.01?'up':ce<pe*.99?'down':'flat';
-    return kv(name,fmtSet(c)+(dir==='up'?' ↑':dir==='down'?' ↓':dir==='flat'?' →':''),dir);
+    return kv(name,fmtSet(c, name)+(dir==='up'?' ↑':dir==='down'?' ↓':dir==='flat'?' →':''),dir);
   }).filter(Boolean);
   if(rows.length) h+='<h2>Główne boje</h2><div class="card">'+rows.join('')+
     '<div class="note" style="margin-top:10px">Tylko boje, bo tylko one nie rotują — akcesoria zmieniają się, więc ich nie da się porównywać tydzień do tygodnia.</div></div>';
