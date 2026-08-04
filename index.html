@@ -438,32 +438,46 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
       <label>Data</label><input type="date" id="dDate" onchange="renderDaily()">
     </div>
     <div class="dayin">
-      <div class="fld"><label>Sen (h)</label><input type="number" inputmode="decimal" step="0.1" id="dSleep" placeholder="7.5"></div>
-      <div class="fld"><label>Tętno spocz.</label><input type="number" inputmode="numeric" id="dRhr" placeholder="52"></div>
-      <div class="fld"><label>HRV (ms)</label><input type="number" inputmode="numeric" id="dHrv" placeholder="45"></div>
-      <div class="fld"><label>Kroki</label><input type="number" inputmode="numeric" id="dSteps" placeholder="8500"></div>
-      <div class="fld"><label>Body Battery</label><input type="number" inputmode="numeric" id="dBb" placeholder="75"></div>
-      <div class="fld"><label>Waga (kg)</label><input type="number" inputmode="decimal" step="0.1" id="dWeight" placeholder="75.4"></div>
+      <div class="fld"><label>Sen (h)</label><input type="number" inputmode="decimal" step="0.1" id="dSleep" placeholder="np. 7,5"></div>
+      <div class="fld"><label>Tętno spocz.</label><input type="number" inputmode="numeric" id="dRhr" placeholder="np. 52"></div>
+      <div class="fld"><label>HRV (ms)</label><input type="number" inputmode="numeric" id="dHrv" placeholder="np. 45"></div>
+      <div class="fld"><label>Kroki</label><input type="number" inputmode="numeric" id="dSteps" placeholder="np. 8500"></div>
+      <div class="fld"><label>Body Battery</label><input type="number" inputmode="numeric" id="dBb" placeholder="np. 75"></div>
+      <div class="fld"><label>Waga (kg)</label><input type="number" inputmode="decimal" step="0.1" id="dWeight" placeholder="np. 75,4"></div>
+    </div>
+    <div class="note" style="margin-top:14px;margin-bottom:7px"><b>Suplementy</b> — wpisz, ile faktycznie wziąłeś</div>
+    <div class="dayin">
+      <div class="fld"><label>Kreatyna (g)</label><input type="number" inputmode="decimal" step="0.5" id="dKrea" placeholder="np. 5"></div>
+      <div class="fld"><label>Magnez (mg)</label><input type="number" inputmode="numeric" id="dMag" placeholder="np. 200"></div>
+      <div class="fld"><label>Wit. D (IU)</label><input type="number" inputmode="numeric" id="dWitD" placeholder="np. 2000"></div>
+      <div class="fld"><label>Inne</label><input type="text" id="dInne" placeholder="np. omega-3"></div>
     </div>
     <div class="fld" style="margin-top:12px">
       <label>Notatka</label><input type="text" id="dNote" placeholder="np. zmęczony, kolokwium">
     </div>
     <button class="btn" style="margin-top:13px" onclick="saveDaily()">Zapisz dzień</button>
   </div>
+
+  <h2>Suplementy — co i ile</h2>
+  <div class="card" id="suplBox"></div>
   <h2>Ostatnie 10 dni</h2>
   <div class="card" id="dailyList"></div>
+
+  <h2>Historia treningów</h2>
+  <div class="note" style="margin-bottom:9px">Usunięty trening trafia do kosza w zakładce Dane i przez 30 dni da się go przywrócić.</div>
+  <div class="card" id="histList"></div>
 
   <h2>Obwody (cm)</h2>
   <div class="note" style="margin-bottom:9px">Raz w miesiącu, rano na czczo, zawsze w tym samym miejscu. Waga sama myli — przy odbudowie masy obwody mówią, czy przybywa mięśni czy reszty.</div>
   <div class="card">
     <div class="fld" style="margin-bottom:11px"><label>Data</label><input type="date" id="mDate"></div>
     <div class="dayin">
-      <div class="fld"><label>Klatka</label><input type="number" inputmode="decimal" step="0.5" id="mKlatka" placeholder="98"></div>
-      <div class="fld"><label>Talia</label><input type="number" inputmode="decimal" step="0.5" id="mTalia" placeholder="80"></div>
-      <div class="fld"><label>Ramię</label><input type="number" inputmode="decimal" step="0.5" id="mRamie" placeholder="36"></div>
-      <div class="fld"><label>Udo</label><input type="number" inputmode="decimal" step="0.5" id="mUdo" placeholder="56"></div>
-      <div class="fld"><label>Łydka</label><input type="number" inputmode="decimal" step="0.5" id="mLydka" placeholder="37"></div>
-      <div class="fld"><label>Biodra</label><input type="number" inputmode="decimal" step="0.5" id="mBiodra" placeholder="95"></div>
+      <div class="fld"><label>Klatka</label><input type="number" inputmode="decimal" step="0.5" id="mKlatka" placeholder="np. 98"></div>
+      <div class="fld"><label>Talia</label><input type="number" inputmode="decimal" step="0.5" id="mTalia" placeholder="np. 80"></div>
+      <div class="fld"><label>Ramię</label><input type="number" inputmode="decimal" step="0.5" id="mRamie" placeholder="np. 36"></div>
+      <div class="fld"><label>Udo</label><input type="number" inputmode="decimal" step="0.5" id="mUdo" placeholder="np. 56"></div>
+      <div class="fld"><label>Łydka</label><input type="number" inputmode="decimal" step="0.5" id="mLydka" placeholder="np. 37"></div>
+      <div class="fld"><label>Biodra</label><input type="number" inputmode="decimal" step="0.5" id="mBiodra" placeholder="np. 95"></div>
     </div>
     <button class="btn" style="margin-top:12px" onclick="saveMeasure()">Zapisz obwody</button>
   </div>
@@ -941,7 +955,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.22';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.24';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1903,10 +1917,15 @@ function renderHub(){
       '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii'+
         (wuN?' (+'+wuN+' rozgrz.)':'')+' · '+Math.round(vol(x)).toLocaleString('pl')+' kg'+
         (x.dur?' · '+x.dur+' min':'')+'</div></div>'+
-      '<div class="pill">T'+weekNo(x.date)+'</div>'+
-      '<button class="sx" onclick="delWorkout(\''+x.id+'\')">×</button></div>';
+      '<div class="pill">T'+weekNo(x.date)+'</div></div>';
   }).join('')
     : '<div class="empty">Nic tu jeszcze nie ma.<br>Zacznij od „Proponowany trening".</div>';
+  /* Kasowanie celowo nie ma tu przycisku. Krzyżyk siedział na ekranie
+     głównym, kilka milimetrów od plakietki tygodnia, na liście przewijanej
+     kciukiem — czyli w miejscu, gdzie trafia się w niego przypadkiem.
+     Historia jest jedyną rzeczą w tej aplikacji, której nie odtworzysz
+     z żadnego innego źródła, więc usuwanie mieszka w Dzienniku, gdzie
+     wchodzi się świadomie. */
   /* gotowy plan na następny trening — widoczny, zanim go zaczniesz */
   /* Kafelek planu jest rozwijany. Pierwsza wersja pokazywała trzy ćwiczenia
      i napis „+3 więcej", który nic nie robił — obietnica bez pokrycia.
@@ -2709,9 +2728,9 @@ function renderRun(){
       '<div class="fld"><label>Rodzaj</label><select id="rType">'+
         '<option value="Z2">Spokojny (Z2)</option><option value="jakość">Jakość</option>'+
         '<option value="test">Test na czas</option><option value="inne">Inne</option></select></div>'+
-      '<div class="fld"><label>Dystans (km)</label><input type="number" inputmode="decimal" step="0.1" id="rDist" placeholder="5.2"></div>'+
-      '<div class="fld"><label>Czas (min)</label><input type="number" inputmode="decimal" step="0.1" id="rTime" placeholder="30"></div>'+
-      '<div class="fld"><label>Tętno śr.</label><input type="number" inputmode="numeric" id="rHr" placeholder="148"></div>'+
+      '<div class="fld"><label>Dystans (km)</label><input type="number" inputmode="decimal" step="0.1" id="rDist" placeholder="np. 5,2"></div>'+
+      '<div class="fld"><label>Czas (min)</label><input type="number" inputmode="decimal" step="0.1" id="rTime" placeholder="np. 30"></div>'+
+      '<div class="fld"><label>Tętno śr.</label><input type="number" inputmode="numeric" id="rHr" placeholder="np. 148"></div>'+
     '</div>'+
     '<div class="fld" style="margin-top:10px"><label>Notatka</label><input type="text" id="rNote" placeholder="np. ciężko szło, upał"></div>'+
     '<button class="btn rn" style="margin-top:12px" onclick="saveRun()">Zapisz bieg</button></div>';
@@ -2750,12 +2769,96 @@ function delRun(id){
 /* ============================================================
    DZIENNIK
    ============================================================ */
+/* Pełna historia treningów — i jedyne miejsce w aplikacji, gdzie da się
+   trening usunąć. Świadomie schowane głębiej niż ekran główny. */
+function renderHist(){
+  const el = document.getElementById('histList');
+  if(!el) return;
+  const rec = DB.workouts.slice().reverse();
+  el.innerHTML = rec.length ? rec.map(x=>{
+    const wuN = wuCount(x);
+    return '<div class="hist"><div style="min-width:0">'+
+      '<div class="hd">'+x.day+' — '+esc(dayName2(x.day))+
+        (x.flag?' <span class="prtag" style="background:var(--warn);color:#2a1a05">!</span>':'')+'</div>'+
+      '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii'+
+        (wuN?' (+'+wuN+' rozgrz.)':'')+' · '+Math.round(vol(x)).toLocaleString('pl')+' kg'+
+        (x.dur?' · '+x.dur+' min':'')+'</div></div>'+
+      '<div class="pill">T'+weekNo(x.date)+'</div>'+
+      '<button class="sx" onclick="delWorkout(\''+x.id+'\')">×</button></div>';
+  }).join('') : '<div class="empty">Brak zapisanych treningów.</div>';
+}
+
+/* ============================================================
+   SUPLEMENTY
+   Dawki są STAŁE, nie liczone pod trening. Kreatyna działa w modelu
+   wysycenia: mięśnie napełniają się przez 3-4 tygodnie przy stałej dawce
+   i tak zostają. Branie więcej po ciężkiej sesji, a mniej po lekkiej,
+   daje ten sam efekt co dawka stała — tyle że trudniej o regularność,
+   która jest tu jedyną rzeczą, która się liczy.
+   Dlatego aplikacja nie „wylicza dawki z treningu" — pilnuje ciągłości.
+   ============================================================ */
+const SUPLEMENTY = [
+  {k:'kreatyna', n:'Kreatyna (monohydrat)', cel:5, jedn:'g', codziennie:true,
+   opis:'5 g dziennie, każdego dnia — też bez treningu. Pora nie ma znaczenia. '+
+        'Model wysycenia: liczy się ciągłość przez tygodnie, nie pojedynczy dzień.'},
+  {k:'magnez', n:'Magnez', cel:200, jedn:'mg', codziennie:true,
+   opis:'200–400 mg elementarnego, wieczorem. Cytrynian albo glicynian — tlenek jest '+
+        'najtańszy i najsłabiej przyswajalny. Za dużo naraz kończy się biegunką.'},
+  {k:'witd', n:'Witamina D', cel:2000, jedn:'IU', codziennie:false,
+   opis:'Październik–marzec, bo w Polsce zimą słońce nie wystarcza. Latem tylko jeśli '+
+        'badanie pokaże niedobór. Z posiłkiem zawierającym tłuszcz.'}
+];
+
+function statSupl(k, dni){
+  const okno = DB.daily.filter(x => x.date >= daysAgo(dni));
+  const wziete = okno.filter(x => x[k] != null && x[k] > 0);
+  return {
+    dni: wziete.length,
+    zDni: okno.length,
+    srednia: wziete.length ? wziete.reduce((a,x)=>a+x[k],0)/wziete.length : null
+  };
+}
+
+function renderSupl(){
+  const el = document.getElementById('suplBox');
+  if(!el) return;
+  const zima = [10,11,12,1,2,3].includes(new Date(today()+'T00:00:00').getMonth()+1);
+
+  el.innerHTML = SUPLEMENTY.map(s => {
+    const st = statSupl(s.k, 14);
+    const sezon = s.codziennie || zima;
+    let stan = '', klasa = '';
+    if(!st.zDni){ stan = 'brak danych'; }
+    else if(!sezon){ stan = 'poza sezonem'; }
+    else if(st.dni === 0){ stan = 'nie brałeś'; klasa = 'warn'; }
+    else {
+      const proc = Math.round(st.dni / st.zDni * 100);
+      stan = st.dni+'/'+st.zDni+' dni ('+proc+'%) · średnio '+fmtKg(st.srednia)+' '+s.jedn;
+      klasa = proc >= 80 ? 'ok' : 'warn';
+    }
+    return '<div style="padding:10px 0;border-bottom:1px solid var(--line)">'+
+      '<div class="hd">'+esc(s.n)+
+        ' <span class="pill">'+s.cel+' '+s.jedn+(s.codziennie?' / dzień':' / dzień, sezonowo')+'</span></div>'+
+      '<div class="hm '+klasa+'" style="margin:3px 0 4px">'+esc(stan)+'</div>'+
+      '<div class="note">'+esc(s.opis)+'</div></div>';
+  }).join('') +
+  '<div class="note" style="margin-top:11px">Dawki są stałe i nie zależą od tego, jak ciężki '+
+  'był trening — przy kreatynie liczy się wyłącznie regularność. Przy magnezie i witaminie D '+
+  'badanie krwi powie więcej niż szacowanie. To informacje, nie zalecenie lekarskie.</div>'+
+  '<div class="note" style="margin-top:7px"><b>Ważniejsze od suplementów:</b> sen (adaptacja zachodzi '+
+  'we śnie, nie na siłowni) i białko — przy Twojej masie celuj w 110–155 g dziennie. '+
+  'Żadna dawka kreatyny nie nadrobi pięciu godzin snu.</div>';
+}
+
 function renderDaily(){
+  renderHist();
+  renderSupl();
   const el=document.getElementById('dDate');
   if(!el.value) el.value=today();
   const ex=DB.daily.find(d=>d.date===el.value);
   [['dSleep','sleep'],['dRhr','rhr'],['dHrv','hrv'],['dSteps','steps'],
-   ['dBb','bb'],['dWeight','weight'],['dNote','note']].forEach(([id,k])=>{
+   ['dBb','bb'],['dWeight','weight'],['dNote','note'],
+   ['dKrea','kreatyna'],['dMag','magnez'],['dWitD','witd'],['dInne','inne']].forEach(([id,k])=>{
     document.getElementById(id).value = ex&&ex[k]!=null ? ex[k] : '';
   });
   const list=DB.daily.slice(-10).reverse();
@@ -2782,6 +2885,8 @@ function saveDaily(){
   DB.daily=DB.daily.filter(d=>d.date!==date);
   DB.daily.push({date, sleep:num('dSleep'), rhr:num('dRhr'), hrv:num('dHrv'),
     steps:num('dSteps'), bb:num('dBb'), weight:num('dWeight'),
+    kreatyna:num('dKrea'), magnez:num('dMag'), witd:num('dWitD'),
+    inne:document.getElementById('dInne').value.trim()||null,
     note:document.getElementById('dNote').value.trim()||null});
   DB.daily.sort((a,b)=>a.date.localeCompare(b.date));
   save(); renderDaily(); toast('Zapisano '+plDate(date));
