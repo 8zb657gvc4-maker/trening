@@ -931,7 +931,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.15';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.16';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1059,10 +1059,15 @@ async function srvPull(cicho){
     if(t.raport && t.raport !== DB.raport){ DB.raport = t.raport; zmiany.push('raport'); }
     if(t.coach){ DB.coach = t.coach; zmiany.push('uwagi'); }
     /* Kanał trenera jest „lepki" — moja poprawka leży na serwerze, dopóki jej
-       nie nadpiszę. Bez tych dwóch warunków każde otwarcie aplikacji kasowałoby
-       świeżo policzony plan starą korektą i zostawiało pusty ekran. */
-    if(t.nastepny && t.nastepny.cwiczenia && t.nastepny.data >= today()
-       && !(DB.nastepny && DB.nastepny.data > t.nastepny.data)){
+       nie nadpiszę. Bez zabezpieczenia każde otwarcie aplikacji kasowałoby
+       świeżo policzony plan starą korektą.
+       Pierwsza wersja porównywała daty planów i odrzucała korektę, gdy telefon
+       miał plan na późniejszy dzień. To było źle postawione pytanie: plan trenera
+       na DZIŚ jest pilniejszy niż plan aplikacji na jutro, a tamten warunek
+       odrzucał właśnie ten przypadek. Właściwe pytanie brzmi: czy ten plan został
+       już odrobiony? Jeśli istnieje trening z dnia planu lub późniejszy — tak. */
+    const planOdbyty = t.nastepny && DB.workouts.some(w => w.date >= t.nastepny.data);
+    if(t.nastepny && t.nastepny.cwiczenia && t.nastepny.data >= today() && !planOdbyty){
       DB.nastepny = Object.assign({}, t.nastepny, {sprawdzony:true});
       zmiany.push('plan na jutro');
     }
