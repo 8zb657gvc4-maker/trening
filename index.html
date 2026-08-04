@@ -931,7 +931,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.13';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.15';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1493,8 +1493,12 @@ function nadpisanieAktywne(name){
   const ovr = c.overrides[name];
   if(!ovr) return null;
   if(!c.date) return ovr;                       /* brak daty — nie mam jak wygasić */
+  /* Porównanie ostre, nie „>=". Analizę piszę wieczorem, po treningu z tego
+     samego dnia — przy „>=" nadpisanie napisane w reakcji na dzisiejszą sesję
+     wygasałoby natychmiast, jeszcze zanim zdążyłbyś je zobaczyć. Wygasza je
+     dopiero kolejne wykonanie ćwiczenia. */
   const h = historia(name);
-  const zrobione = h.some(x => x.date >= c.date);
+  const zrobione = h.some(x => x.date > c.date);
   return zrobione ? null : ovr;
 }
 
@@ -1635,6 +1639,9 @@ function planNaDzis(day){
   return n;
 }
 /* do pokazania na ekranie głównym wystarczy, że plan jeszcze nie minął */
+let PLAN_ROZW = false;
+function przelaczPlan(){ PLAN_ROZW = !PLAN_ROZW; renderHub(); }
+
 function planDoPokazania(){
   const n = DB.nastepny;
   return (n && n.cwiczenia && n.data >= today()) ? n : null;
@@ -1856,15 +1863,39 @@ function renderHub(){
   }).join('')
     : '<div class="empty">Nic tu jeszcze nie ma.<br>Zacznij od „Proponowany trening".</div>';
   /* gotowy plan na następny trening — widoczny, zanim go zaczniesz */
+  /* Kafelek planu jest rozwijany. Pierwsza wersja pokazywała trzy ćwiczenia
+     i napis „+3 więcej", który nic nie robił — obietnica bez pokrycia.
+     Po rozwinięciu widać komplet razem z uzasadnieniem każdej pozycji;
+     to jedyne miejsce, gdzie widać, dlaczego trener zmienił to, co zmienił. */
   const gp = planDoPokazania();
-  const planBox = gp
-    ? '<div class="tip '+(gp.sprawdzony?'ok':'')+'">'+
+  let planBox = '';
+  if(gp){
+    const naDzis = gp.data === today();
+    planBox = '<div class="tip '+(gp.sprawdzony?'ok':'')+'" onclick="przelaczPlan()" '+
+      'style="cursor:pointer;-webkit-tap-highlight-color:transparent">'+
       '<b>Plan na dzień '+gp.dzien+'</b>'+
-      (gp.sprawdzony?' · sprawdzony przez trenera':' · czeka na sprawdzenie')+'<br>'+
-      esc(gp.cwiczenia.slice(0,3).map(c=>
+      (naDzis ? ' · na dziś' : ' · na '+plDate(gp.data))+
+      (gp.sprawdzony?' · sprawdzony przez trenera':' · czeka na sprawdzenie')+
+      '<span style="float:right;opacity:.6">'+(PLAN_ROZW?'▴':'▾')+'</span><br>';
+    if(PLAN_ROZW){
+      planBox += '<div style="margin-top:8px">'+ gp.cwiczenia.map(c=>
+        '<div style="margin:7px 0;padding-left:9px;border-left:2px solid var(--line)">'+
+        '<b>'+esc(c.name)+'</b> — '+c.serie+' × '+c.powt+
+        (c.ciezar!=null && c.ciezar!==0 ? ' @ '+fmtKg(c.ciezar)+' kg'
+          : (c.ciezar===0 ? ' (masa własna)' : ' <span class="warn">dobierz ciężar</span>'))+
+        (c.why?'<div class="note" style="margin-top:2px">'+esc(c.why)+'</div>':'')+
+        '</div>').join('') +
+        (gp.uwagi && gp.uwagi.length
+          ? '<div class="note" style="margin-top:9px">'+gp.uwagi.map(esc).join('<br>')+'</div>' : '')+
+        '</div>';
+    } else {
+      planBox += esc(gp.cwiczenia.slice(0,3).map(c=>
         c.name+' '+c.serie+'×'+c.powt+(c.ciezar?' @'+fmtKg(c.ciezar)+' kg':'')).join(' · '))+
-      (gp.cwiczenia.length>3?' · +'+(gp.cwiczenia.length-3)+' więcej':'')+'</div>'
-    : '';
+        (gp.cwiczenia.length>3?' · +'+(gp.cwiczenia.length-3)+' więcej':'')+
+        '<div class="note" style="margin-top:4px">Dotknij, żeby zobaczyć całość</div>';
+    }
+    planBox += '</div>';
+  }
 
   /* stały sygnał, że dane nie płyną — inaczej łatwo trenować tygodniami
      w przekonaniu, że trener wszystko widzi */
