@@ -333,6 +333,11 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .rpeb span{font-size:9.5px;opacity:.75;line-height:1}
 .rpeb.on{background:var(--acc);border-color:var(--acc);color:#fff}
 .rpeb.on span{opacity:.9}
+.cwimg{width:100%;max-width:340px;display:block;margin:9px auto 4px;border-radius:12px;
+  background:var(--card2)}
+.imgbrak{margin:9px 0 4px;padding:11px;border:1px dashed var(--line);border-radius:12px;
+  color:var(--dim);font-size:12.5px;line-height:1.45}
+.imgbrak a{color:var(--acc)}
 </style>
 </head>
 <body>
@@ -405,6 +410,9 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 
   <!-- HISTORIA ĆWICZENIA -->
   <div class="sub" id="s-hist"><div id="histBody"></div></div>
+
+  <!-- PODGLAD ZAPISANEGO TRENINGU -->
+  <div class="sub" id="s-tren"><div id="trenBody"></div></div>
 
   <!-- SESJA -->
   <div class="sub" id="s-ses">
@@ -867,10 +875,10 @@ const DOMYSLNY_PLAN = {
 const DOMYSLNY_ORDER = ['A','B','C','D'];
 
 const DOMYSLNE_PHASES = [
-  {n:'Reaktywacja',    rpe:6, skala:1,   d:'Tygodnie 1–2. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
-  {n:'Budowa',         rpe:8, skala:1, narastanie:true, d:'Tygodnie 3–5. Główna faza. RPE 7–8, dochodzi martwy ciąg. Tu robi się masa.'},
-  {n:'Deload',         rpe:5, skala:0.8, d:'Tydzień 6. Objętość w dół, ciężary −30%. Nie pomijaj — to on decyduje o mocy tygodni 7–8.'},
-  {n:'Intensyfikacja', rpe:9, skala:1,   d:'Tygodnie 7–8. RPE 8–9, niższe zakresy powtórzeń. Masa przekłada się na ciężar na sztandze.'}
+  {n:'Reaktywacja',    rpe:6, skala:1,   d:'Tygodnie 1–2, raz na początku. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
+  {n:'Budowa',         rpe:8, skala:1, narastanie:true, d:'Trzy tygodnie w każdym cyklu. Główna faza — RPE 7–8, objętość rośnie do ostatniego tygodnia. Tu robi się masa.'},
+  {n:'Deload',         rpe:5, skala:0.8, d:'Co szósty tydzień, po najcięższych. Objętość w dół, ciężary −30%. Nie pomijaj — to on decyduje o mocy następnego cyklu.'},
+  {n:'Intensyfikacja', rpe:9, skala:1,   d:'Dwa tygodnie w każdym cyklu. RPE 8–9, niższe zakresy powtórzeń. Masa przekłada się na ciężar na sztandze.'}
 ];
 
 const DOMYSLNE_RUNS = [
@@ -955,7 +963,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.24';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.27';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1220,7 +1228,34 @@ function weekNo(dateStr){
   const d = new Date((dateStr||today())+'T00:00:00');
   return Math.max(1, Math.floor((d-s)/(7*864e5))+1);
 }
-function phaseOf(w){ return w<=2 ? 0 : w<=5 ? 1 : w===6 ? 2 : 3; }
+/* ============================================================
+   FAZY — pierwszy blok sztywno, potem cykl bez końca
+   Pierwsza wersja kończyła się na `w===6 ? 2 : 3`, więc od dziewiątego
+   tygodnia plan zostawał w intensyfikacji NA ZAWSZE: RPE 9, czwórki,
+   zero deloadu. To najgorsza możliwa faza do utknięcia — dokładanie
+   ciężaru przy RPE 9 bez tygodnia odciążenia kończy się zastojem albo
+   kontuzją, a wyglądało jak działający plan.
+   Tygodnie 1–8 zostają, bo ten blok jest zaprojektowany i w trakcie.
+   Od dziewiątego leci cykl sześciotygodniowy: trzy tygodnie budowy,
+   dwa intensyfikacji, tydzień deloadu. Deload PO najcięższych tygodniach,
+   nie przed — odciąża się to, co się zmęczyło.
+   ============================================================ */
+function phaseOf(w){
+  if(w <= 2) return 0;      /* reaktywacja */
+  if(w <= 5) return 1;      /* budowa */
+  if(w === 6) return 2;     /* deload */
+  if(w <= 8) return 3;      /* intensyfikacja */
+  const k = (w - 9) % 6;
+  return k <= 2 ? 1 : k <= 4 ? 3 : 2;
+}
+/* Ostatni tydzień bieżącego odcinka tej samej fazy. Przy cyklu nie da się
+   już pytać „który tydzień jest ostatni w fazie budowy" — jest ich wiele. */
+function koniecFazy(tydzien){
+  const f = phaseOf(tydzien);
+  let w = tydzien;
+  while(w < tydzien + 12 && phaseOf(w + 1) === f) w++;
+  return w;
+}
 function weekRange(w){
   const s = new Date(DB.settings.start+'T00:00:00');
   s.setDate(s.getDate()+(w-1)*7);
@@ -1287,18 +1322,12 @@ function avg(arr){ const v=arr.filter(x=>x!=null&&!isNaN(x)); return v.length? v
    Dokładamy serię w OSTATNIM tygodniu fazy i tylko do ćwiczeń wielostawowych
    (bój + pierwsze akcesorium), żeby sesja nie urosła o kwadrans.
    ============================================================ */
-function tygodnieFazy(faza){
-  const out=[];
-  for(let w=1; w<=40; w++) if(phaseOf(w)===faza) out.push(w);
-  return out;
-}
 function serieSlotu(slot, faza, tydzien){
   const baza = slot.s[faza];
   if(!baza) return 0;
   const f = PHASES[faza] || {};
   if(!f.narastanie || tydzien==null) return baza;
-  const tyg = tygodnieFazy(faza);
-  const ostatni = tyg[tyg.length-1];
+  const ostatni = koniecFazy(tydzien);
   const ciezkie = !!slot.fixed || slot.id.endsWith('2');   /* bój i pierwsze akcesorium */
   return (tydzien===ostatni && ciezkie) ? baza+1 : baza;
 }
@@ -1845,6 +1874,7 @@ function renderSub(){
   if(SUB==='run') renderRun();
   if(SUB==='sum') renderSummary();
   if(SUB==='hist') renderHist();
+  if(SUB==='tren') renderTrening();
   if(SUB==='ses'&&SES) renderSession();
 }
 function openPick(){ setSub('pick'); }
@@ -1911,7 +1941,8 @@ function renderHub(){
   const rec=DB.workouts.slice(-6).reverse();
   document.getElementById('recent').innerHTML = rec.length ? rec.map(x=>{
     const wuN=wuCount(x);
-    return '<div class="hist"><div style="min-width:0">'+
+    return '<div class="hist" style="cursor:pointer" onclick="openTrening(\''+x.id+'\')">'+
+      '<div style="min-width:0">'+
       '<div class="hd">'+x.day+' — '+esc(dayName2(x.day))+
         (x.flag?' <span class="prtag" style="background:var(--warn);color:#2a1a05">!</span>':'')+'</div>'+
       '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii'+
@@ -2211,6 +2242,15 @@ function renderSession(){
           }).join('') +'</div>'+
           '<input type="hidden" id="irpe'+i+'" value="'+prefill(e,'rpe')+'">'+
         '</div>'+
+        /* obrazek pokazujemy dopiero po dotknięciu — w trakcie serii nikt
+           nie chce przewijać przez grafikę, żeby dojść do pól z ciężarem */
+        '<button class="mini" onclick="pokazObrazek(\''+esc(e.name).replace(/'/g,"\\'")+'\')">'+
+          (PODGLAD===e.name?'Ukryj obrazek':'Jak to wygląda?')+'</button>'+
+        (PODGLAD===e.name
+          ? '<img class="cwimg" src="'+sciezkaObrazka(e.name)+'" alt="'+esc(e.name)+'" '+
+            'onerror="this.classList.add(\'brak\');this.replaceWith(brakObrazka(\''+
+            esc(e.name).replace(/'/g,"\\'")+'\'))">'
+          : '')+
         '<div class="plt" id="plt'+i+'"></div>'+
         '<div class="btn2" style="margin-top:11px">'+
           '<button class="btn sm" onclick="addSet('+i+')">Dodaj serię</button>'+
@@ -2261,6 +2301,32 @@ function prefill(e,f){
   const L=LIB[e.name]||{};
   return f==='w' ? (L.bw?0:20) : f==='r' ? (L.time?40:8) : '';
 }
+/* ============================================================
+   OBRAZKI ĆWICZEŃ
+   Osobne pliki w aplikacja/obrazki/, nie wklejone w index.html. Pięćdziesiąt
+   dwa obrazki zakodowane w pliku to ~1,5 MB doklejone do stu siedemdziesięciu
+   kilobajtów, a ten plik pobiera się na nowo przy każdym sprawdzeniu wersji.
+   Osobne pliki service worker zapisuje w pamięci podręcznej przy pierwszym
+   wyświetleniu, więc offline działają, a aplikacja startuje tak samo szybko.
+
+   Nazwa pliku wyliczana z nazwy ćwiczenia, więc dorzucenie obrazka nie wymaga
+   zmiany w kodzie. Brak pliku nie jest błędem — kafelek po prostu znika.
+   ============================================================ */
+function slugCwiczenia(name){
+  const zamiana = {'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z'};
+  return String(name).toLowerCase()
+    .replace(/[ąćęłńóśźż]/g, c => zamiana[c])
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+function sciezkaObrazka(name){ return 'obrazki/' + slugCwiczenia(name) + '.webp'; }
+
+let PODGLAD = null;
+function pokazObrazek(name){
+  PODGLAD = PODGLAD === name ? null : name;
+  renderSession();
+}
+
 function toggleEx(i){
   SES.exercises.forEach((e,j)=>{ if(j!==i) e._open=false; });
   SES.exercises[i]._open=!SES.exercises[i]._open;
@@ -2274,6 +2340,18 @@ function bump(i,f,d){
   el.value = v || (f==='rpe'?'':0);
   if(f==='w') odswiezTalerze(i);
 }
+/* Gdy pliku nie ma, zamiast pustej ramki dajemy link do wyszukiwania —
+   brakujący obrazek nie może być ślepym zaułkiem w środku treningu. */
+function brakObrazka(name){
+  const d = document.createElement('div');
+  d.className = 'imgbrak';
+  const q = encodeURIComponent(name + ' technika ćwiczenia');
+  d.innerHTML = 'Nie mam jeszcze obrazka do tego ćwiczenia.<br>'+
+    '<a href="https://www.youtube.com/results?search_query='+q+'" target="_blank" rel="noopener">'+
+    'Zobacz na YouTube →</a>';
+  return d;
+}
+
 function ustawRpe(i, v){
   const pole = document.getElementById('irpe'+i);
   /* powtórne dotknięcie tej samej wartości ją zdejmuje — RPE bywa nieznane
@@ -2435,6 +2513,71 @@ function renderSummary(){
    ============================================================ */
 let HIST_EX=null;
 function openHist(name){ HIST_EX=name; setSub('hist'); }
+
+/* ============================================================
+   PODGLĄD ZAPISANEGO TRENINGU
+   Dotąd sesję dało się obejrzeć wyłącznie zaraz po zakończeniu. Wpisy
+   na liście pokazywały sumę serii i tonaż, ale nie dało się sprawdzić,
+   ile konkretnie wyszło na przysiadzie trzy tygodnie temu — a to
+   pierwsze pytanie, jakie się zadaje, patrząc na starą sesję.
+   ============================================================ */
+let TREN_ID = null;
+function openTrening(id){ TREN_ID = id; setSub('tren'); }
+
+function renderTrening(){
+  const w = DB.workouts.find(x => x.id === TREN_ID);
+  if(!w){ setSub('hub'); return; }
+  const d0 = DB.daily.find(x => x.date === w.date);
+  const wuN = wuCount(w);
+
+  let h = '<h2>'+w.day+' — '+esc(dayName2(w.day))+'</h2>';
+  h += '<div class="tip"><b>'+plDate(w.date)+'</b> · tydzień '+weekNo(w.date)+
+       ' · '+esc((PHASES[phaseOf(weekNo(w.date))]||{}).n||'')+'</div>';
+
+  h += '<div class="mdkafle">'+
+    '<div><b>'+setCount(w)+'</b><span>serii'+(wuN?' (+'+wuN+' rozgrz.)':'')+'</span></div>'+
+    '<div><b>'+Math.round(vol(w)).toLocaleString('pl')+'</b><span>kg objętości</span></div>'+
+    (w.dur?'<div><b>'+w.dur+'</b><span>minut</span></div>':'')+
+    (srednieRpe(w)!=null?'<div><b>'+fmtKg(srednieRpe(w))+'</b><span>średnie RPE</span></div>':'')+
+    '</div>';
+
+  if(w.flag) h += '<div class="tip warn"><b>Oznaczony:</b> coś było nie tak.</div>';
+  if(w.note) h += '<div class="tip"><b>Twoja notatka:</b> '+esc(w.note)+'</div>';
+
+  h += '<h2>Ćwiczenia</h2><div class="card">'+ w.exercises.map(e=>{
+    const rob = e.sets.filter(x=>!x.wu);
+    const najlepsza = bestSet(e.sets);
+    return '<div style="padding:11px 0;border-bottom:1px solid var(--line)">'+
+      '<div class="hrow"><div class="hd">'+esc(e.name)+'</div>'+
+      '<button class="pill" onclick="openHist(\''+esc(e.name).replace(/'/g,"\\'")+'\')">wykres</button></div>'+
+      (e.target?'<div class="hm">cel: '+esc(e.target)+'</div>':'')+
+      '<div style="margin-top:5px">'+ rob.map((x,i)=>
+        '<div class="hm">'+(i+1)+'. '+esc(fmtSet(x, e.name))+(x.n?' — '+esc(x.n):'')+'</div>'
+      ).join('') +'</div>'+
+      (najlepsza && !(LIB[e.name]||{}).time
+        ? '<div class="note" style="margin-top:4px">Szacowany 1RM: '+fmtKg(e1rm(najlepsza))+' kg</div>' : '')+
+      '</div>';
+  }).join('') +'</div>';
+
+  /* kontekst regeneracyjny — bez niego liczby wiszą w próżni */
+  if(d0){
+    const b=[];
+    if(d0.sleep!=null) b.push('sen '+fmtKg(d0.sleep)+' h');
+    if(d0.hrv!=null) b.push('HRV '+d0.hrv);
+    if(d0.rhr!=null) b.push('tętno spocz. '+d0.rhr);
+    if(d0.bb!=null) b.push('Body Battery '+d0.bb);
+    if(b.length) h += '<h2>Tego dnia</h2><div class="card"><div class="hm">'+esc(b.join(' · '))+'</div>'+
+      (d0.note?'<div class="note" style="margin-top:5px">'+esc(d0.note)+'</div>':'')+'</div>';
+  }
+
+  h += '<button class="btn ghost sm" style="margin-top:13px" onclick="setSub(\'hub\')">Wróć</button>';
+  document.getElementById('trenBody').innerHTML = h;
+}
+
+function srednieRpe(w){
+  const v = w.exercises.flatMap(e=>e.sets.filter(x=>!x.wu && x.rpe!=null).map(x=>x.rpe));
+  return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null;
+}
 function renderHist(){
   const name=HIST_EX;
   if(!name){ setSub('hub'); return; }
@@ -2659,6 +2802,17 @@ function opisDnia(data){
   return D[new Date(data+'T00:00:00').getDay()] + ', ' + plDate(data);
 }
 
+/* Plan biegowy poza pierwszym blokiem. Wcześniej `RUNS[Math.min(w,8)-1]`
+   zamrażało go na tygodniu 8 i powtarzało w nieskończoność — także w tygodniach
+   deloadu, gdzie miał być lżejszy. Po ósmym tygodniu dobieramy zestaw pod fazę:
+   objętość biegowa przestaje rosnąć i to jest świadome. Dalszy przyrost
+   kilometrów wymaga decyzji, ile realnie masz czasu, a nie ekstrapolacji. */
+function biegTygodnia(w){
+  if(w <= 8) return RUNS[Math.max(1, w) - 1];
+  const f = phaseOf(w);
+  return RUNS[f === 2 ? 5 : f === 3 ? 7 : 4];
+}
+
 function radaBiegowa(){
   const w = weekNo(), p = phaseOf(w), f = PHASES[p] || {}, out = [];
 
@@ -2686,7 +2840,7 @@ function radaBiegowa(){
 }
 
 function renderRun(){
-  const w=weekNo(), r=RUNS[Math.min(w,8)-1];
+  const w=weekNo(), r=biegTygodnia(w);
   const mine=DB.runs.filter(x=>inWeek(x.date,w));
   let h='<div class="tip rn"><b>Tydzień '+w+'</b> — dwa biegi: jeden spokojny, jeden jakościowy. '+
     'Dni dobierają się same tak, żeby nie kolidowały z nogami na siłowni. '+
@@ -2771,13 +2925,17 @@ function delRun(id){
    ============================================================ */
 /* Pełna historia treningów — i jedyne miejsce w aplikacji, gdzie da się
    trening usunąć. Świadomie schowane głębiej niż ekran główny. */
-function renderHist(){
+/* UWAGA na nazwę: `renderHist` bez przyrostka renderuje wykres pojedynczego
+   ćwiczenia (ekran 'hist'). Ta funkcja to co innego — lista treningów
+   w Dzienniku. Przez chwilę obie nazywały się tak samo i ta późniejsza
+   nadpisywała tamtą, przez co przycisk „wykres" prowadził donikąd. */
+function renderHistTreningow(){
   const el = document.getElementById('histList');
   if(!el) return;
   const rec = DB.workouts.slice().reverse();
   el.innerHTML = rec.length ? rec.map(x=>{
     const wuN = wuCount(x);
-    return '<div class="hist"><div style="min-width:0">'+
+    return '<div class="hist"><div style="min-width:0;cursor:pointer" onclick="openTrening(\''+x.id+'\')">'+
       '<div class="hd">'+x.day+' — '+esc(dayName2(x.day))+
         (x.flag?' <span class="prtag" style="background:var(--warn);color:#2a1a05">!</span>':'')+'</div>'+
       '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii'+
@@ -2851,7 +3009,7 @@ function renderSupl(){
 }
 
 function renderDaily(){
-  renderHist();
+  renderHistTreningow();
   renderSupl();
   const el=document.getElementById('dDate');
   if(!el.value) el.value=today();
@@ -3311,6 +3469,22 @@ function md(tekst){
   return out;
 }
 
+/* Miejsce cięcia: koniec pierwszego akapitu po kaflach ze statystykami.
+   Szukamy struktury, nie liczby znaków — raport zawsze zaczyna się nagłówkiem,
+   kaflami i akapitem podsumowania, więc to naturalna granica „w skrócie".
+   Gdy struktura się nie zgadza, wolimy pokazać całość niż uciąć w połowie zdania. */
+function znajdzCiecie(html){
+  const koniecKafli = html.indexOf('</div>', html.indexOf('mdkafle'));
+  const od = koniecKafli > 0 ? koniecKafli : 0;
+  const koniecAkapitu = html.indexOf('</p>', od);
+  if(koniecAkapitu < 0) return 0;
+  const ciecie = koniecAkapitu + 4;
+  /* nie ma sensu chować dwustu znaków ani pokazywać dziewięciu dziesiątych */
+  return (ciecie < 200 || ciecie > html.length * 0.75) ? 0 : ciecie;
+}
+
+let RAPORT_ROZW = false;
+
 function renderReport(){
   const w=weekNo(), p=phaseOf(w);
   const cur=DB.workouts.filter(x=>inWeek(x.date,w));
@@ -3322,7 +3496,22 @@ function renderReport(){
   let h='<div class="tip"><b>Tydzień '+w+'</b> · '+PHASES[p].n+' · '+plDate(ws)+' – '+plDate(we)+'</div>';
 
   if(DB.raport){
-    h+='<h2>Od trenera</h2><div class="card mdbox">'+md(DB.raport)+'</div>';
+    /* Raport potrafi mieć cztery tysiące znaków. Cały naraz to ściana, przez
+       którą przewija się do końca i nie czyta nic — a najważniejsze zdania
+       stoją zawsze na górze, zaraz za kaflami. Domyślnie pokazujemy tę część,
+       resztę na żądanie. */
+    const pelny = md(DB.raport);
+    const ciecie = znajdzCiecie(pelny);
+    h += '<h2>Od trenera</h2>';
+    if(ciecie > 0 && !RAPORT_ROZW){
+      h += '<div class="card mdbox">' + pelny.slice(0, ciecie) +
+        '<button class="btn ghost sm" style="margin-top:13px" onclick="RAPORT_ROZW=true;renderReport()">'+
+        'Pokaż cały raport</button></div>';
+    } else {
+      h += '<div class="card mdbox">' + pelny +
+        (ciecie > 0 ? '<button class="btn ghost sm" style="margin-top:13px" '+
+          'onclick="RAPORT_ROZW=false;renderReport()">Zwiń</button>' : '') + '</div>';
+    }
     if(srvGotowy()) h+='<button class="btn ghost sm" style="margin-bottom:14px" onclick="srvPull()">Sprawdź, czy jest nowszy</button>';
   }
 
