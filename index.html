@@ -302,7 +302,11 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   padding:11px 20px;border-radius:22px;font-size:13.5px;font-weight:700;z-index:100;
   opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;max-width:90vw}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
-.dayin{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* etykiety bywają dwuwierszowe („Ramię (napięte)”) i rozjeżdżały pola —
+   wyrównujemy inputy do dołu komórki zamiast do góry */
+.dayin{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+.dayin .fld{display:flex;flex-direction:column;justify-content:flex-end}
+.dayin .fld label{min-height:13px}
 .mono{font-variant-numeric:tabular-nums}
 </style>
 </head>
@@ -431,7 +435,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <div class="dayin">
       <div class="fld"><label>Klatka</label><input type="number" inputmode="decimal" step="0.5" id="mKlatka" placeholder="98"></div>
       <div class="fld"><label>Talia</label><input type="number" inputmode="decimal" step="0.5" id="mTalia" placeholder="80"></div>
-      <div class="fld"><label>Ramię (napięte)</label><input type="number" inputmode="decimal" step="0.5" id="mRamie" placeholder="36"></div>
+      <div class="fld"><label>Ramię</label><input type="number" inputmode="decimal" step="0.5" id="mRamie" placeholder="36"></div>
       <div class="fld"><label>Udo</label><input type="number" inputmode="decimal" step="0.5" id="mUdo" placeholder="56"></div>
       <div class="fld"><label>Łydka</label><input type="number" inputmode="decimal" step="0.5" id="mLydka" placeholder="37"></div>
       <div class="fld"><label>Biodra</label><input type="number" inputmode="decimal" step="0.5" id="mBiodra" placeholder="95"></div>
@@ -883,7 +887,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.1';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-04.2';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -924,6 +928,7 @@ function load(){
   if(!DB.settings) DB.settings = {start:iso(new Date()), rest:90};
   ['workouts','daily','runs','measures','questions','pain','skip'].forEach(k=>{ if(!Array.isArray(DB[k])) DB[k]=[]; });
   if(DB.coach===undefined) DB.coach = null;
+  delete DB.meta;   /* dokładane tylko przy eksporcie, w bazie zbędne */
   /* biegi kasowaliśmy kiedyś po dacie+rodzaju — dwa biegi Z2 tego samego dnia
      kasowały się nawzajem. Od teraz każdy ma własny identyfikator. */
   DB.runs.forEach((r,i)=>{ if(!r.id) r.id = 'r'+r.date+'_'+i; });
@@ -1706,7 +1711,11 @@ function renderSession(){
         '<div class="exn">'+esc(e.name)+'</div>'+
         '<div class="extg">Cel: '+esc(e.target)+esc(sugTxt)+'</div>'+
         '<div class="exl">'+esc(lastTxt)+'</div></div>'+
-        '<div class="exc">'+(e.sets.length?'<b style="color:var(--ok)">'+e.sets.length+'</b> serii':'—')+'</div>'+
+        '<div class="exc">'+(robocze(e.sets).length
+            ? '<b style="color:var(--ok)">'+robocze(e.sets).length+'</b> serii'+
+              (e.sets.some(s=>s.wu)?'<br><span style="font-size:10px">+'+
+                e.sets.filter(s=>s.wu).length+' rozgrz.</span>':'')
+            : (e.sets.some(s=>s.wu)?'<span style="font-size:10px">rozgrzewka</span>':'—'))+'</div>'+
       '</button>'+
       '<div class="exb'+(e._open?' on':'')+'" id="exb'+i+'">'+
         '<div class="exacts">'+
@@ -1991,11 +2000,28 @@ const PRESETS=[60,90,120,180];
 let TICK=null, T_END=0, T_LEN=90, AC=null, WL=null;
 
 function fmtTime(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+/* Timer też przeżywa ubicie aplikacji — koniec przerwy zapisujemy jako
+   znacznik czasu. Bez tego iOS ubijał apkę i timer po prostu znikał,
+   choć sesja się odtwarzała. */
+const TIMKEY='trening_timer';
 function startTimer(sec){
   T_LEN=sec||DB.settings.rest||90; T_END=Date.now()+T_LEN*1000;
+  try{ localStorage.setItem(TIMKEY, JSON.stringify({end:T_END, len:T_LEN})); }catch(e){}
   const bar=document.getElementById('tbar'); bar.classList.add('on'); bar.classList.remove('done');
   document.getElementById('tLab').textContent='PRZERWA · '+fmtTime(T_LEN);
   clearInterval(TICK); paint(); TICK=setInterval(paint,250); wakeOn();
+}
+function resumeTimer(){
+  try{
+    const r=JSON.parse(localStorage.getItem(TIMKEY)||'null');
+    if(!r || !r.end) return;
+    const zostalo=(r.end-Date.now())/1000;
+    if(zostalo<=0){ localStorage.removeItem(TIMKEY); return; }
+    T_LEN=r.len||90; T_END=r.end;
+    const bar=document.getElementById('tbar'); bar.classList.add('on'); bar.classList.remove('done');
+    document.getElementById('tLab').textContent='PRZERWA · '+fmtTime(T_LEN);
+    clearInterval(TICK); paint(); TICK=setInterval(paint,250); wakeOn();
+  }catch(e){}
 }
 function paint(){
   const left=(T_END-Date.now())/1000;
@@ -2016,6 +2042,7 @@ function finishRest(){
 function addTime(s){ if(!TICK){ startTimer(s); return; } T_END+=s*1000; T_LEN+=s; paint(); }
 function stopTimer(){
   clearInterval(TICK); TICK=null;
+  try{ localStorage.removeItem(TIMKEY); }catch(e){}
   const b=document.getElementById('tbar'); b.classList.remove('on'); b.classList.remove('done'); wakeOff();
 }
 function beep(){
@@ -2628,8 +2655,12 @@ function saveSettings(){
 }
 async function exportData(){
   /* zapisujemy zawsze pod tą samą nazwą — plik ma być nadpisywany,
-     a nie mnożyć się w folderze po jednym na każdy zapis */
-  const json=JSON.stringify(DB,null,2);
+     a nie mnożyć się w folderze po jednym na każdy zapis.
+     Do eksportu dokładamy `meta` z aktualną biblioteką ćwiczeń i regionami:
+     bez tego skrypty rysujące mapę mięśni musiałyby zgadywać mapowanie
+     i rozjechałyby się przy każdej zmianie planu. */
+  const doZapisu=Object.assign({}, DB, {meta:{wersja:WERSJA, lib:LIB, reg:REG}});
+  const json=JSON.stringify(doZapisu,null,2);
   const name='trening.json';
   try{
     const file=new File([json],name,{type:'application/json'});
@@ -2760,6 +2791,7 @@ function wipe(){
    ============================================================ */
 load();
 if(!resumeSes()) setSub('hub');
+else resumeTimer();   /* wraca też odliczanie przerwy, jeśli jeszcze trwa */
 window.addEventListener('beforeunload',e=>{ if(SES&&setCount(SES)>0){ e.preventDefault(); e.returnValue=''; } });
 
 /* ============================================================
