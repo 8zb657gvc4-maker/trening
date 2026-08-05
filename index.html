@@ -963,7 +963,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-04.27';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-05.1';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1040,16 +1040,41 @@ function srvGotowy(){ return !!(SRV.on && SRV.adres && SRV.token); }
 /* Odcisk historii treningów. Sam znacznik czasu nie wystarczy: trening ma
    tylko datę dzienną, więc nie da się odróżnić „wysłane po treningu" od
    „wysłane rano tego samego dnia". */
-function odciskTreningow(){
-  const w = DB.workouts;
-  return w.length + ':' + (w.length ? w[w.length-1].id : '-');
+function odciskStanu(){
+  /* Odcisk CAŁEGO stanu, nie samych treningów.
+     Pierwsza wersja patrzyła wyłącznie na `workouts`, więc dopisanie snu,
+     biegu, obwodów czy bólu nie liczyło się jako zmiana i nigdy nie trafiało
+     na serwer. Filip wpisał ręcznie sen z zegarka, gdy Garmin się rozłączył —
+     i poranna analiza go nie zobaczyła, bo serwer wciąż miał „dni: 0".
+     Cicha strata danych, która wygląda jak działający system. */
+  const cz = pole => {
+    const a = DB[pole] || [];
+    if(!a.length) return '0';
+    const o = a[a.length-1];
+    return a.length + '/' + (o.id || o.date || '?');
+  };
+  return ['workouts','daily','runs','measures','questions','pain']
+    .map(cz).join('|');
+}
+
+/* Cicha wysyłka po dopisaniu czegokolwiek. Odkładamy o sekundę, żeby seria
+   szybkich zmian (np. poprawianie wpisu) nie wysyłała pięć razy pod rząd. */
+let SYNC_T = null;
+function zsynchronizuj(){
+  if(!srvGotowy()) return;
+  clearTimeout(SYNC_T);
+  SYNC_T = setTimeout(()=>{ srvPush(true).catch(()=>{}); }, 1000);
 }
 /* iOS potrafi zamrozić aplikację zaraz po zakończeniu treningu — wysyłka
    rusza, ale nie zdąży się dokończyć i ginie bez śladu: bez błędu, bez danych
    na serwerze. Dlatego przy każdym otwarciu sprawdzamy, czy serwer ma już to,
    co telefon, i w razie czego dosyłamy zaległość. */
 function zalegaWysylka(){
-  return srvGotowy() && DB.workouts.length > 0 && SRV.wyslany !== odciskTreningow();
+  if(!srvGotowy()) return false;
+  /* pusta baza to nie zaległość — nie ma sensu wypychać niczego */
+  const pusto = !DB.workouts.length && !DB.daily.length && !DB.runs.length &&
+                !DB.measures.length && !DB.questions.length && !DB.pain.length;
+  return !pusto && SRV.wyslany !== odciskStanu();
 }
 function srvUrl(zasob){
   return SRV.adres.replace(/\/+$/,'') + '/' + zasob + '/' + encodeURIComponent(SRV.token);
@@ -1074,7 +1099,7 @@ async function srvPush(cicho){
       srvSave(); if(!cicho) toast(SRV.blad); return false;
     }
     SRV.ostatni = new Date().toISOString(); SRV.blad = null;
-    SRV.wyslany = odciskTreningow(); srvSave();
+    SRV.wyslany = odciskStanu(); srvSave();
     if(!cicho) toast('Wysłano na serwer');
     return true;
   }catch(e){
@@ -1999,7 +2024,7 @@ function renderHub(){
       'Synchronizacja jest wyłączona. Włącz ją w Danych → Serwer.</div>'
     : SRV.blad ? '<div class="tip warn"><b>Ostatnia wysyłka się nie udała</b><br>'+
         esc(SRV.blad)+' — Dane → Synchronizuj teraz.</div>'
-    : zalegaWysylka() ? '<div class="tip warn"><b>Serwer nie ma najnowszego treningu</b><br>'+
+    : zalegaWysylka() ? '<div class="tip warn"><b>Serwer nie ma najnowszych danych</b><br>'+
         'Wejdź w Dane → Synchronizuj teraz.</div>' : '';
 
   document.getElementById('coachBox').innerHTML = syncBox + resume + planBox + coach + odpBox + czekaBox;
@@ -2911,13 +2936,13 @@ function saveRun(){
     dist:num('rDist'), time:num('rTime'), hr:num('rHr'),
     note:document.getElementById('rNote').value.trim()||null});
   DB.runs.sort((a,b)=>a.date.localeCompare(b.date));
-  save(); renderRun(); toast('Zapisano bieg');
+  save(); zsynchronizuj(); renderRun(); toast('Zapisano bieg');
 }
 function delRun(id){
   const r=DB.runs.find(x=>x.id===id);
   if(!r) return;
   if(!confirm('Usunąć bieg z '+plDate(r.date)+'?')) return;
-  DB.runs=DB.runs.filter(x=>x.id!==id); save(); renderRun();
+  DB.runs=DB.runs.filter(x=>x.id!==id); save(); zsynchronizuj(); renderRun();
 }
 
 /* ============================================================
@@ -3047,11 +3072,11 @@ function saveDaily(){
     inne:document.getElementById('dInne').value.trim()||null,
     note:document.getElementById('dNote').value.trim()||null});
   DB.daily.sort((a,b)=>a.date.localeCompare(b.date));
-  save(); renderDaily(); toast('Zapisano '+plDate(date));
+  save(); zsynchronizuj(); renderDaily(); toast('Zapisano '+plDate(date));
 }
 function delDaily(d){
   if(!confirm('Usunąć wpis z '+plDate(d)+'?')) return;
-  DB.daily=DB.daily.filter(x=>x.date!==d); save(); renderDaily();
+  DB.daily=DB.daily.filter(x=>x.date!==d); save(); zsynchronizuj(); renderDaily();
 }
 
 /* ============================================================
@@ -3069,11 +3094,11 @@ function saveMeasure(){
   DB.measures=DB.measures.filter(m=>m.date!==date);
   DB.measures.push(rec);
   DB.measures.sort((a,b)=>a.date.localeCompare(b.date));
-  save(); renderMeasures(); toast('Zapisano obwody');
+  save(); zsynchronizuj(); renderMeasures(); toast('Zapisano obwody');
 }
 function delMeasure(d){
   if(!confirm('Usunąć obwody z '+plDate(d)+'?')) return;
-  DB.measures=DB.measures.filter(m=>m.date!==d); save(); renderMeasures();
+  DB.measures=DB.measures.filter(m=>m.date!==d); save(); zsynchronizuj(); renderMeasures();
 }
 function renderMeasures(){
   const el=document.getElementById('mDate');
@@ -3106,11 +3131,11 @@ function addQuestion(){
   const t=(el.value||'').trim();
   if(!t){ toast('Wpisz pytanie'); return; }
   DB.questions.push({id:uid('q'), date:today(), text:t, answer:null});
-  el.value=''; save(); renderQuestions(); toast('Pytanie zapisane');
+  el.value=''; save(); zsynchronizuj(); renderQuestions(); toast('Pytanie zapisane');
 }
 function delQuestion(id){
   if(!confirm('Usunąć pytanie?')) return;
-  DB.questions=DB.questions.filter(q=>q.id!==id); save(); renderQuestions();
+  DB.questions=DB.questions.filter(q=>q.id!==id); save(); zsynchronizuj(); renderQuestions();
 }
 function renderQuestions(){
   const box=document.getElementById('qList');
@@ -3142,7 +3167,7 @@ function addPain(){
   document.getElementById('pMiejsce').value='';
   document.getElementById('pSila').value='';
   document.getElementById('pNote').value='';
-  save(); renderPain();
+  save(); zsynchronizuj(); renderPain();
   const ile=DB.pain.filter(p=>p.miejsce===m.toLowerCase() && p.date>=daysAgo(30)).length;
   toast(ile>=3 ? 'Trzeci raz w tym miejscu w miesiącu' : 'Zapisano');
 }
