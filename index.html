@@ -425,6 +425,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     </div>
     <button class="btn ghost sm" onclick="openTimer()" style="margin-bottom:11px">
       Timer przerwy — ustaw czas</button>
+    <div id="rozgrzewkaBox"></div>
     <div id="exList"></div>
     <button class="btn ghost sm" onclick="addCustom()" style="margin-bottom:11px">+ Inne ćwiczenie</button>
     <div class="fld" style="margin-bottom:11px">
@@ -761,6 +762,17 @@ const DOMYSLNA_LIB = {
                                   cue:'Zgięte kolano wyłącza brzuchatego — to jedyny sposób na płaszczkowatego.'},
 
   /* --- tułów --- */
+  /* Plank i ab wheel siedzialy w jednej pozycji, bo oba „na brzuch". To był
+     błąd: plank mierzy się w sekundach i nie ma ciężaru, ab wheel to powtórzenia
+     przy masie własnej. Filip musiał wpisać swoją wagę jako ciężar, a liczbę
+     powtórzeń w polu sekund — i dopisać notatkę, żeby dało się to odczytać.
+     Dane, które wymagają komentarza, żeby coś znaczyły, są złymi danymi. */
+  'Plank':                       {inc:0, bw:true, time:true, mus:{brzuch:1},
+                                  cue:'Pośladki napięte, biodra nie opadają. Gdy biodra zaczynają się zapadać — koniec serii.'},
+  'Ab wheel':                    {inc:0, bw:true, mus:{brzuch:1, plecy_pion:0.2},
+                                  cue:'Wyjeżdżasz tak daleko, jak utrzymasz napięte pośladki i plecy bez wygięcia. Zakres rośnie z tygodniami.'},
+  /* Stara nazwa zostaje, żeby wcześniejsze wpisy nadal się wyświetlały.
+     Nie ma jej już w żadnej puli, więc nowe sesje jej nie zaproponują. */
   'Plank / ab wheel':            {inc:0, time:true, mus:{brzuch:1}},
   'Unoszenie nóg w zwisie':      {inc:0, bw:true,   mus:{brzuch:1}},
   'Allahy na wyciągu':           {inc:2.5,          mus:{brzuch:1}}
@@ -790,7 +802,7 @@ const DOMYSLNY_PLAN = {
     {id:'A5', lab:'Łydki', pool:['Wspięcia na palce stojąc','Wspięcia na palce siedząc'],
      t:['3×15','4×12-15','2×15','4×12-15'],
      s:[3,4,2,4], rr:[[15,15],[12,15],[15,15],[12,15]]},
-    {id:'A6', lab:'Tułów', pool:['Plank / ab wheel','Allahy na wyciągu','Unoszenie nóg w zwisie'],
+    {id:'A6', lab:'Tułów', pool:['Plank','Ab wheel','Allahy na wyciągu','Unoszenie nóg w zwisie'],
      t:['3×40s','3×50s','2×40s','3×60s'],
      s:[3,3,2,3], rr:[[40,40],[50,50],[40,40],[60,60]]}
   ]},
@@ -838,7 +850,7 @@ const DOMYSLNY_PLAN = {
     {id:'C5', lab:'Łydki', pool:['Wspięcia na palce siedząc','Wspięcia na palce stojąc'],
      t:['3×15','3×15-20','2×15','3×15-20'],
      s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
-    {id:'C6', lab:'Tułów', pool:['Unoszenie nóg w zwisie','Allahy na wyciągu','Plank / ab wheel'],
+    {id:'C6', lab:'Tułów', pool:['Unoszenie nóg w zwisie','Ab wheel','Allahy na wyciągu','Plank'],
      t:['3×10','3×12','2×10','3×12-15'],
      s:[3,3,2,3], rr:[[10,10],[12,12],[10,10],[12,15]]},
     {id:'C7', lab:'Chwyt', pool:['Utrzymanie sztangi','Utrzymanie hantli'],
@@ -963,7 +975,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-05.1';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-05.2';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -2175,7 +2187,53 @@ function sesCzas(){
   const m=Math.round((Date.now()-SES.t0)/60000);
   return m<1 ? '' : ' · '+m+' min';
 }
+/* ============================================================
+   ROZGRZEWKA OGÓLNA
+   Rampa serii przy głównym boju to rozgrzewka SAMEGO ĆWICZENIA — dobra do
+   przygotowania wzorca ruchu i układu nerwowego, ale nie zastępuje podniesienia
+   temperatury i rozruszania stawów. Po roku przerwy to właśnie ta część
+   decyduje, czy technika trzyma się do trzeciej serii.
+   Krótka i konkretna, bo rozgrzewka, której nikt nie robi, jest bezużyteczna.
+   ============================================================ */
+const ROZGRZEWKA = {
+  nogi: ['5 min rower albo orbitrek — aż zrobi się ciepło, nie do zadyszki',
+         '10× krążenie bioder w każdą stronę',
+         '10× przysiad bez obciążenia, powoli, pełny zakres',
+         '10× wykrok w miejscu na nogę',
+         'Rozciąganie łydek o ścianę, 30 s na nogę'],
+  gora: ['5 min wiosła albo orbitrek z pracą ramion',
+         '10× krążenie ramion w przód i w tył',
+         '10× odwodzenie łopatek w podporze („scapular push-up")',
+         '15× odwodzenie ramion z gumą albo bez obciążenia',
+         'Rozciąganie klatki w futrynie, 30 s'],
+};
+
+function renderRozgrzewka(){
+  const el = document.getElementById('rozgrzewkaBox');
+  if(!el || !SES) return;
+  const grp = (PLAN[SES.day] || {}).grp === 'nogi' ? 'nogi' : 'gora';
+  const zrobiona = !!SES.rozgrzewka;
+  el.innerHTML =
+    '<div class="tip '+(zrobiona?'ok':'')+'" onclick="przelaczRozgrzewke()" '+
+      'style="cursor:pointer;-webkit-tap-highlight-color:transparent">'+
+      '<b>Rozgrzewka</b> — 6-8 minut'+(zrobiona?' · zrobiona':'')+
+      '<span style="float:right;opacity:.6">'+(zrobiona?'✓':'▾')+'</span>'+
+      (zrobiona ? '' :
+        '<div style="margin-top:7px">'+ ROZGRZEWKA[grp].map(x=>
+          '<div class="hm" style="margin:3px 0">• '+esc(x)+'</div>').join('') +
+        '<div class="note" style="margin-top:6px">Dotknij, gdy skończysz. '+
+        'Rampa przy pierwszym ćwiczeniu to co innego — ona rozgrzewa sam ruch, '+
+        'nie ciało.</div></div>')+
+    '</div>';
+}
+function przelaczRozgrzewke(){
+  SES.rozgrzewka = !SES.rozgrzewka;
+  saveSes(); renderSession();
+  if(navigator.vibrate) navigator.vibrate(12);
+}
+
 function renderSession(){
+  renderRozgrzewka();
   document.getElementById('sesStat').textContent =
     setCount(SES)+' serii · '+Math.round(vol(SES)).toLocaleString('pl')+' kg'+sesCzas();
   const nEl=document.getElementById('sesNote');
@@ -2455,6 +2513,7 @@ function finishSession(){
 
   const dur = SES.t0 ? Math.max(1, Math.round((Date.now()-SES.t0)/60000)) : null;
   const wpis={id:uid('w'), date:SES.date, day:SES.day, week:SES.week, exercises:ex};
+  if(SES.rozgrzewka) wpis.rozgrzewka=true;
   if(dur) wpis.dur=dur;
   if(SES.note && SES.note.trim()) wpis.note=SES.note.trim();
   if(SES.flag) wpis.flag=true;
