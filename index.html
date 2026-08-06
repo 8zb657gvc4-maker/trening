@@ -720,7 +720,7 @@ const KALIS_LIB = {
                                    cue:'Pod stołem, barierką albo drążkiem nisko. Im bardziej poziomo, tym trudniej.'},
   'Wiosłowanie australijskie podchwytem': {bw:true, rr:[10,18], mus:{biceps:1, plecy_poziom:.7, plecy_pion:.3}},
   'Podciąganie podchwytem':       {bw:true, rr:[5,12],  mus:{biceps:1, plecy_pion:.8, plecy_poziom:.3}},
-  'Zwis na drążku':               {bw:true, czas:true, rr:[30,60], mus:{przedramie:1, plecy_pion:.2}},
+  'Zwis na drążku':               {bw:true, time:true, rr:[30,60], mus:{przedramie:1, plecy_pion:.2}},
   'Przysiad bułgarski (masa własna)': {bw:true, rr:[10,20], mus:{czworoglowe:1, posladki:.7, dwuglowe:.2},
                                    cue:'Tylna noga na krześle. To najmocniejsze ćwiczenie nóg bez sprzętu.'},
   'Przysiad jednonóż do ławki':   {bw:true, rr:[6,12],  mus:{czworoglowe:1, posladki:.6},
@@ -737,7 +737,15 @@ const KALIS_LIB = {
   'Unoszenie nóg leżąc':          {bw:true, rr:[12,20], mus:{brzuch:1}},
   'Unoszenie bokiem — plecak':    {bw:true, rr:[12,20], mus:{bark_bok:1},
                                    cue:'Plecak z butelkami wody. Litr to kilogram — łatwo dobrać.'},
-  'Odwrotne rozpiętki — plecak':  {bw:true, rr:[12,20], mus:{bark_tyl:1, plecy_gora:.5}}
+  'Odwrotne rozpiętki — plecak':  {bw:true, rr:[12,20], mus:{bark_tyl:1, plecy_gora:.5}},
+  'Wyciskanie plecakiem nad głowę': {bw:true, rr:[10,18], mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.4},
+                                   cue:'Plecak z butelkami. Żebra w dół, nie wyginaj lędźwi.'},
+  'Wchodzenie na podwyższenie':   {bw:true, rr:[10,20], mus:{czworoglowe:1, posladki:.8, lydki_stoj:.2},
+                                   cue:'Krzesło albo murek do wysokości kolana. Wchodź bez odbicia tylną nogą.'},
+  'Deska bokiem':                 {bw:true, time:true, rr:[25,50], mus:{brzuch:1, prostowniki:.3},
+                                   cue:'Biodro wysoko, ciało w linii. Na każdą stronę osobno.'},
+  'Superman':                     {bw:true, rr:[12,20], mus:{prostowniki:1, posladki:.4},
+                                   cue:'Leżąc na brzuchu unosisz ręce i nogi. Bez szarpania, dwie sekundy u góry.'}
 };
 
 const DOMYSLNA_LIB = {
@@ -855,26 +863,26 @@ const KALIS = {
   A3: ['Most biodrowy jednonóż', 'Nordic curl asystowany'],
   A4: ['Nordic curl asystowany', 'Most biodrowy jednonóż'],
   A5: ['Wspięcia na palce jednonóż'],
-  A6: ['Plank', 'Ab wheel', 'Unoszenie nóg leżąc'],
+  A6: ['Plank', 'Deska bokiem'],
   B1: ['Pompki', 'Pompki nogi wyżej'],
-  B2: ['Pompki w podporze przodem', 'Pompki nogi wyżej'],
+  B2: ['Pompki w podporze przodem', 'Wyciskanie plecakiem nad głowę'],
   B3: ['Wiosłowanie australijskie'],
   B4: ['Pompki nogi wyżej', 'Pompki szerokie'],
   B5: ['Pompki diamentowe', 'Dipy na krzesłach'],
   B6: ['Unoszenie bokiem — plecak'],
-  C1: ['Wykroki chodzone (masa własna)', 'Przysiad bułgarski (masa własna)'],
+  C1: ['Wykroki chodzone (masa własna)', 'Wchodzenie na podwyższenie'],
   C2: ['Przysiad jednonóż do ławki', 'Wykroki chodzone (masa własna)'],
-  C3: ['Most biodrowy jednonóż', 'Hip thrust jednonóż'],
-  C4: ['Przysiad w miejscu wolno', 'Przysiad z wyskokiem'],
+  C3: ['Most biodrowy jednonóż', 'Wykroki chodzone (masa własna)'],
+  C4: ['Przysiad w miejscu wolno', 'Wchodzenie na podwyższenie'],
   C5: ['Wspięcia na palce jednonóż'],
-  C6: ['Plank', 'Unoszenie nóg leżąc'],
+  C6: ['Unoszenie nóg leżąc', 'Superman'],
   C7: ['Zwis na drążku'],
   D1: ['Podciąganie', 'Wiosłowanie australijskie'],
   D2: ['Wiosłowanie australijskie'],
   D3: ['Pompki nogi wyżej', 'Pompki'],
   D4: ['Odwrotne rozpiętki — plecak', 'Wiosłowanie australijskie'],
   D5: ['Podciąganie podchwytem', 'Wiosłowanie australijskie podchwytem'],
-  D6: ['Podciąganie', 'Zwis na drążku']
+  D6: ['Podciąganie', 'Wiosłowanie australijskie']
 };
 
 /* Zakresy powtórzeń przy masie własnej — wyższe, bo obciążenie jest stałe. */
@@ -1139,7 +1147,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-06.5';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-06.6';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1173,7 +1181,7 @@ function blank(){
   const d = new Date(); d.setDate(d.getDate() - ((d.getDay()+6)%7));
   return {v:4, settings:{start:iso(d), rest:90}, workouts:[], daily:[], runs:[],
           measures:[], questions:[], pain:[], skip:[], coach:null, nastepny:null, kosz:[],
-          przelozone:[]};
+          przelozone:[], odpoczynek:[]};
 }
 function load(){
   try{ const r = localStorage.getItem(KEY); DB = r ? JSON.parse(r) : blank(); }
@@ -1183,6 +1191,7 @@ function load(){
   if(DB.coach===undefined) DB.coach = null;
   if(DB.nastepny===undefined) DB.nastepny = null;
   if(!Array.isArray(DB.przelozone)) DB.przelozone = [];
+  if(!Array.isArray(DB.odpoczynek)) DB.odpoczynek = [];
   if(!Array.isArray(DB.kosz)) DB.kosz = [];
   /* kosz sam się opróżnia po 30 dniach — inaczej rósłby w nieskończoność
      i zjadał miejsce w localStorage, którego jest 5 MB */
@@ -1806,12 +1815,73 @@ function slotHistory(slotId){
    ============================================================ */
 const HOLD = 3;
 
-function pickVariant(slot){
-  if(slot.fixed)
-    return {name:slot.fixed, why:'Główny bój — nie rotuje przez cały blok, bo to on mierzy Twoją progresję.', rot:'fixed'};
+/* Regiony, po które slot naprawdę sięga — liczone z jego własnej puli,
+   nie z etykiety, bo etykieta bywa opisowa („Czworogłowe — maszyna"). */
+function regionySlotu(slot){
+  const pula = slot.fixed ? [slot.fixed] : (slot.pool || []);
+  const suma = {};
+  pula.forEach(n => Object.entries((LIB[n]||{}).mus || {}).forEach(([r,w]) => {
+    suma[r] = Math.max(suma[r] || 0, w);
+  }));
+  return Object.entries(suma).filter(([,w]) => w >= 0.7).map(([r]) => r);
+}
+
+/* Szukamy w całej bibliotece czegoś, co robi tę samą robotę. */
+function zastepstwoDlaSlotu(slot, zajete){
+  const cele = regionySlotu(slot);
+  if(!cele.length) return null;
+  const wyjazd = trybWyjazdowy();
+  const kand = Object.entries(LIB)
+    .filter(([n,L]) => !isSkipped(n) && L.mus)
+    /* Zastępstwo nie może powtarzać czegoś, co już jest w tym dniu — inaczej
+       „ciąg pionowy dodatkowy" wychodził jako drugie podciąganie po pierwszym. */
+    .filter(([n]) => !(zajete || []).includes(n))
+    .filter(([n,L]) => cele.some(r => (L.mus[r] || 0) >= 0.5))
+    .filter(([n,L]) => !wyjazd || L.bw)
+    .map(([n,L]) => {
+      let sc = cele.reduce((a,r) => a + (L.mus[r] || 0), 0);
+      /* przy równym trafieniu wolimy ćwiczenie prostsze sprzętowo */
+      if(L.bw) sc += 0.15;
+      return {n, sc};
+    })
+    .sort((a,b) => b.sc - a.sc || a.n.localeCompare(b.n));
+  if(!kand.length) return null;
+  const nazwy = cele.map(r => (REG[r]||{n:r}).n).join(' / ');
+  return {name: kand[0].n, rot: 'zastepstwo',
+    why: 'Wszystkie warianty tego slotu masz odznaczone, więc aplikacja poszukała '+
+      'zastępstwa poza planem: „'+kand[0].n+'" trafia w ten sam region ('+nazwy+'). '+
+      'Jeśli i tego nie zrobisz, odznacz je też — wtedy slot wypadnie z dnia, '+
+      'zamiast podsuwać Ci coś, czego nie masz.'};
+}
+
+function pickVariant(slot, zajete){
+  if(slot.fixed){
+    /* Główny bój też można odznaczyć — i to nie jest przypadek brzegowy:
+       na wyjeździe nie ma sztangi. Wcześniej `fixed` wracał zawsze, więc
+       aplikacja proponowała przysiad ze sztangą komuś, kto nie ma sztangi. */
+    if(!isSkipped(slot.fixed))
+      return {name:slot.fixed, why:'Główny bój — nie rotuje przez cały blok, bo to on mierzy Twoją progresję.', rot:'fixed'};
+    const zf = zastepstwoDlaSlotu(slot, zajete);
+    if(!zf) return null;
+    return Object.assign({}, zf, {why:
+      '„'+slot.fixed+'" masz odznaczone, a to główny bój tego dnia. '+
+      'Zastępstwo: „'+zf.name+'". Progresję mierzysz teraz na nim — gdy wrócisz '+
+      'do sztangi, historia boju czeka nietknięta.'});
+  }
 
   let pool = slot.pool.filter(n=>!isSkipped(n));
-  if(!pool.length) pool = slot.pool.slice();
+
+  /* BŁĄD, który to zastępuje: gdy odznaczyłeś WSZYSTKIE warianty slotu,
+     aplikacja wracała po cichu do pełnej puli i proponowała dokładnie to,
+     czego nie chcesz albo nie masz. Wyglądało to jak działający plan.
+     Teraz szukamy zastępstwa poza slotem — czegoś, co trafia w ten sam
+     region i nie jest odznaczone. Dopiero gdy nic takiego nie ma, slot
+     wypada z dnia, i to widocznie. */
+  if(!pool.length){
+    const z = zastepstwoDlaSlotu(slot, zajete);
+    if(!z) return null;
+    return z;
+  }
 
   const hist = slotHistory(slot.id);
   const cur  = hist.length ? hist[0].name : null;
@@ -1883,6 +1953,21 @@ function przerwaSkala(dni){
   return {s:0.65, why:'Dwa miesiące i więcej. Traktuj to jak wejście od nowa — technika najpierw, ciężar potem. Wróci szybciej, niż myślisz.'};
 }
 
+/* Etykieta celu MUSI iść z ćwiczenia, nie ze slotu. Slot ma jeden opis dla
+   całej puli — i tak powstało „Ab wheel 3×40 s": plank i ab wheel siedzą
+   w tym samym slocie, a opis był pisany pod plank. Zakresy naprawiliśmy
+   wtedy przez `rr` na ćwiczeniu, ale NAPIS został ze slotu i dalej kłamał.
+   Tu liczymy go od nowa: z zakresu tego ćwiczenia i z jego jednostki. */
+function celCwiczenia(name, slot, phase, sug){
+  const L = LIB[name] || {};
+  const [mn, mx] = L.rr || slot.rr[phase] || [8, 8];
+  const serie = (sug && sug.sets) || serieSlotu(slot, phase, weekNo()) || 3;
+  const zakres = mn === mx ? String(mn) : mn + '-' + mx;
+  const jedn = L.time ? ' s' : '';
+  const rpe = (slot.t[phase] || '').match(/RPE\s*[\d,.]+/);
+  return serie + '×' + zakres + jedn + (rpe ? ' ' + rpe[0] : '');
+}
+
 function suggestLoad(name, slot, phase, tydzien){
   const sets = serieSlotu(slot, phase, tydzien);
   /* Slot ma jeden zakres powtórzeń dla całej puli, co przestaje działać, gdy
@@ -1927,8 +2012,13 @@ function suggestLoad(name, slot, phase, tydzien){
      wprawy nerwowo-mięśniowej niż samych mięśni — dlatego siła wraca dużo
      szybciej, niż odchodziła. Pierwsza sesja po przerwie ma być rozbiegiem,
      nie sprawdzianem. */
+  /* Uwaga: `last` może pomijać tygodnie deloadu, więc jego data bywa starsza,
+     niż wynika z kalendarza treningów. Przerwę liczymy z FAKTYCZNIE ostatniego
+     wystąpienia — inaczej deload wyglądał jak dwutygodniowa przerwa i silnik
+     ścinał ciężary w środku dobrze idącego bloku. */
+  const naprawde = lastFor(name, false) || last;
   const przerwa = Math.round((new Date(today()+'T00:00:00') -
-                              new Date(last.date+'T00:00:00')) / 864e5);
+                              new Date(naprawde.date+'T00:00:00')) / 864e5);
   const pr = przerwaSkala(przerwa);
   if(pr){
     const wTop0 = Math.max(...last.sets.map(s=>s.w||0));
@@ -2100,7 +2190,11 @@ function planNastepnego(){
     utworzony: new Date().toISOString(),
     data: s.data, dzien: s.day, tydzien: s.week,
     faza: (PHASES[s.phase]||{}).n || '',
-    uwagi: s.notes.filter(n=>n[1]).map(n=>n[1]),
+    uwagi: s.notes.filter(n=>n[1]).map(n=>n[1]).concat(
+      (items.wypadly && items.wypadly.length)
+        ? ['Wypadło z dnia, bo wszystkie warianty masz odznaczone i nie ma zastępstwa: '+
+           items.wypadly.join(', ')+'. Jeśli masz tam jakiś sprzęt, odznacz go z powrotem '+
+           'w Dzienniku → Ćwiczenia pomijane.'] : []),
     sprawdzony: false,
     cwiczenia: items.map(it=>({
       slot: it.slot.id, name: it.name, lab: it.slot.lab,
@@ -2191,6 +2285,7 @@ function odrzucKorekte(){
 }
 
 function planNaDzis(day){
+  DB.nastepny = przeterminowany(DB.nastepny) || DB.nastepny;
   const n = DB.nastepny;
   if(!n || !n.cwiczenia) return null;
   if(n.dzien !== day || n.data !== today()) return null;
@@ -2256,6 +2351,17 @@ function renderPrzeloz(){
     Object.entries(POWODY).map(([k,v]) =>
       '<button class="rpeb" onclick="przeloz(\''+k+'\')" title="'+esc(v.opis)+'">'+
       '<span style="font-size:11px">'+esc(v.n)+'</span></button>').join('')+'</div>'+
+    '<div class="note" style="margin-top:9px"><b>Albo dzień wolny</b> — jeśli nie chcesz '+
+    'wpisywać treningu w konkretne jutro. Plan poczeka na Twój następny dzień '+
+    'treningowy, jakikolwiek by nie był.</div>'+
+    '<div class="rpe" style="margin-top:6px;flex-wrap:wrap">'+
+    ['zakwasy','zmeczenie','upal','bol'].map(k =>
+      '<button class="rpeb" onclick="dzienWolny(\''+k+'\')">'+
+      '<span style="font-size:11px">'+esc(POWODY[k].n)+'</span></button>').join('')+'</div>'+
+    (dniWolneZRzedu() >= 2
+      ? '<div class="note warn" style="margin-top:8px">'+dniWolneZRzedu()+
+        ' dni wolne z rzędu. Nic złego się nie dzieje — ale jeśli to nie plan '+
+        'na odpoczynek, tylko coś Cię blokuje, napisz mi „raport".</div>' : '')+
     (seria >= 2
       ? '<div class="note warn" style="margin-top:8px">Przekładasz ten trening '+seria+
         ' raz z rzędu. To już nie jest gorszy dzień — albo plan jest za ciężki, albo '+
@@ -2339,6 +2445,35 @@ const POWODY = {
   choroba:  {n:'Choroba',        opis:'Infekcja, gorszy stan'}
 };
 
+/* „Dzień wolny" to nie to samo co przełożenie. Przełożenie mówi: zrobię to
+   jutro. Dzień wolny mówi: dziś nie trenuję, a plan poczeka na następny raz,
+   kiedykolwiek to będzie. Różnica jest praktyczna — przełożenie na siłę
+   wpisuje trening w jutro, którego możesz nie mieć.
+
+   Zapisujemy też POWÓD, bo trzy dni wolne z rzędu z powodu upału to zupełnie
+   inna informacja niż trzy z powodu bólu. */
+function dzienWolny(powod){
+  const d = today();
+  DB.odpoczynek = DB.odpoczynek || [];
+  if(!DB.odpoczynek.some(x => x.date === d))
+    DB.odpoczynek.push({date: d, powod, kiedy: new Date().toISOString()});
+  /* Planu nie ruszamy — przeterminowany() sam przeniesie go na następny dzień,
+     w którym otworzysz aplikację. Data nie kłamie, a plan nie ginie. */
+  save(); zsynchronizuj(); renderSub();
+  toast('Dzień wolny zapisany — ' + ((POWODY[powod]||{n:powod}).n||'').toLowerCase());
+}
+
+function dniWolneZRzedu(){
+  let ile = 0;
+  for(let i = 0; i < 7; i++){
+    const d = przesun(today(), -i);
+    if(DB.workouts.some(w => w.date === d)) break;
+    if((DB.odpoczynek || []).some(x => x.date === d)) ile++;
+    else if(i > 0) break;
+  }
+  return ile;
+}
+
 function przeloz(powod){
   const n = DB.nastepny;
   if(!n || n.data !== today()){ toast('Nie ma dziś planu do przełożenia'); return; }
@@ -2383,8 +2518,33 @@ let PLAN_ROZW = false, KOLEJNE_ROZW = false;
 function przelaczKolejne(){ KOLEJNE_ROZW = !KOLEJNE_ROZW; renderHub(); }
 function przelaczPlan(){ PLAN_ROZW = !PLAN_ROZW; renderHub(); }
 
+/* BŁĄD, który to zamyka: plan miał sztywną datę i porównanie `data >= today()`.
+   Jeśli nie poszedłeś i nie przełożyłeś — nazajutrz plan po prostu ZNIKAŁ
+   z ekranu. Nie było komunikatu, nie było błędu, po prostu pustka; wyglądało
+   to jak „aplikacja nic dziś nie proponuje". Zaległy plan przenosi się teraz
+   sam na dziś i mówi, ile dni czekał. */
+function przeterminowany(n){
+  if(!n || !n.cwiczenia || !n.data || n.data >= today()) return n;
+  if(DB.workouts.some(w => w.date >= n.data)) return null;   /* już odrobiony */
+  /* Przenosimy TYLKO plan, który przeze mnie przeszedł. Plan aplikacji nie ma
+     czego ratować — policzy się od nowa z tej samej historii i wyjdzie tak samo
+     albo lepiej, bo uwzględni dodatkowy dzień przerwy. Przenoszenie go zamrażało
+     ciężary: plan z wczoraj wchodził jako dzisiejszy i progresja stała w miejscu. */
+  if(!n.sprawdzony) return null;
+  const ile = Math.round((new Date(today()+'T00:00:00') -
+                          new Date(n.data+'T00:00:00')) / 864e5);
+  /* Powyżej trzech dni plan przestaje być „zaległy", a zaczyna być nieaktualny:
+     zmienia się tydzień, faza, a korekta ode mnie odnosi się do sytuacji,
+     której już nie ma. Wtedy lepiej policzyć od nowa niż podać stare liczby. */
+  if(ile > 3) return null;
+  return Object.assign({}, n, {data: today(), zalegly: ile,
+    uwagi: ['Ten trening czeka od '+plDate(n.data)+' ('+ile+' '+
+      (ile===1?'dzień':'dni')+'). Przeniosłem go na dziś — ciężary są te same, '+
+      'bo nic w międzyczasie nie zrobiłeś.'].concat(n.uwagi || [])});
+}
+
 function planDoPokazania(){
-  const n = DB.nastepny;
+  const n = przeterminowany(DB.nastepny);
   return (n && n.cwiczenia && n.data >= today()) ? zastosujGotowosc(n) : null;
 }
 
@@ -2406,11 +2566,16 @@ function wyjazdowySlot(slot){
 }
 
 function buildDay(day, phase, tydzien, bezGotowosci){
+  const zajete = [];
+  const wypadly = [];
   const lista = PLAN[day].slots.filter(s=>s.s[phase]>0).map(s0=>{
     const slot = wyjazdowySlot(s0);
-    const v = pickVariant(slot);
+    const v = pickVariant(slot, zajete);
+    if(!v){ wypadly.push(slot.lab); return null; }
+    zajete.push(v.name);
     return {slot, name:v.name, pick:v, sug:suggestLoad(v.name, slot, phase, tydzien)};
-  });
+  }).filter(Boolean);
+  lista.wypadly = wypadly;
   return bezGotowosci ? lista : dostosuj(lista, day);
 }
 
@@ -2955,7 +3120,7 @@ function startSession(day, withSug){
         ? {w:z.ciezar, r:z.powt, sets:z.serie, tag:z.tag||'hold', why:z.why||''}
         : (withSug ? it.sug : null);
       return {name: z ? z.name : it.name, slot:it.slot.id, lab:it.slot.lab,
-              target:it.slot.t[p], sets:[], sug:sug, pool: it.slot.pool||null};
+              target:celCwiczenia(it.name, it.slot, p, sug), sets:[], sug:sug, pool: it.slot.pool||null};
     })};
   if(gotowy) toast(gotowy.sprawdzony ? 'Plan sprawdzony przez trenera' : 'Plan z wczoraj');
   saveSes();
