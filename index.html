@@ -368,23 +368,9 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <div class="tip" id="phaseTip"></div>
     <div id="coachBox"></div>
 
-    <button class="hub sug" onclick="openSuggest()">
-      <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/><circle cx="12" cy="12" r="3.5"/></svg></div>
-      <div><div class="tt">Proponowany trening</div>
-        <div class="ss" id="hubSugSub">Sprawdź, co robić dziś i z jakim ciężarem</div></div>
-      <div class="ar">›</div>
-    </button>
-
-    <button class="hub" onclick="openPick()">
-      <div class="ic"><svg viewBox="0 0 24 24"><path d="M6.5 6.5h11v11h-11z"/><path d="M3 9v6M21 9v6M6.5 12h11"/></svg></div>
-      <div><div class="tt">Rozpocznij trening</div>
-        <div class="ss" id="hubStartSub">Wybierz dzień A / B / C / D sam</div></div>
-      <div class="ar">›</div>
-    </button>
-
     <button class="hub run" onclick="openRun()">
       <div class="ic"><svg viewBox="0 0 24 24"><circle cx="15" cy="4.5" r="2"/><path d="M12 21l1.5-5.5-3.5-3 1-5.5 3 2.5 3 1M8.5 13L7 15.5 4 16M13.5 15.5L16 19l1 2.5"/></svg></div>
-      <div><div class="tt">Bieganie</div>
+      <div><div class="tt">Bieganie, pływanie, SUP</div>
         <div class="ss" id="hubRunSub">Plan biegowy na ten tydzień</div></div>
       <div class="ar">›</div>
     </button>
@@ -812,9 +798,9 @@ const DOMYSLNA_LIB = {
                                   cue:'Jedna noga naraz wyrównuje różnice między stronami.'},
   'Good morning':                {inc:2.5, mus:{dwuglowe:1, prostowniki:.8, posladki:.6},
                                   cue:'Lżej niż w martwym rumuńskim — to ćwiczenie na wzorzec, nie na ciężar.'},
-  'Utrzymanie sztangi':          {inc:5, time:true, mus:{przedramie:1, plecy_gora:.3, brzuch:.3},
+  'Utrzymanie sztangi':          {inc:5, time:true, rr:[20,45], mus:{przedramie:1, plecy_gora:.3, brzuch:.3},
                                   cue:'Chwyt ogranicza martwy ciąg i wiosłowanie wcześniej niż plecy.'},
-  'Utrzymanie hantli':           {hantle:true, inc:2.5, time:true, mus:{przedramie:1, plecy_gora:.4, brzuch:.4},
+  'Utrzymanie hantli':           {hantle:true, inc:2.5, time:true, rr:[20,45], mus:{przedramie:1, plecy_gora:.4, brzuch:.4},
                                   cue:'Hantle po bokach, tułów napięty. Łatwiej odłożyć niż sztangę.'},
   'Wspięcia na palce stojąc':    {inc:5,   mus:{lydki_stoj:1}},
   'Wspięcia na palce siedząc':   {inc:2.5, mus:{lydki_sied:1},
@@ -834,7 +820,10 @@ const DOMYSLNA_LIB = {
                                   cue:'Wyjeżdżasz tak daleko, jak utrzymasz napięte pośladki i plecy bez wygięcia. Zakres rośnie z tygodniami.'},
   /* Stara nazwa zostaje, żeby wcześniejsze wpisy nadal się wyświetlały.
      Nie ma jej już w żadnej puli, więc nowe sesje jej nie zaproponują. */
-  'Plank / ab wheel':            {inc:0, time:true, mus:{brzuch:1}},
+  /* Pozostałość po czasach, gdy plank i ab wheel siedziały w jednej pozycji.
+     Zostaje wyłącznie po to, żeby stare wpisy w historii dało się odczytać;
+     `stare:true` trzyma je z dala od planowania. */
+  'Plank / ab wheel':            {inc:0, time:true, stare:true, mus:{brzuch:1}},
   'Unoszenie nóg w zwisie':      {inc:0, bw:true, rr:[8,15], mus:{brzuch:1}},
   'Allahy na wyciągu':           {inc:2.5, rr:[12,20], mus:{brzuch:1}}
 };
@@ -1147,7 +1136,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-06.6';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-06.10';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1831,13 +1820,20 @@ function zastepstwoDlaSlotu(slot, zajete){
   const cele = regionySlotu(slot);
   if(!cele.length) return null;
   const wyjazd = trybWyjazdowy();
+  /* Zastępstwo musi mierzyć się TĄ SAMĄ jednostką co slot. Bez tego chwyt
+     na czas („Utrzymanie sztangi") trafiał w slot powtórzeniowy i dostawał
+     „3×8" — osiem powtórzeń trzymania sztangi nic nie znaczy. Jednostkę
+     slotu bierzemy z jego własnej puli. */
+  const pulaSlotu = slot.fixed ? [slot.fixed] : (slot.pool || []);
+  const slotCzasowy = pulaSlotu.length && pulaSlotu.every(n => (LIB[n]||{}).time);
   const kand = Object.entries(LIB)
-    .filter(([n,L]) => !isSkipped(n) && L.mus)
+    .filter(([n,L]) => !isSkipped(n) && L.mus && !L.stare)
     /* Zastępstwo nie może powtarzać czegoś, co już jest w tym dniu — inaczej
        „ciąg pionowy dodatkowy" wychodził jako drugie podciąganie po pierwszym. */
     .filter(([n]) => !(zajete || []).includes(n))
     .filter(([n,L]) => cele.some(r => (L.mus[r] || 0) >= 0.5))
     .filter(([n,L]) => !wyjazd || L.bw)
+    .filter(([n,L]) => !!L.time === !!slotCzasowy || !!L.rr)
     .map(([n,L]) => {
       let sc = cele.reduce((a,r) => a + (L.mus[r] || 0), 0);
       /* przy równym trafieniu wolimy ćwiczenie prostsze sprzętowo */
@@ -1859,7 +1855,7 @@ function pickVariant(slot, zajete){
     /* Główny bój też można odznaczyć — i to nie jest przypadek brzegowy:
        na wyjeździe nie ma sztangi. Wcześniej `fixed` wracał zawsze, więc
        aplikacja proponowała przysiad ze sztangą komuś, kto nie ma sztangi. */
-    if(!isSkipped(slot.fixed))
+    if(!isSkipped(slot.fixed) && (zajete||[]).indexOf(slot.fixed) < 0)
       return {name:slot.fixed, why:'Główny bój — nie rotuje przez cały blok, bo to on mierzy Twoją progresję.', rot:'fixed'};
     const zf = zastepstwoDlaSlotu(slot, zajete);
     if(!zf) return null;
@@ -1869,7 +1865,13 @@ function pickVariant(slot, zajete){
       'do sztangi, historia boju czeka nietknięta.'});
   }
 
-  let pool = slot.pool.filter(n=>!isSkipped(n));
+  /* BŁĄD, który to zamyka: `zajete` sprawdzaliśmy tylko przy zastępstwach,
+     więc dwa sloty z zachodzącymi pulami spokojnie wybierały to samo ćwiczenie.
+     Na siłowni wychodziło „Ściąganie drążka" dwa razy w dniu D, a w trybie
+     wyjazdowym — cztery razy wiosłowanie australijskie w jednej sesji, bo pule
+     bez sprzętu są z natury wąskie i mocno się pokrywają. */
+  const juz = zajete || [];
+  let pool = slot.pool.filter(n => !isSkipped(n) && juz.indexOf(n) < 0);
 
   /* BŁĄD, który to zastępuje: gdy odznaczyłeś WSZYSTKIE warianty slotu,
      aplikacja wracała po cichu do pełnej puli i proponowała dokładnie to,
@@ -1877,10 +1879,13 @@ function pickVariant(slot, zajete){
      Teraz szukamy zastępstwa poza slotem — czegoś, co trafia w ten sam
      region i nie jest odznaczone. Dopiero gdy nic takiego nie ma, slot
      wypada z dnia, i to widocznie. */
+
+  /* Gdy po odsianiu powtórek nie zostało nic, szukamy zastępstwa poza slotem —
+     a dopiero gdy i tego nie ma, slot wypada. Powtórzone ćwiczenie jest gorsze
+     niż krótszy trening: te same mięśnie dostają podwójną dawkę, a inne zero. */
   if(!pool.length){
-    const z = zastepstwoDlaSlotu(slot, zajete);
-    if(!z) return null;
-    return z;
+    const zz = zastepstwoDlaSlotu(slot, juz);
+    return zz || null;
   }
 
   const hist = slotHistory(slot.id);
@@ -1991,7 +1996,12 @@ function suggestLoad(name, slot, phase, tydzien){
   /* W deloadzie patrzymy na tygodnie sprzed niego, żeby liczyć od pełnego
      ciężaru. Poza deloadem pomijamy tygodnie deloadowe, żeby lekki tydzień
      nie cofał progresji całego bloku. */
-  const last = lastFor(name, !deload);
+  /* Poza deloadem pomijamy tygodnie deloadowe, żeby lekki tydzień nie cofał
+     progresji. Ale jeśli CAŁA historia ćwiczenia pochodzi z deloadu — bo
+     akurat wtedy je robiłeś — to odfiltrowanie zostawia pustkę i silnik mówi
+     „pierwszy raz, dobierz ciężar", choć doskonale wie, ile podniosłeś.
+     Dlatego przy pustym wyniku wracamy do pełnej historii. */
+  const last = lastFor(name, !deload) || lastFor(name, false);
   const unit = L.time ? 's' : 'powt';
 
   if(!last) return {w:null, r:mn, sets, tag:'new',
@@ -2021,7 +2031,11 @@ function suggestLoad(name, slot, phase, tydzien){
                               new Date(naprawde.date+'T00:00:00')) / 864e5);
   const pr = przerwaSkala(przerwa);
   if(pr){
-    const wTop0 = Math.max(...last.sets.map(s=>s.w||0));
+    /* Ciężar bazowy bierzemy z TEJ SAMEJ sesji, od której liczymy przerwę.
+       Wcześniej przerwa liczyła się od ostatniego treningu, a kilogramy
+       od ostatniego treningu POZA deloadem — i po miesiącu przerwy aplikacja
+       potrafiła zaproponować więcej, niż podniosłeś ostatnim razem. */
+    const wTop0 = Math.max(...naprawde.sets.map(s=>s.w||0));
     if(L.time)
       return {w:wTop0, r:mn, sets, tag:'down', przerwa,
         why:'Przerwa '+przerwa+' dni w tym ćwiczeniu. Wracasz do '+mn+' s zamiast gonić poprzedni wynik.'};
@@ -2341,6 +2355,48 @@ function brakiDnia(){
 }
 
 /* Trzeci przycisk obok „zacznij trening": przełóż. */
+/* Ekran główny odpowiadał na pytanie „co się dzieje", a powinien odpowiadać
+   na „co robię teraz". Ten kafelek jest tą odpowiedzią i stoi najwyżej:
+   dzień, gotowość, jeden duży przycisk. Reszta to kontekst. */
+function renderDzis(){
+  const zrobiony = DB.workouts.find(w => w.date === today());
+  const gp = planDoPokazania();
+  const s = suggestNext();
+  const g = gotowosc();
+  const dz = DB.daily.find(x => x.date === today()) || {};
+  const maOdp = dz.samopoczucie != null;
+
+  if(zrobiony)
+    return '<div class="tip ok"><b>Dziś zrobione: '+zrobiony.day+' — '+esc(dayName2(zrobiony.day))+'</b>'+
+      '<div class="hm" style="margin-top:3px">'+setCount(zrobiony)+' serii · '+
+      Math.round(vol(zrobiony)).toLocaleString('pl')+' kg objętości</div>'+
+      '<button class="btn ghost sm" style="margin-top:9px" onclick="openTrening(\''+zrobiony.id+'\')">Zobacz raport</button></div>';
+
+  if((DB.odpoczynek||[]).some(x => x.date === today()))
+    return '<div class="tip"><b>Dzień wolny</b><div class="hm" style="margin-top:3px">'+
+      'Plan czeka na Twój następny dzień treningowy.</div>'+
+      '<button class="btn ghost sm" style="margin-top:9px" onclick="openSuggest()">I tak pokaż plan</button></div>';
+
+  const dzien = gp ? gp.dzien : s.day;
+  if(!dzien) return '<div class="tip"><b>Dziś odpoczynek</b><div class="hm" style="margin-top:3px">'+
+    esc((s.why||[])[0]||'')+'</div></div>';
+
+  const ile = gp ? gp.cwiczenia.length : 0;
+  const stan = !maOdp ? '' : g.pkt>=85 ? ' ok' : g.pkt>=55 ? ' warn' : ' bad';
+  return '<div class="tip'+stan+'">'+
+    '<b style="font-size:16px">'+dzien+' — '+esc(dayName2(dzien))+'</b>'+
+    (gp ? '<span class="autor '+(gp.sprawdzony?'trener':'apka')+'" style="float:right">'+
+          (gp.sprawdzony?'TRENER':'APLIKACJA')+'</span>' : '')+
+    '<div class="hm" style="margin-top:4px">'+
+      (ile ? ile+' ćwiczeń' : 'plan policzy się przy starcie')+
+      (maOdp ? ' · gotowość '+g.pkt+'/100' : ' · <b>odpowiedz na dwa pytania niżej</b>')+
+      (gp && gp.zalegly ? ' · czeka od '+gp.zalegly+' dni' : '')+'</div>'+
+    '<div style="display:flex;gap:8px;margin-top:11px">'+
+    '<button class="btn" style="flex:2" onclick="openSuggest()">Zacznij trening</button>'+
+    '<button class="btn ghost" style="flex:1" onclick="openPick()">Inny dzień</button>'+
+    '</div></div>';
+}
+
 function renderPrzeloz(){
   const n = DB.nastepny;
   if(!n || n.data !== today() || DB.workouts.some(w => w.date === today())) return '';
@@ -2380,11 +2436,26 @@ function renderBraki(){
     'Inaczej ocenię dzień na niepełnych liczbach, a Ty dopiszesz je po fakcie.</div></div>';
 }
 
+let PORANNE_ROZW = false;
+function przelaczPoranne(){ PORANNE_ROZW = !PORANNE_ROZW; renderSub(); }
+
 function renderPoranne(){
   const d = DB.daily.find(x => x.date === today()) || {};
   const z = d.zakwasy || {};
   const g = gotowosc();
   const odp = d.samopoczucie != null;
+
+  /* Po odpowiedzi kafelek zwija się do jednej linijki. Trzy rzędy przycisków
+     na górze ekranu przez cały dzień to nie jest pytanie — to tapeta, przez
+     którą trzeba przewinąć do rzeczy, po którą naprawdę otworzyłeś aplikację. */
+  if(odp && !PORANNE_ROZW){
+    const stan = g.pkt>=85?'ok':g.pkt>=55?'warn':'bad';
+    const zak = [z.nogi?'nogi':'', z.gora?'góra':''].filter(Boolean).join(', ');
+    return '<div class="tip '+stan+'" onclick="przelaczPoranne()" style="cursor:pointer;'+
+      '-webkit-tap-highlight-color:transparent"><b>Gotowość '+g.pkt+'/100</b>'+
+      (zak?' · zakwasy: '+zak:'')+(d.upal>=2?' · gorąco':'')+
+      '<span style="float:right;opacity:.6">zmień ›</span></div>';
+  }
 
   const rzad = (etykieta, gdzie) =>
     '<div class="fld" style="margin-top:9px"><label>'+etykieta+'</label><div class="rpe">'+
@@ -2394,6 +2465,7 @@ function renderPoranne(){
 
   return '<div class="tip'+(odp ? (g.pkt>=85?' ok':g.pkt>=55?' warn':' bad') : '')+'">'+
     '<b>Jak się dziś czujesz?</b>'+
+    (odp?'<span style="float:right;opacity:.6;cursor:pointer" onclick="przelaczPoranne()">zwiń ›</span>':'')+
     (odp ? ' · gotowość '+g.pkt+'/100' : ' — dwa dotknięcia, a plan się dostosuje')+
     '<div class="rpe" style="margin-top:7px">'+
       [[1,'słabo'],[2,'średnio'],[3,'ok'],[4,'dobrze'],[5,'świetnie']].map(([v,n]) =>
@@ -2996,7 +3068,11 @@ function renderHub(){
   document.getElementById('coachBox').innerHTML =
     (trybWyjazdowy() ? '<div class="tip warn"><b>Tryb wyjazdowy</b> — plan z masy własnej, '+
       'bez sprzętu. Wyłączysz w Dzienniku → Tryb wyjazdowy.</div>' : '') +
-    syncBox + renderPoranne() + renderBraki() + resume + planBox + renderKolejne() + renderPrzeloz() + coach + odpBox + czekaBox;
+    /* Kolejność jest teraz według pilności, nie według historii dopisywania:
+       najpierw to, co robisz teraz, potem to, czego aplikacja od Ciebie chce,
+       potem kontekst, na końcu sprawy techniczne. */
+    resume + renderDzis() + renderPoranne() + renderBraki() + coach +
+    planBox + renderKolejne() + odpBox + czekaBox + renderPrzeloz() + syncBox;
 }
 
 /* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
@@ -3301,12 +3377,22 @@ function renderSession(){
   SES.exercises.forEach((e,i)=>{ if(e._open) odswiezTalerze(i); });
 }
 /* podpowiedź „co założyć na sztangę" pod polem ciężaru */
+/* Czy to w ogole sztanga. Maszyny i wyciagi maja wlasne stosy, hantle sa
+   parami — w obu przypadkach rozklad na talerze jest bez znaczenia. */
+function sztangowe(name){
+  if(/hantl|maszyn|wyciąg|Brama|Ściąganie|Face pull|Dipy|Podciąganie|masa własna|Plank|Ab wheel/i.test(name)) return false;
+  return /sztang|Wyciskanie leżąc|Przysiad ze sztangą|Martwy ciąg|Good morning|Hip thrust|Wyciskanie żołnierskie|Francuskie|Uginanie ramion|Wykroki|Wypychanie|Hack/i.test(name);
+}
+
 function odswiezTalerze(i){
   const box=document.getElementById('plt'+i), inp=document.getElementById('iw'+i);
   if(!box||!inp) return;
   const e=SES.exercises[i], L=LIB[e.name]||{};
   const w=parseFloat(inp.value)||0;
-  if(L.bw||L.time||w<20){ box.innerHTML=''; return; }
+  /* Talerze maja sens tylko przy sztandze. Wczesniej warunkiem bylo samo
+     "w >= 20", wiec przy 30 kg hantlu albo maszynie aplikacja tlumaczyla,
+     jak to zlozyc z talerzy 25 + 2,5 na strone. Bez sensu i mylace. */
+  if(L.bw || L.time || L.hantle || !sztangowe(e.name) || w < 20){ box.innerHTML=''; return; }
   const t=platesTxt(w);
   box.innerHTML = t===null
     ? '<span class="warn">'+fmtKg(w)+' kg nie złożysz ze standardowych talerzy</span>'
@@ -3746,10 +3832,14 @@ function renderHist(){
   const punkty=h0.slice().reverse().map(x=>({v:e1rm(bestSet(x.sets)), d:x.date}));
   if(punkty.length>1){
     const p0=punkty[0].v, p1=punkty[punkty.length-1].v;
-    const zm=Math.round((p1/p0-1)*100);
+    /* Przy masie własnej bez obciążenia szacowany 1RM wychodzi zero, więc
+       procent zmiany był dzieleniem przez zero — na ekranie pokazywało się
+       „NaN%". Bez punktu odniesienia po prostu nie pokazujemy procentu. */
+    const zm = p0 > 0 ? Math.round((p1/p0-1)*100) : null;
     h+='<div class="card"><div class="chdr">'+
        (L.time?'Najdłuższa seria':'Szacowany 1RM')+
-       '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+zm+'%</span></div>'+
+       (zm==null ? '<span class="hm">masa własna — patrz na powtórzenia</span>'
+                 : '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+zm+'%</span>')+'</div>'+
        sparkline(punkty,'#4a9eff')+
        '<div class="cfoot"><span>'+plDate(punkty[0].d)+'</span>'+
        '<span>'+plDate(punkty[punkty.length-1].d)+'</span></div></div>';
@@ -4547,9 +4637,10 @@ function renderTrendy(){
     const h0=historia(name);
     if(h0.length<2) return;
     const pkt=h0.slice().reverse().map(x=>({v:e1rm(bestSet(x.sets)), d:x.date}));
-    const zm=Math.round((pkt[pkt.length-1].v/pkt[0].v-1)*100);
+    const zm = pkt[0].v > 0 ? Math.round((pkt[pkt.length-1].v/pkt[0].v-1)*100) : null;
     bloki+='<div class="card"><div class="chdr">'+esc(name)+
-      '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+zm+'%</span></div>'+
+      (zm==null ? '<span class="hm">masa własna</span>'
+                : '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+zm+'%</span>')+'</div>'+
       sparkline(pkt,'#4a9eff')+
       '<div class="cfoot"><span>'+fmtKg(pkt[0].v)+' kg</span>'+
       '<span>'+fmtKg(pkt[pkt.length-1].v)+' kg · szacowany 1RM</span></div></div>';
