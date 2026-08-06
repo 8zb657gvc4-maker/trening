@@ -1252,7 +1252,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '15';
+const WERSJA = '16';
 const WERSJA_DATA = '2026-08-06';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -5088,7 +5088,7 @@ function md(tekst){
   let src = String(tekst);
 
   /* 1. Znaczniki grafik są dla generatora PDF — w telefonie nie mają
-        czego zastąpić, więc znikają zamiast straszyć jako {{mapa}}. */
+        czego zastąpić, więc znikają zamiast straszyć surowym znacznikiem. */
   src = src.replace(/\{\{\s*\w+\s*\}\}/g, '');
 
   /* 2. Kafle ze statystykami przepisujemy na własny, czytelny wiersz,
