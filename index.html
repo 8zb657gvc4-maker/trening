@@ -326,6 +326,10 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .dayin .fld label{min-height:13px}
 .mono{font-variant-numeric:tabular-nums}
 .rpe{display:flex;gap:5px;margin-top:5px}
+.autor{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.06em;
+  padding:1px 5px;border-radius:4px;vertical-align:middle;text-transform:uppercase}
+.autor.trener{background:var(--ok);color:#06210f}
+.autor.apka{background:var(--line);color:var(--dim)}
 .rpeb{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:11px;
   padding:9px 0 7px;color:var(--dim);display:flex;flex-direction:column;align-items:center;
   gap:1px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:.12s}
@@ -972,7 +976,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-06.2';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-06.3';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1161,7 +1165,9 @@ async function srvPull(cicho){
        już odrobiony? Jeśli istnieje trening z dnia planu lub późniejszy — tak. */
     const planOdbyty = t.nastepny && DB.workouts.some(w => w.date >= t.nastepny.data);
     if(t.nastepny && t.nastepny.cwiczenia && t.nastepny.data >= today() && !planOdbyty){
-      DB.nastepny = Object.assign({}, t.nastepny, {sprawdzony:true});
+      DB.nastepny = Object.assign({}, t.nastepny, {sprawdzony:true,
+        sprawdzonyKiedy: t.nastepny.utworzony || new Date().toISOString(),
+        korektaPrzyjeta:false, korektaOdrzucona:false});
       zmiany.push('plan na jutro');
     }
     if(t.plan && !walidujPlan(t.plan).length){
@@ -1781,23 +1787,57 @@ function zastosujGotowosc(n){
   const ile   = pkt >= 80 ? n.cwiczenia.length : pkt >= 60 ? 4 : 3;
   const sufit = pkt >= 80 ? 7 : pkt >= 60 ? 6 : 5;
 
-  const cw = n.cwiczenia.slice(0, Math.max(3, ile)).map(c => {
-    const w = c.ciezar ? Math.max(2.5, Math.round(c.ciezar * skala / 2.5) * 2.5) : c.ciezar;
-    if(w === c.ciezar) return c;
-    return Object.assign({}, c, {ciezar: w, ciezarPlan: c.ciezar, tag: 'down',
-      why: 'Gotowość ' + pkt + '/100 — ' + fmtKg(c.ciezar) + ' → ' + fmtKg(w) +
-           ' kg. ' + (c.why || '')});
-  });
-
   const powody = g.powody.map(x => x[1]);
   if(dms >= 2) powody.push('Zakwasy w partii, którą dziś trenujesz');
+  const opis = 'Gotowość ' + pkt + '/100' +
+    (powody.length ? ' — ' + powody.join('; ') : '') + '.';
 
-  return Object.assign({}, n, {cwiczenia: cw, gotowosc: pkt, sufitRpe: sufit,
-    uwagi: ['Gotowość ' + pkt + '/100' +
-      (cw.length < n.cwiczenia.length ? ', sesja skrócona do ' + cw.length + ' ćwiczeń' : '') +
-      ', sufit RPE ' + sufit + '.' +
-      (powody.length ? ' Powód: ' + powody.join('; ') + '.' : '') +
-      ' Boje zostają, cięte są tylko dodatki.'].concat(n.uwagi || [])});
+  /* Plan przejrzany przeze mnie NIE zmienia się sam. Powód jest prosty:
+     mogłeś wpisać sen i HRV dopiero po naszej rozmowie, a wtedy aplikacja
+     po cichu nadpisałaby moje decyzje i trenowałbyś nie tym, co ustaliliśmy.
+     Więc gdy plan jest sprawdzony, korekta jest tylko propozycją z guzikiem. */
+  if(n.sprawdzony && n.korektaOdrzucona) return n;
+  if(n.sprawdzony && !n.korektaPrzyjeta)
+    return Object.assign({}, n, {propozycja: {pkt, sufit, ile, skala, opis,
+      tnie: Math.max(0, n.cwiczenia.length - Math.max(3, ile))}});
+
+  return Object.assign({}, n, zetnij(n, pkt, skala, ile, sufit, opis),
+    {gotowosc: pkt, sufitRpe: sufit, korekta: true});
+}
+
+/* Wspólne cięcie — jedno miejsce, żeby ścieżka automatyczna i ta z guzika
+   nie rozjechały się przy pierwszej poprawce. Pozycje ode mnie (tag 'coach')
+   nigdy nie wypadają i nigdy nie tracą swojego znacznika. */
+function zetnij(n, pkt, skala, ile, sufit, opis){
+  const limit = Math.max(3, ile);
+  const cw = n.cwiczenia.filter((c, i) => i < limit || c.tag === 'coach').map(c => {
+    const w = c.ciezar ? Math.max(2.5, Math.round(c.ciezar * skala / 2.5) * 2.5) : c.ciezar;
+    if(w === c.ciezar) return c;
+    return Object.assign({}, c, {ciezar: w, ciezarPlan: c.ciezar,
+      zmiana: 'gotowosc',
+      why: (c.tag === 'coach' ? 'Trener ustawił ' : 'Planowane ') + fmtKg(c.ciezar) +
+           ' kg, aplikacja zeszła do ' + fmtKg(w) + ' kg. ' + opis +
+           (c.why ? ' ' + c.why : '')});
+  });
+  return {cwiczenia: cw, uwagi: [opis +
+    (cw.length < n.cwiczenia.length ? ' Sesja skrócona do ' + cw.length + ' ćwiczeń.' : '') +
+    ' Sufit RPE ' + sufit + '. Boje zostają, cięte są tylko dodatki.'].concat(n.uwagi || [])};
+}
+
+/* Guzik pod propozycją — świadoma zgoda zamiast cichej podmiany. */
+function przyjmijKorekte(){
+  const n = DB.nastepny;
+  if(!n) return;
+  n.korektaPrzyjeta = true;
+  save(); zsynchronizuj(); renderSub();
+  toast('Korekta zastosowana');
+}
+function odrzucKorekte(){
+  const n = DB.nastepny;
+  if(!n) return;
+  n.korektaOdrzucona = true;
+  save(); zsynchronizuj(); renderSub();
+  toast('Zostajesz przy planie trenera');
 }
 
 function planNaDzis(day){
@@ -1834,6 +1874,29 @@ function wpisDnia(){
   return d;
 }
 
+/* Czego mi brakuje, żeby ocena była uczciwa. Bez tego zdarza się, że
+   przychodzisz po raport, ja liczę na niepełnych danych, a Ty dopisujesz
+   sen dopiero potem — i wychodzą dwie różne prawdy o tym samym dniu. */
+function brakiDnia(){
+  const d = DB.daily.find(x => x.date === today()) || {};
+  const b = [];
+  if(d.sleep == null) b.push('sen');
+  if(d.hrv == null) b.push('HRV');
+  if(d.bb == null) b.push('Body Battery');
+  if(d.samopoczucie == null) b.push('samopoczucie');
+  if(!d.zakwasy || (!d.zakwasy.nogi && !d.zakwasy.gora && d.zakwasyOdp !== true))
+    b.push('zakwasy');
+  return b;
+}
+
+function renderBraki(){
+  const b = brakiDnia();
+  if(!b.length) return '';
+  return '<div class="tip warn"><b>Brakuje danych z dziś: '+esc(b.join(', '))+'</b>'+
+    '<div class="note" style="margin-top:4px">Uzupełnij, zanim poprosisz mnie o raport. '+
+    'Inaczej ocenię dzień na niepełnych liczbach, a Ty dopiszesz je po fakcie.</div></div>';
+}
+
 function renderPoranne(){
   const d = DB.daily.find(x => x.date === today()) || {};
   const z = d.zakwasy || {};
@@ -1862,6 +1925,21 @@ function renderPoranne(){
       ? '<div class="note" style="margin-top:6px"><b>Plan na dziś został dostosowany</b> — '+
         'zobacz ciężary w propozycji treningu.</div>' : '')+
     '</div>';
+}
+
+function propozycjaBox(p){
+  return '<div class="tip warn" style="margin-top:10px" onclick="event.stopPropagation()">'+
+    '<b>Aplikacja proponuje zmianę</b><br>'+esc(p.opis)+'<br>'+
+    'Zeszłaby o '+Math.round((1-p.skala)*100)+'% na ciężarach'+
+    (p.tnie ? ' i wycięła '+p.tnie+' '+(p.tnie===1?'ćwiczenie':'ćwiczenia') : '')+
+    ', sufit RPE '+p.sufit+'.'+
+    '<div class="note" style="margin-top:6px">Ten plan przeszedł przeze mnie, więc nic nie '+
+    'zmieni się bez Twojej zgody. Jeśli dane o śnie wpisałeś dopiero po naszej rozmowie, '+
+    'przyjmij korektę. Jeśli rozmawialiśmy już po nich — zostań przy planie.</div>'+
+    '<div style="display:flex;gap:8px;margin-top:9px">'+
+    '<button class="btn" onclick="przyjmijKorekte()">Przyjmij korektę</button>'+
+    '<button class="btn ghost" onclick="odrzucKorekte()">Zostaw plan trenera</button>'+
+    '</div></div>';
 }
 
 let PLAN_ROZW = false;
@@ -2220,18 +2298,31 @@ function renderHub(){
       'style="cursor:pointer;-webkit-tap-highlight-color:transparent">'+
       '<b>Plan na dzień '+gp.dzien+'</b>'+
       (naDzis ? ' · na dziś' : ' · na '+plDate(gp.data))+
-      (gp.sprawdzony?' · sprawdzony przez trenera':' · czeka na sprawdzenie')+
+      '<span class="autor '+(gp.sprawdzony?'trener':'apka')+'">'+
+        (gp.sprawdzony?'TRENER':'APLIKACJA')+'</span>'+
       '<span style="float:right;opacity:.6">'+(PLAN_ROZW?'▴':'▾')+'</span><br>';
     if(PLAN_ROZW){
-      planBox += '<div style="margin-top:8px">'+ gp.cwiczenia.map(c=>
-        '<div style="margin:7px 0;padding-left:9px;border-left:2px solid var(--line)">'+
-        '<b>'+esc(c.name)+'</b> — '+c.serie+' × '+c.powt+
+      planBox += '<div style="margin-top:8px">'+
+        (gp.sprawdzony
+          ? '<div class="note" style="margin-bottom:8px">Plan przejrzany przeze mnie '+
+            (gp.sprawdzonyKiedy?plDate(gp.sprawdzonyKiedy.slice(0,10))+', ':'')+
+            'na podstawie danych, które wtedy miałem. Aplikacja sama go nie zmieni — '+
+            'jeśli coś dopisałeś później, zaproponuje zmianę i poczeka na Twoją zgodę.</div>'
+          : '<div class="note" style="margin-bottom:8px">Ten plan ułożyła aplikacja i nikt go '+
+            'jeszcze nie sprawdził. Patrz na ciężary uważniej niż zwykle.</div>')+
+        gp.cwiczenia.map(c=>
+        '<div style="margin:7px 0;padding-left:9px;border-left:2px solid '+
+        (c.tag==='coach'?'var(--ok)':'var(--line)')+'">'+
+        '<b>'+esc(c.name)+'</b> '+
+        '<span class="autor '+(c.tag==='coach'?'trener':'apka')+'">'+
+        (c.tag==='coach'?'trener':'apka')+'</span> — '+c.serie+' × '+c.powt+
         (c.ciezar!=null && c.ciezar!==0 ? ' @ '+fmtKg(c.ciezar)+' kg'
           : (c.ciezar===0 ? ' (masa własna)' : ' <span class="warn">dobierz ciężar</span>'))+
         (c.why?'<div class="note" style="margin-top:2px">'+esc(c.why)+'</div>':'')+
         '</div>').join('') +
         (gp.uwagi && gp.uwagi.length
           ? '<div class="note" style="margin-top:9px">'+gp.uwagi.map(esc).join('<br>')+'</div>' : '')+
+        (gp.propozycja ? propozycjaBox(gp.propozycja) : '')+
         '</div>';
     } else {
       planBox += esc(gp.cwiczenia.slice(0,3).map(c=>
@@ -2253,7 +2344,7 @@ function renderHub(){
         'Wejdź w Dane → Synchronizuj teraz.</div>' : '';
 
   document.getElementById('coachBox').innerHTML =
-    syncBox + renderPoranne() + resume + planBox + coach + odpBox + czekaBox;
+    syncBox + renderPoranne() + renderBraki() + resume + planBox + coach + odpBox + czekaBox;
 }
 
 /* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
@@ -2763,7 +2854,20 @@ function raportSesji(w){
   const doUpadku = rpe.filter(x => x >= 10).length;
   const dz = DB.daily.find(x => x.date === w.date) || {};
 
-  let h = '<h2>Raport z sesji</h2>';
+  const n = DB.nastepny;
+  const czyjPlan = (n && n.data === w.date)
+    ? (n.sprawdzony
+        ? (n.korektaPrzyjeta
+            ? 'Plan trenera z przyjętą korektą aplikacji'
+            : n.korektaOdrzucona ? 'Plan trenera, korekta aplikacji odrzucona'
+                                 : 'Plan trenera, bez zmian aplikacji')
+        : (n.korekta ? 'Plan aplikacji, skorygowany o gotowość ' + n.gotowosc + '/100'
+                     : 'Plan aplikacji, niesprawdzony przeze mnie'))
+    : null;
+
+  let h = '<h2>Raport z sesji</h2>' + (czyjPlan
+    ? '<div class="tip"><span class="autor '+(n.sprawdzony?'trener':'apka')+'">'+
+      (n.sprawdzony?'TRENER':'APLIKACJA')+'</span> '+esc(czyjPlan)+'</div>' : '');
 
   /* --- w zakresie czy nie, ćwiczenie po ćwiczeniu --- */
   const wiersze = w.exercises.map(e => {
