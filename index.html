@@ -609,6 +609,8 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   </div>
   <h2>Statystyki</h2>
   <div class="card" id="stats"></div>
+  <h2>Kopia awaryjna</h2>
+  <div class="card" id="kopieBox"></div>
   <h2>Kosz</h2>
   <div class="card" id="koszBox"></div>
   <h2 style="color:var(--bad)">Strefa zagrożenia</h2>
@@ -1137,7 +1139,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-06.4';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-06.5';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1410,8 +1412,83 @@ function mergeDB(a, b){
   out.v = 4;
   return out;
 }
+/* ============================================================
+   KOPIA AWARYJNA
+   Do tej pory zapis szedł w jedno miejsce. Kopie były dwie — na serwerze
+   i w cotygodniowym archiwum na Macu — ale obie wymagają, żeby coś zadziałało:
+   sieć albo włączony laptop. Za granicą nie ma ani jednego, ani drugiego.
+
+   Trzy migawki pod osobnym kluczem, robione nie częściej niż raz na dobę.
+   Osobny klucz, bo najczęstsza awaria to nie zniknięcie pamięci, tylko
+   nadpisanie jej czymś zepsutym — i wtedy sąsiedni wpis wciąż jest cały.
+   Zajmuje ułamek limitu, a ratuje jedyną rzecz w tej aplikacji, której nie
+   odtworzysz z niczego innego: historię treningów.
+   ============================================================ */
+const KOPIEKEY = KEY + '-kopie';
+
+function kopieWczytaj(){
+  try { const k = JSON.parse(localStorage.getItem(KOPIEKEY) || '[]');
+        return Array.isArray(k) ? k : []; } catch(e){ return []; }
+}
+
+function kopiaZrob(){
+  if(!DB.workouts || !DB.workouts.length) return;
+  const k = kopieWczytaj();
+  const teraz = new Date().toISOString();
+  if(k.length && k[0].kiedy.slice(0,10) === teraz.slice(0,10)) return;  /* raz na dobę */
+  k.unshift({kiedy: teraz, treningi: DB.workouts.length, stan: JSON.stringify(DB)});
+  try { localStorage.setItem(KOPIEKEY, JSON.stringify(k.slice(0, 3))); }
+  catch(e){
+    /* Brak miejsca na kopie nie może wywrócić zapisu głównego — lepiej
+       mieć dwie kopie niż stracić bieżący trening. */
+    try { localStorage.setItem(KOPIEKEY, JSON.stringify(k.slice(0, 1))); } catch(e2){}
+  }
+}
+
+function kopiaPrzywroc(i){
+  const k = kopieWczytaj()[i];
+  if(!k) return;
+  let stan;
+  try { stan = JSON.parse(k.stan); } catch(e){ toast('Kopia uszkodzona'); return; }
+  if(!stan || !Array.isArray(stan.workouts)){ toast('Kopia nie wygląda na stan aplikacji'); return; }
+  if(!confirm('Przywrócić stan z '+plDate(k.kiedy.slice(0,10))+'?\n\n'+
+    k.treningi+' treningów zamiast obecnych '+DB.workouts.length+'.\n\n'+
+    'Obecny stan trafi do kopii, więc da się wrócić.')) return;
+  kopiaZrobWymuszona();
+  /* Zapisujemy surowy stan i przepuszczamy go przez load() — tam siedzą
+     wszystkie uzupełnienia brakujących pól i migracje. Powtarzanie ich tutaj
+     znaczyłoby dwa miejsca, które muszą się zgadzać, a nigdy się nie zgadzają. */
+  try { localStorage.setItem(KEY, k.stan); } catch(e){ toast('Brak miejsca'); return; }
+  load();
+  save(); zsynchronizuj(); renderSub();
+  toast('Przywrócono stan z '+plDate(k.kiedy.slice(0,10)));
+}
+
+function kopiaZrobWymuszona(){
+  const k = kopieWczytaj();
+  k.unshift({kiedy: new Date().toISOString(), treningi: (DB.workouts||[]).length,
+             stan: JSON.stringify(DB), reczna: true});
+  try { localStorage.setItem(KOPIEKEY, JSON.stringify(k.slice(0, 3))); } catch(e){}
+}
+
+function renderKopie(){
+  const k = kopieWczytaj();
+  const el = document.getElementById('kopieBox');
+  if(!el) return;
+  el.innerHTML = (k.length
+    ? k.map((x,i) => '<div class="hist"><div><div class="hd">'+plDate(x.kiedy.slice(0,10))+
+        (x.reczna?' · ręczna':'')+'</div><div class="hm">'+x.treningi+' treningów · '+
+        Math.round(x.stan.length/1024)+' kB</div></div>'+
+        '<button class="btn ghost sm" onclick="kopiaPrzywroc('+i+')">Przywróć</button></div>').join('')
+    : '<div class="empty">Kopia zrobi się przy pierwszym zapisie po treningu.</div>')+
+    '<button class="btn ghost sm" style="margin-top:10px" onclick="kopiaZrobWymuszona();renderKopie();toast(\'Kopia zrobiona\')">Zrób kopię teraz</button>'+
+    '<div class="note" style="margin-top:8px">Trzy migawki w pamięci telefonu, jedna na dobę. '+
+    'Działają bez sieci i bez laptopa. Nie zastępują eksportu — jeśli skasujesz aplikację, '+
+    'znikną razem z nią.</div>';
+}
+
 function save(){
-  try{ localStorage.setItem(KEY, JSON.stringify(DB)); }
+  try{ localStorage.setItem(KEY, JSON.stringify(DB)); kopiaZrob(); }
   catch(e){ toast('Błąd zapisu — brak miejsca?'); }
 }
 
@@ -1796,6 +1873,16 @@ function nadpisanieAktywne(name){
 /* ============================================================
    PROPOZYCJA OBCIĄŻENIA — podwójna progresja + autoregulacja RPE
    ============================================================ */
+/* Ile zdjąć po przerwie. null = przerwa na tyle krótka, że nic nie zmieniamy. */
+function przerwaSkala(dni){
+  if(dni < 10)  return null;
+  if(dni < 15)  return {s:0.95, why:'Dziesięć dni to jeszcze nie utrata siły — pięć procent w dół wystarczy, żeby pierwsza seria nie zaskoczyła.'};
+  if(dni < 22)  return {s:0.90, why:'Po dwóch tygodniach wraca głównie wprawa, nie mięśnie. Dziesięć procent w dół i za dwie–trzy sesje jesteś z powrotem.'};
+  if(dni < 32)  return {s:0.85, why:'Trzy–cztery tygodnie to już realny spadek. Piętnaście procent w dół, pierwsza sesja ma być rozbiegiem.'};
+  if(dni < 60)  return {s:0.75, why:'Ponad miesiąc przerwy. Ćwierć w dół i dwa tygodnie na odbudowę wzorca ruchu, zanim znowu zaczniesz dokładać.'};
+  return {s:0.65, why:'Dwa miesiące i więcej. Traktuj to jak wejście od nowa — technika najpierw, ciężar potem. Wróci szybciej, niż myślisz.'};
+}
+
 function suggestLoad(name, slot, phase, tydzien){
   const sets = serieSlotu(slot, phase, tydzien);
   /* Slot ma jeden zakres powtórzeń dla całej puli, co przestaje działać, gdy
@@ -1824,6 +1911,39 @@ function suggestLoad(name, slot, phase, tydzien){
 
   if(!last) return {w:null, r:mn, sets, tag:'new',
     why:'Pierwszy raz w tym planie. Dobierz ciężar tak, żeby po '+mn+' '+unit+' zostały jeszcze 3–4 w zapasie.'};
+
+  /* ---- POWRÓT PO PRZERWIE ----
+     Do tej pory silnik brał ostatnią sesję niezależnie od tego, czy była
+     wczoraj, czy trzy tygodnie temu — więc po wyjeździe proponował ciężar
+     sprzed wyjazdu, jakby nic się nie stało.
+
+     Skala jest liczona osobno dla każdego ćwiczenia, a nie dla całego planu.
+     To ma znaczenie na wyjeździe: wracasz do wyciskania po dwóch tygodniach,
+     ale pompki robiłeś przedwczoraj — i tylko wyciskanie ma zejść niżej.
+
+     Liczby biorą się z tego, jak faktycznie wygląda utrata siły: do dwóch
+     tygodni jest ona minimalna i wystarczy nie dokładać. Wyraźny spadek
+     zaczyna się po trzech–czterech tygodniach, i to bardziej z powodu utraty
+     wprawy nerwowo-mięśniowej niż samych mięśni — dlatego siła wraca dużo
+     szybciej, niż odchodziła. Pierwsza sesja po przerwie ma być rozbiegiem,
+     nie sprawdzianem. */
+  const przerwa = Math.round((new Date(today()+'T00:00:00') -
+                              new Date(last.date+'T00:00:00')) / 864e5);
+  const pr = przerwaSkala(przerwa);
+  if(pr){
+    const wTop0 = Math.max(...last.sets.map(s=>s.w||0));
+    if(L.time)
+      return {w:wTop0, r:mn, sets, tag:'down', przerwa,
+        why:'Przerwa '+przerwa+' dni w tym ćwiczeniu. Wracasz do '+mn+' s zamiast gonić poprzedni wynik.'};
+    if(!wTop0)
+      return {w:0, r:Math.max(mn, Math.round(Math.min(...last.sets.map(s=>s.r||mn)) * pr.s)),
+        sets, tag:'down', przerwa,
+        why:'Przerwa '+przerwa+' dni. Masa własna, więc schodzisz powtórzeniami. '+pr.why};
+    const w = Math.max(2.5, roundTo(wTop0 * pr.s, 2.5));
+    return {w, r:mn, sets, tag:'down', przerwa,
+      why:'Przerwa '+przerwa+' dni od ostatniego razu. Ostatnio '+fmtKg(wTop0)+
+        ' kg — startujesz od '+fmtKg(w)+' kg. '+pr.why};
+  }
 
   const wTop = Math.max(...last.sets.map(s=>s.w||0));
   const top  = last.sets.filter(s=>(s.w||0)===wTop);
@@ -1918,6 +2038,58 @@ function zachowajPlanTrenera(nowy, poDacie){
     if(!nowy || nowy.data <= stary.data) return stary;
   }
   return nowy;
+}
+
+/* ============================================================
+   PODGLĄD KOLEJNYCH SESJI
+   Aplikacja trzyma jeden zamrożony plan — i słusznie, bo tylko dla niego
+   zna gotowość, zakwasy i świeżą historię. Ale na wyjeździe, gdzie nie
+   piszesz do mnie codziennie, warto widzieć dalej niż jedną sesję.
+
+   Podgląd NIE dostaje dat. Data zakłada, że wiem, którego dnia pójdziesz,
+   a nie wiem — i wolę tego nie udawać. Dostaje kolejność dni i ćwiczenia.
+   Ciężary są orientacyjne, bo liczą się z dzisiejszej historii: gdy zrobisz
+   sesję po drodze, kolejne przeliczą się od nowa i mogą wyjść inaczej.
+   ============================================================ */
+function kolejneSesje(ile){
+  const start = DB.nastepny && DB.nastepny.dzien;
+  if(!start) return [];
+  const i0 = ORDER.indexOf(start);
+  if(i0 < 0) return [];
+  const out = [];
+  for(let k = 1; k <= (ile || 3); k++){
+    const day = ORDER[(i0 + k) % ORDER.length];
+    const w = weekNo(przesun(today(), k * 2));
+    const f = phaseOf(w);
+    let poz;
+    try { poz = buildDay(day, f, w, true); } catch(e){ continue; }
+    if(!poz.length) continue;
+    out.push({dzien: day, nazwa: (PLAN[day]||{}).name || day,
+      faza: (PHASES[f]||{}).n || '', tydzien: w,
+      cwiczenia: poz.map(it => ({slot: it.slot.id, name: it.name, lab: it.slot.lab,
+        serie: it.sug.sets, powt: it.sug.r, ciezar: it.sug.w}))});
+  }
+  return out;
+}
+
+function renderKolejne(){
+  const l = kolejneSesje(trybWyjazdowy() ? 3 : 2);
+  if(!l.length) return '';
+  return '<div class="tip" onclick="przelaczKolejne()" style="cursor:pointer;'+
+    '-webkit-tap-highlight-color:transparent"><b>Dalej w kolejce</b> · '+
+    l.map(x => x.dzien).join(' → ')+
+    '<span style="float:right;opacity:.6">'+(KOLEJNE_ROZW?'▴':'▾')+'</span>'+
+    (KOLEJNE_ROZW
+      ? '<div style="margin-top:8px">'+ l.map(x =>
+          '<div style="margin:9px 0;padding-left:9px;border-left:2px solid var(--line)">'+
+          '<div class="hd">'+x.dzien+' — '+esc(x.nazwa)+'</div>'+
+          '<div class="hm">'+ x.cwiczenia.map(c => esc(c.name)+' '+c.serie+'×'+c.powt+
+            (c.ciezar ? ' @'+fmtKg(c.ciezar)+' kg' : '')).join(' · ') +'</div></div>').join('')+
+        '<div class="note" style="margin-top:8px">Bez dat — to Ty decydujesz, kiedy '+
+        'pójdziesz. Ciężary orientacyjne: przeliczą się po każdej wykonanej sesji, '+
+        'a warianty ćwiczeń mogą się obrócić.</div></div>'
+      : '<div class="note" style="margin-top:4px">Dotknij, żeby zobaczyć ćwiczenia</div>')+
+    '</div>';
 }
 
 function planNastepnego(){
@@ -2207,7 +2379,8 @@ function seriaPrzelozen(){
   return ile;
 }
 
-let PLAN_ROZW = false;
+let PLAN_ROZW = false, KOLEJNE_ROZW = false;
+function przelaczKolejne(){ KOLEJNE_ROZW = !KOLEJNE_ROZW; renderHub(); }
 function przelaczPlan(){ PLAN_ROZW = !PLAN_ROZW; renderHub(); }
 
 function planDoPokazania(){
@@ -2658,7 +2831,7 @@ function renderHub(){
   document.getElementById('coachBox').innerHTML =
     (trybWyjazdowy() ? '<div class="tip warn"><b>Tryb wyjazdowy</b> — plan z masy własnej, '+
       'bez sprzętu. Wyłączysz w Dzienniku → Tryb wyjazdowy.</div>' : '') +
-    syncBox + renderPoranne() + renderBraki() + resume + planBox + renderPrzeloz() + coach + odpBox + czekaBox;
+    syncBox + renderPoranne() + renderBraki() + resume + planBox + renderKolejne() + renderPrzeloz() + coach + odpBox + czekaBox;
 }
 
 /* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
@@ -4480,6 +4653,7 @@ function renderKosz(){
 function renderData(){
   renderSrv();
   renderKosz();
+  renderKopie();
   const wl=planWlasny();
   document.getElementById('planStan').innerHTML=
     '<div class="kv"><span class="k">Źródło planu</span><span class="v '+(wl?'up':'')+'">'+
