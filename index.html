@@ -972,7 +972,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-06.1';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-06.2';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1741,7 +1741,7 @@ function suggestLoad(name, slot, phase, tydzien){
 function planNastepnego(){
   const s = suggestNext(true);
   if(s.rest || !s.day) return null;
-  const items = buildDay(s.day, s.phase, s.week);
+  const items = buildDay(s.day, s.phase, s.week, true);
   return {
     utworzony: new Date().toISOString(),
     data: s.data, dzien: s.day, tydzien: s.week,
@@ -1760,11 +1760,51 @@ function planNastepnego(){
    po przerwie aplikacja podstawiałaby ciężary sprzed kilku dni, ignorując to,
    co wydarzyło się w międzyczasie, i progresja stawała w miejscu.
    Nieaktualny plan jest po prostu liczony od nowa. */
+/* Plan zamraża się po treningu, żeby nie zmieniał się sam pod ręką. Ale
+   gotowość znamy dopiero rano — więc plan trzymamy surowy, a korektę
+   nakładamy przy każdym wyświetleniu, z dzisiejszych danych. Sam plan
+   pod spodem zostaje nietknięty; korekta jest widoczna i odwracalna. */
+function zastosujGotowosc(n){
+  if(!n || !n.cwiczenia || n.data !== today()) return n;
+  const dz = DB.daily.find(x => x.date === today()) || {};
+  const maDane = dz.samopoczucie != null || dz.zakwasy || dz.sleep != null || dz.hrv != null;
+  if(!maDane) return n;
+
+  const g = gotowosc();
+  const dms = zakwasyDnia(n.dzien);
+  let pkt = g.pkt;
+  if(dms >= 3) pkt -= 25; else if(dms === 2) pkt -= 12; else if(dms === 1) pkt -= 4;
+  pkt = Math.max(0, pkt);
+  if(pkt >= 95) return n;
+
+  const skala = pkt >= 80 ? 0.95 : pkt >= 60 ? 0.9 : 0.8;
+  const ile   = pkt >= 80 ? n.cwiczenia.length : pkt >= 60 ? 4 : 3;
+  const sufit = pkt >= 80 ? 7 : pkt >= 60 ? 6 : 5;
+
+  const cw = n.cwiczenia.slice(0, Math.max(3, ile)).map(c => {
+    const w = c.ciezar ? Math.max(2.5, Math.round(c.ciezar * skala / 2.5) * 2.5) : c.ciezar;
+    if(w === c.ciezar) return c;
+    return Object.assign({}, c, {ciezar: w, ciezarPlan: c.ciezar, tag: 'down',
+      why: 'Gotowość ' + pkt + '/100 — ' + fmtKg(c.ciezar) + ' → ' + fmtKg(w) +
+           ' kg. ' + (c.why || '')});
+  });
+
+  const powody = g.powody.map(x => x[1]);
+  if(dms >= 2) powody.push('Zakwasy w partii, którą dziś trenujesz');
+
+  return Object.assign({}, n, {cwiczenia: cw, gotowosc: pkt, sufitRpe: sufit,
+    uwagi: ['Gotowość ' + pkt + '/100' +
+      (cw.length < n.cwiczenia.length ? ', sesja skrócona do ' + cw.length + ' ćwiczeń' : '') +
+      ', sufit RPE ' + sufit + '.' +
+      (powody.length ? ' Powód: ' + powody.join('; ') + '.' : '') +
+      ' Boje zostają, cięte są tylko dodatki.'].concat(n.uwagi || [])});
+}
+
 function planNaDzis(day){
   const n = DB.nastepny;
   if(!n || !n.cwiczenia) return null;
   if(n.dzien !== day || n.data !== today()) return null;
-  return n;
+  return zastosujGotowosc(n);
 }
 /* do pokazania na ekranie głównym wystarczy, że plan jeszcze nie minął */
 /* ============================================================
@@ -1829,7 +1869,7 @@ function przelaczPlan(){ PLAN_ROZW = !PLAN_ROZW; renderHub(); }
 
 function planDoPokazania(){
   const n = DB.nastepny;
-  return (n && n.cwiczenia && n.data >= today()) ? n : null;
+  return (n && n.cwiczenia && n.data >= today()) ? zastosujGotowosc(n) : null;
 }
 
 function buildDay(day, phase, tydzien, bezGotowosci){
@@ -2706,6 +2746,97 @@ function finishSession(){
 /* ============================================================
    EKRAN PODSUMOWANIA
    ============================================================ */
+/* ============================================================
+   RAPORT SESJI — pisany przez aplikację, zaraz po treningu
+   Dotąd raport powstawał w analizie na Macu, więc pojawiał się wieczorem
+   albo wcale, gdy laptop spał. To, co w nim najważniejsze — czy trafiłeś
+   w zakresy, czy RPE pasuje do fazy, co silnik zrobi z ciężarami — da się
+   policzyć z samych danych. Zostaje w telefonie i jest od razu.
+   ============================================================ */
+function raportSesji(w){
+  if(!w) return '';
+  const p = phaseOf(weekNo(w.date)), faza = PHASES[p] || {};
+  const celRpe = faza.rpe || 7;
+  const rob = w.exercises.flatMap(e => e.sets.filter(x => !x.wu));
+  const rpe = rob.filter(x => x.rpe != null).map(x => x.rpe);
+  const srRpe = rpe.length ? rpe.reduce((a,b)=>a+b,0)/rpe.length : null;
+  const doUpadku = rpe.filter(x => x >= 10).length;
+  const dz = DB.daily.find(x => x.date === w.date) || {};
+
+  let h = '<h2>Raport z sesji</h2>';
+
+  /* --- w zakresie czy nie, ćwiczenie po ćwiczeniu --- */
+  const wiersze = w.exercises.map(e => {
+    const L = LIB[e.name] || {};
+    const r = e.sets.filter(x => !x.wu);
+    if(!r.length) return null;
+    const cel = (e.target || '').match(/(\d+)[–-]?(\d+)?/g) || [];
+    const powt = r.map(x => x.r);
+    const naj = Math.max(...powt), min = Math.min(...powt);
+    const rp = r.filter(x => x.rpe != null).map(x => x.rpe);
+    const maxRpe = rp.length ? Math.max(...rp) : null;
+    const zaCiezko = maxRpe != null && maxRpe > celRpe + 1;
+    return {name: e.name, cel: e.target || '—',
+      zrobione: (r[0].w ? fmtKg(r[0].w)+' kg × ' : '') + powt.join('/'),
+      rpe: rp.length ? rp.join('/') : '—', zaCiezko, naj, min, L};
+  }).filter(Boolean);
+
+  h += '<div class="card">'+ wiersze.map(x =>
+    '<div style="padding:9px 0;border-bottom:1px solid var(--line)">'+
+    '<div class="hd">'+esc(x.name)+'</div>'+
+    '<div class="hm">cel '+esc(x.cel)+' · zrobione '+esc(x.zrobione)+
+    ' · RPE <span class="'+(x.zaCiezko?'bad':'ok')+'">'+esc(x.rpe)+'</span></div></div>').join('')
+    +'</div>';
+
+  /* --- najważniejszy wniosek: czy trenowałeś w swojej fazie --- */
+  if(srRpe != null){
+    const stan = srRpe <= celRpe + 0.5 ? 'ok' : srRpe <= celRpe + 1.5 ? 'warn' : 'bad';
+    h += '<div class="tip '+stan+'"><b>Średnie RPE '+fmtKg(srRpe)+' przy celu fazy '+celRpe+'</b><br>'+
+      (stan === 'ok'
+        ? 'Trafiłeś w fazę. Tak ma wyglądać cała sesja.'
+        : doUpadku
+          ? doUpadku+' '+(doUpadku===1?'seria':'serie')+' na RPE 10, czyli do upadku. '+
+            'W tej fazie budujesz tolerancję na obciążenie, nie szukasz granicy — '+
+            'to właśnie po takich sesjach pod koniec odcina siłę.'
+          : 'Trochę ciężej, niż przewiduje faza. Następnym razem zejdź o stopień.')+
+      '</div>';
+  }
+
+  /* --- co silnik zrobi z ciężarami przy następnym takim dniu --- */
+  const zmiany = w.exercises.map(e => {
+    const slot = (PLAN[w.day] || {slots:[]}).slots.find(x => x.id === e.slot);
+    if(!slot) return null;
+    const sug = suggestLoad(e.name, slot, p, weekNo(w.date));
+    if(!sug || sug.w == null) return null;
+    const teraz = (e.sets.filter(x => !x.wu)[0] || {}).w;
+    if(teraz == null || sug.w === teraz) return null;
+    return {name: e.name, z: teraz, na: sug.w, gora: sug.w > teraz};
+  }).filter(Boolean);
+
+  if(zmiany.length){
+    h += '<h2>Następnym razem</h2><div class="card">'+ zmiany.map(z =>
+      '<div class="kv"><span class="k">'+esc(z.name)+'</span>'+
+      '<span class="v '+(z.gora?'up':'down')+'">'+fmtKg(z.z)+' → '+fmtKg(z.na)+' kg</span></div>').join('')
+      +'<div class="note" style="margin-top:9px">Spadek nie jest cofnięciem — to szukanie '+
+      'ciężaru, przy którym domkniesz pełne serie. Stamtąd progresja rusza szybciej '+
+      'niż przy szarpaniu się ze zbyt dużym.</div></div>';
+  }
+
+  /* --- pokrycie i regeneracja --- */
+  h += renderCoverage();
+
+  if(dz.sleep != null || dz.hrv != null){
+    const b = [];
+    if(dz.sleep != null) b.push('sen '+fmtKg(dz.sleep)+' h'+(dz.drzemka?' (w tym '+fmtKg(dz.drzemka)+' h drzemki)':''));
+    if(dz.hrv != null) b.push('HRV '+dz.hrv);
+    if(dz.bb != null) b.push('Body Battery '+dz.bb);
+    h += '<h2>Tego dnia</h2><div class="card"><div class="hm">'+esc(b.join(' · '))+'</div>'+
+      (w.note ? '<div class="note" style="margin-top:6px"><b>Twoja notatka:</b> '+esc(w.note)+'</div>' : '')+
+      '</div>';
+  }
+  return h;
+}
+
 function renderSummary(){
   if(!OSTATNI){ setSub('hub'); return; }
   const {wpis, rekordy, poprz}=OSTATNI;
@@ -2754,6 +2885,8 @@ function renderSummary(){
   /* Wyłączona synchronizacja pokazywała wcześniej sam przycisk iCloud — bez
      słowa wyjaśnienia. Wyglądało to jak normalny ekran, a trening po cichu
      nie docierał do trenera. Cisza jest tu najgorszym możliwym komunikatem. */
+  h += raportSesji(wpis);
+
   h+= srvGotowy()
     ? '<div class="tip '+(SRV.blad?'warn':'ok')+'">'+
       (SRV.blad ? 'Nie udało się wysłać na serwer: '+esc(SRV.blad)+'. Spróbuj w Danych → Synchronizuj teraz.'
