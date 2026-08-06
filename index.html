@@ -454,20 +454,15 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
       <div class="fld"><label>Body Battery</label><input type="number" inputmode="numeric" id="dBb" placeholder="np. 75"></div>
       <div class="fld"><label>Waga (kg)</label><input type="number" inputmode="decimal" step="0.1" id="dWeight" placeholder="np. 75,4"></div>
     </div>
-    <div class="note" style="margin-top:14px;margin-bottom:7px"><b>Suplementy</b> — wpisz, ile faktycznie wziąłeś</div>
-    <div class="dayin">
-      <div class="fld"><label>Kreatyna (g)</label><input type="number" inputmode="decimal" step="0.5" id="dKrea" placeholder="np. 5"></div>
-      <div class="fld"><label>Magnez (mg)</label><input type="number" inputmode="numeric" id="dMag" placeholder="np. 200"></div>
-      <div class="fld"><label>Wit. D (IU)</label><input type="number" inputmode="numeric" id="dWitD" placeholder="np. 2000"></div>
-      <div class="fld"><label>Inne</label><input type="text" id="dInne" placeholder="np. omega-3"></div>
-    </div>
     <div class="fld" style="margin-top:12px">
       <label>Notatka</label><input type="text" id="dNote" placeholder="np. zmęczony, kolokwium">
     </div>
     <button class="btn" style="margin-top:13px" onclick="saveDaily()">Zapisz dzień</button>
   </div>
 
-  <h2>Suplementy — co i ile</h2>
+  <h2>Suplementy</h2>
+  <div class="note" style="margin-bottom:9px">Odhaczasz wtedy, kiedy naprawdę bierzesz — nie rano razem z Garminem.</div>
+  <div class="card" id="suplDzis"></div>
   <div class="card" id="suplBox"></div>
   <h2>Ostatnie 10 dni</h2>
   <div class="card" id="dailyList"></div>
@@ -767,15 +762,17 @@ const DOMYSLNA_LIB = {
      przy masie własnej. Filip musiał wpisać swoją wagę jako ciężar, a liczbę
      powtórzeń w polu sekund — i dopisać notatkę, żeby dało się to odczytać.
      Dane, które wymagają komentarza, żeby coś znaczyły, są złymi danymi. */
-  'Plank':                       {inc:0, bw:true, time:true, mus:{brzuch:1},
+  /* Plank ma własny zakres, bo slot C6 jest ustawiony pod powtórzenia
+     (3×10) i bez tego proponowałby dziesięciosekundowy plank. */
+  'Plank':                       {inc:0, bw:true, time:true, rr:[30,60], mus:{brzuch:1},
                                   cue:'Pośladki napięte, biodra nie opadają. Gdy biodra zaczynają się zapadać — koniec serii.'},
-  'Ab wheel':                    {inc:0, bw:true, mus:{brzuch:1, plecy_pion:0.2},
+  'Ab wheel':                    {inc:0, bw:true, rr:[8,12], mus:{brzuch:1, plecy_pion:0.2},
                                   cue:'Wyjeżdżasz tak daleko, jak utrzymasz napięte pośladki i plecy bez wygięcia. Zakres rośnie z tygodniami.'},
   /* Stara nazwa zostaje, żeby wcześniejsze wpisy nadal się wyświetlały.
      Nie ma jej już w żadnej puli, więc nowe sesje jej nie zaproponują. */
   'Plank / ab wheel':            {inc:0, time:true, mus:{brzuch:1}},
-  'Unoszenie nóg w zwisie':      {inc:0, bw:true,   mus:{brzuch:1}},
-  'Allahy na wyciągu':           {inc:2.5,          mus:{brzuch:1}}
+  'Unoszenie nóg w zwisie':      {inc:0, bw:true, rr:[8,15], mus:{brzuch:1}},
+  'Allahy na wyciągu':           {inc:2.5, rr:[12,20], mus:{brzuch:1}}
 };
 /* ============================================================
    PLAN — sloty zamiast sztywnych ćwiczeń
@@ -975,7 +972,7 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-05.2';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+const WERSJA = '2026-08-06.1';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1632,7 +1629,13 @@ function nadpisanieAktywne(name){
    ============================================================ */
 function suggestLoad(name, slot, phase, tydzien){
   const sets = serieSlotu(slot, phase, tydzien);
-  const [mn,mx] = slot.rr[phase];
+  /* Slot ma jeden zakres powtórzeń dla całej puli, co przestaje działać, gdy
+     w puli siedzą ćwiczenia mierzone inaczej. Slot tułowia był ustawiony pod
+     plank (40 sekund) i po rozdzieleniu ćwiczeń zaproponował „Ab wheel 3×40" —
+     czyli czterdzieści powtórzeń zamiast czterdziestu sekund. Ćwiczenie może
+     więc podać własny zakres i on ma pierwszeństwo. */
+  const wlasny = (LIB[name] || {}).rr;
+  const [mn,mx] = wlasny || slot.rr[phase];
   if(!sets) return null;
 
   const L = LIB[name] || {inc:2.5, mus:{}};
@@ -1764,6 +1767,63 @@ function planNaDzis(day){
   return n;
 }
 /* do pokazania na ekranie głównym wystarczy, że plan jeszcze nie minął */
+/* ============================================================
+   PORANNE SPRAWDZENIE
+   Dwa dotknięcia: jak się czujesz i czy coś boli po wczorajszym.
+   Czujniki mówią o układzie nerwowym i krążeniu, ale nie wiedzą, że masz
+   zakwasy w czworogłowych — a to właśnie one decydują, czy dziś przysiad
+   ma sens. Bez tego pytania aplikacja widziałaby połowę obrazu.
+   ============================================================ */
+function ustawSamopoczucie(v){
+  const d = wpisDnia();
+  d.samopoczucie = d.samopoczucie === v ? null : v;
+  save(); zsynchronizuj(); renderSub();
+  if(navigator.vibrate) navigator.vibrate(12);
+}
+function ustawZakwasy(gdzie, poziom){
+  const d = wpisDnia();
+  d.zakwasy = d.zakwasy || {};
+  d.zakwasy[gdzie] = d.zakwasy[gdzie] === poziom ? 0 : poziom;
+  save(); zsynchronizuj(); renderSub();
+  if(navigator.vibrate) navigator.vibrate(12);
+}
+function wpisDnia(){
+  const dzis = today();
+  let d = DB.daily.find(x => x.date === dzis);
+  if(!d){ d = {date: dzis}; DB.daily.push(d); DB.daily.sort((a,b)=>a.date.localeCompare(b.date)); }
+  return d;
+}
+
+function renderPoranne(){
+  const d = DB.daily.find(x => x.date === today()) || {};
+  const z = d.zakwasy || {};
+  const g = gotowosc();
+  const odp = d.samopoczucie != null;
+
+  const rzad = (etykieta, gdzie) =>
+    '<div class="fld" style="margin-top:9px"><label>'+etykieta+'</label><div class="rpe">'+
+    [[0,'brak'],[1,'lekkie'],[2,'średnie'],[3,'mocne']].map(([p,n]) =>
+      '<button class="rpeb'+((z[gdzie]||0)===p?' on':'')+'" onclick="ustawZakwasy(\''+gdzie+'\','+p+')">'+
+      '<span style="font-size:11px">'+n+'</span></button>').join('')+'</div></div>';
+
+  return '<div class="tip'+(odp ? (g.pkt>=85?' ok':g.pkt>=55?' warn':' bad') : '')+'">'+
+    '<b>Jak się dziś czujesz?</b>'+
+    (odp ? ' · gotowość '+g.pkt+'/100' : ' — dwa dotknięcia, a plan się dostosuje')+
+    '<div class="rpe" style="margin-top:7px">'+
+      [[1,'słabo'],[2,'średnio'],[3,'ok'],[4,'dobrze'],[5,'świetnie']].map(([v,n]) =>
+        '<button class="rpeb'+(d.samopoczucie===v?' on':'')+'" onclick="ustawSamopoczucie('+v+')">'+
+        '<b>'+v+'</b><span>'+n+'</span></button>').join('')+'</div>'+
+    rzad('Zakwasy — nogi', 'nogi') +
+    rzad('Zakwasy — góra ciała', 'gora') +
+    (odp && g.powody.length
+      ? '<div class="note" style="margin-top:8px">'+
+        g.powody.map(p => '• '+esc(p[1])).join('<br>')+'</div>' : '')+
+    (odp && g.pkt < 85
+      ? '<div class="note" style="margin-top:6px"><b>Plan na dziś został dostosowany</b> — '+
+        'zobacz ciężary w propozycji treningu.</div>' : '')+
+    '</div>';
+}
+
 let PLAN_ROZW = false;
 function przelaczPlan(){ PLAN_ROZW = !PLAN_ROZW; renderHub(); }
 
@@ -1772,15 +1832,128 @@ function planDoPokazania(){
   return (n && n.cwiczenia && n.data >= today()) ? n : null;
 }
 
-function buildDay(day, phase, tydzien){
-  return PLAN[day].slots.filter(s=>s.s[phase]>0).map(slot=>{
+function buildDay(day, phase, tydzien, bezGotowosci){
+  const lista = PLAN[day].slots.filter(s=>s.s[phase]>0).map(slot=>{
     const v = pickVariant(slot);
     return {slot, name:v.name, pick:v, sug:suggestLoad(v.name, slot, phase, tydzien)};
+  });
+  return bezGotowosci ? lista : dostosuj(lista, day);
+}
+
+/* ============================================================
+   DOSTOSOWANIE DNIA DO GOTOWOŚCI
+   To jest przeniesiona do kodu ta sama skala, którą stosowałem ręcznie:
+   przy lekkim niedoborze zdejmujemy z boju, przy poważnym skracamy sesję
+   wycinając AKCESORIA, nie boje — bo to boje budują siłę, a akcesoria
+   są dodatkiem, z którego najłatwiej zrezygnować.
+   ============================================================ */
+function dostosuj(lista, day){
+  const g = gotowosc();
+  const dms = zakwasyDnia(day);
+  let pkt = g.pkt;
+
+  /* zakwasy w trenowanej dziś partii — 1 lekkie, 2 średnie, 3 mocne */
+  if(dms >= 3) pkt -= 25;
+  else if(dms === 2) pkt -= 12;
+  else if(dms === 1) pkt -= 4;
+
+  /* Progi dobrane tak, żeby odpowiadały skali, którą stosowałem ręcznie:
+     sen 6–6,5 h to zejście o kilka procent bez skracania sesji, sen poniżej
+     6 h albo mocne zakwasy w trenowanej partii to już cztery ćwiczenia,
+     a dzień po nieprzespanej nocy to trzy w wersji technicznej. */
+  if(pkt >= 95) return lista;                    // wszystko w normie, nie ruszamy
+
+  const skala = pkt >= 80 ? 0.95 : pkt >= 60 ? 0.9 : 0.8;
+  const ile   = pkt >= 80 ? lista.length : pkt >= 60 ? 4 : 3;
+  const sufit = pkt >= 80 ? 7 : pkt >= 60 ? 6 : 5;
+
+  /* Boje zostają zawsze — wycinamy od końca, czyli akcesoria. */
+  const przyciete = lista.slice(0, Math.max(3, ile));
+
+  return przyciete.map(x => {
+    if(!x.sug) return x;
+    const L = LIB[x.name] || {};
+    const w = (x.sug.w != null && x.sug.w > 0 && !L.time)
+      ? roundTo(x.sug.w * skala, L.inc || 2.5) : x.sug.w;
+    return {...x, sug: {...x.sug, w, sufitRpe: sufit, tag: 'down',
+      why: 'Gotowość '+pkt+'/100 — '+(w !== x.sug.w ? 'ciężar w dół o '+
+           Math.round((1-skala)*100)+'%. ' : '')+'Sufit RPE '+sufit+'. '+
+           (g.powody[0] ? g.powody[0][1]+'.' : '')}};
   });
 }
 /* ============================================================
    KTÓRY DZIEŃ
    ============================================================ */
+/* ============================================================
+   GOTOWOŚĆ — ile organizm dziś uniesie
+   Zastępuje moją poranną korektę. Robiłem ją ręcznie, ale wymagała otwartego
+   laptopa o określonej godzinie, a Filip wstaje o różnych porach. Reguły,
+   które stosowałem, dają się zapisać — i wtedy działają zawsze, także
+   przy zamkniętym laptopie.
+
+   Liczymy od 100 w dół. Każdy czynnik odejmuje tyle, ile realnie odejmuje
+   od zdolności do ciężkiej pracy — nie po równo, bo sen i zakwasy w partii,
+   którą dziś trenujesz, ważą inaczej niż samopoczucie.
+   ============================================================ */
+function gotowosc(data){
+  const d = data || today();
+  const dz = DB.daily.find(x => x.date === d) || {};
+  const powody = [];
+  let pkt = 100;
+
+  if(dz.sleep != null){
+    if(dz.sleep < 5)        { pkt -= 35; powody.push(['bad',  'Sen '+fmtKg(dz.sleep)+' h — poniżej pięciu godzin']); }
+    else if(dz.sleep < 6)   { pkt -= 22; powody.push(['warn', 'Sen '+fmtKg(dz.sleep)+' h — wyraźnie za mało']); }
+    else if(dz.sleep < 6.8) { pkt -= 10; powody.push(['warn', 'Sen '+fmtKg(dz.sleep)+' h — poniżej optimum']); }
+  }
+
+  /* HRV liczymy WZGLĘDEM Twojej normy, nie względem tabelek — wartość
+     bezwzględna nic nie znaczy, bo rozrzut między ludźmi jest ogromny. */
+  const baza = avg(DB.daily.filter(x => x.date < d && x.date >= przesun(d,-21)).map(x => x.hrv));
+  if(dz.hrv != null && baza){
+    const proc = dz.hrv / baza;
+    if(proc < 0.80)      { pkt -= 25; powody.push(['bad',  'HRV '+Math.round((1-proc)*100)+'% poniżej Twojej normy']); }
+    else if(proc < 0.90) { pkt -= 12; powody.push(['warn', 'HRV '+Math.round((1-proc)*100)+'% poniżej normy']); }
+    else if(proc > 1.05) { pkt += 5;  powody.push(['ok',   'HRV powyżej normy — dobrze zregenerowany']); }
+  }
+
+  if(dz.bb != null){
+    if(dz.bb < 30)      { pkt -= 20; powody.push(['bad',  'Body Battery '+dz.bb]); }
+    else if(dz.bb < 45) { pkt -= 10; powody.push(['warn', 'Body Battery '+dz.bb]); }
+    else if(dz.bb > 70) { pkt += 5;  powody.push(['ok',   'Body Battery '+dz.bb+' — wysoka']); }
+  }
+
+  if(dz.samopoczucie != null){
+    const s = dz.samopoczucie;
+    if(s <= 2)      { pkt -= 20; powody.push(['bad',  'Czujesz się słabo']); }
+    else if(s === 3){ pkt -= 5; }
+    else if(s === 5){ pkt += 5;  powody.push(['ok',   'Czujesz się świetnie']); }
+  }
+
+  /* Trzeci dzień z rzędu to już obciążenie samo w sobie, niezależnie
+     od tego, co mówią czujniki. */
+  let podrzad = 0;
+  for(let i = 1; i <= 5; i++){
+    if(DB.workouts.some(w => w.date === przesun(d, -i))) podrzad++;
+    else break;
+  }
+  if(podrzad >= 3)      { pkt -= 15; powody.push(['warn', podrzad+' dni treningowe z rzędu']); }
+  else if(podrzad === 2){ pkt -= 5; }
+
+  return {pkt: Math.max(0, Math.min(110, pkt)), powody, zakwasy: dz.zakwasy || null};
+}
+
+/* Zakwasy w partii, którą dziś trenujesz, to co innego niż zakwasy gdzie indziej.
+   Bolące czworogłowe przed dniem nóg znaczą, że tkanka jeszcze się nie odbudowała;
+   boląca klatka przed nogami nie znaczy nic. */
+function zakwasyDnia(day, data){
+  const dz = DB.daily.find(x => x.date === (data || today())) || {};
+  const z = dz.zakwasy;
+  if(!z || !PLAN[day]) return 0;
+  const grp = PLAN[day].grp === 'nogi' ? 'nogi' : 'gora';
+  return z[grp] || 0;
+}
+
 function suggestNext(naJutro){
   /* `naJutro` pozwala zaplanować sesję z wyprzedzeniem, zaraz po zakończeniu
      dzisiejszej — inaczej funkcja zawsze odpowiadałaby „dziś już trenowałeś". */
@@ -2039,7 +2212,8 @@ function renderHub(){
     : zalegaWysylka() ? '<div class="tip warn"><b>Serwer nie ma najnowszych danych</b><br>'+
         'Wejdź w Dane → Synchronizuj teraz.</div>' : '';
 
-  document.getElementById('coachBox').innerHTML = syncBox + resume + planBox + coach + odpBox + czekaBox;
+  document.getElementById('coachBox').innerHTML =
+    syncBox + renderPoranne() + resume + planBox + coach + odpBox + czekaBox;
 }
 
 /* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
@@ -2646,7 +2820,8 @@ function renderTrening(){
   /* kontekst regeneracyjny — bez niego liczby wiszą w próżni */
   if(d0){
     const b=[];
-    if(d0.sleep!=null) b.push('sen '+fmtKg(d0.sleep)+' h');
+    if(d0.sleep!=null) b.push('sen '+fmtKg(d0.sleep)+' h'+
+      (d0.drzemka ? ' (w tym '+fmtKg(d0.drzemka)+' h drzemki)' : ''));
     if(d0.hrv!=null) b.push('HRV '+d0.hrv);
     if(d0.rhr!=null) b.push('tętno spocz. '+d0.rhr);
     if(d0.bb!=null) b.push('Body Battery '+d0.bb);
@@ -3061,7 +3236,37 @@ function statSupl(k, dni){
   };
 }
 
+/* Odhaczanie jednym dotknięciem, niezależnie od wpisu dziennego.
+   Wcześniej suplementy siedziały w tym samym formularzu co dane z Garmina —
+   a te wpisuje się rano, zanim się cokolwiek weźmie. Pola, które trzeba
+   wypełnić w złym momencie dnia, po prostu zostają puste. */
+function wzialem(k){
+  const dzis = today();
+  let d = DB.daily.find(x => x.date === dzis);
+  if(!d){ d = {date: dzis}; DB.daily.push(d); DB.daily.sort((a,b)=>a.date.localeCompare(b.date)); }
+  const s = SUPLEMENTY.find(x => x.k === k);
+  d[k] = d[k] ? null : s.cel;          // ponowne dotknięcie cofa
+  save(); zsynchronizuj(); renderSupl();
+  if(navigator.vibrate) navigator.vibrate(12);
+}
+
+function renderSuplDzis(){
+  const el = document.getElementById('suplDzis');
+  if(!el) return;
+  const d = DB.daily.find(x => x.date === today()) || {};
+  const zima = [10,11,12,1,2,3].includes(new Date(today()+'T00:00:00').getMonth()+1);
+  el.innerHTML = '<div class="hd" style="margin-bottom:8px">Dziś</div><div class="rpe">'+
+    SUPLEMENTY.filter(s => s.codziennie || zima).map(s => {
+      const wziete = d[s.k] != null && d[s.k] > 0;
+      return '<button class="rpeb'+(wziete?' on':'')+'" onclick="wzialem(\''+s.k+'\')">'+
+        '<b>'+(wziete?'✓':'+')+'</b><span>'+esc(s.n.split(' ')[0])+'</span></button>';
+    }).join('') + '</div>'+
+    '<div class="note" style="margin-top:7px">Dotknij, gdy weźmiesz. Ponowne dotknięcie cofa. '+
+    'Dawki są stałe — dotknięcie zapisuje docelową.</div>';
+}
+
 function renderSupl(){
+  renderSuplDzis();
   const el = document.getElementById('suplBox');
   if(!el) return;
   const zima = [10,11,12,1,2,3].includes(new Date(today()+'T00:00:00').getMonth()+1);
@@ -3099,8 +3304,7 @@ function renderDaily(){
   if(!el.value) el.value=today();
   const ex=DB.daily.find(d=>d.date===el.value);
   [['dSleep','sleep'],['dRhr','rhr'],['dHrv','hrv'],['dSteps','steps'],
-   ['dBb','bb'],['dWeight','weight'],['dNote','note'],
-   ['dKrea','kreatyna'],['dMag','magnez'],['dWitD','witd'],['dInne','inne']].forEach(([id,k])=>{
+   ['dBb','bb'],['dWeight','weight'],['dNote','note']].forEach(([id,k])=>{
     document.getElementById(id).value = ex&&ex[k]!=null ? ex[k] : '';
   });
   const list=DB.daily.slice(-10).reverse();
@@ -3124,11 +3328,15 @@ function renderDaily(){
 function saveDaily(){
   const date=document.getElementById('dDate').value;
   if(!date){ toast('Wybierz datę'); return; }
+  /* Suplementy odhaczasz osobno i o innej porze — przepisujemy je ze starego
+     wpisu, żeby zapisanie danych z Garmina rano nie kasowało wieczornej dawki. */
+  const stary = DB.daily.find(d=>d.date===date) || {};
   DB.daily=DB.daily.filter(d=>d.date!==date);
   DB.daily.push({date, sleep:num('dSleep'), rhr:num('dRhr'), hrv:num('dHrv'),
+    kreatyna:stary.kreatyna ?? null, magnez:stary.magnez ?? null,
+    witd:stary.witd ?? null, inne:stary.inne ?? null,
+    drzemka:stary.drzemka ?? null, sen_noca:stary.sen_noca ?? null,
     steps:num('dSteps'), bb:num('dBb'), weight:num('dWeight'),
-    kreatyna:num('dKrea'), magnez:num('dMag'), witd:num('dWitD'),
-    inne:document.getElementById('dInne').value.trim()||null,
     note:document.getElementById('dNote').value.trim()||null});
   DB.daily.sort((a,b)=>a.date.localeCompare(b.date));
   save(); zsynchronizuj(); renderDaily(); toast('Zapisano '+plDate(date));
