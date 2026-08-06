@@ -599,6 +599,13 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   </div>
   <h2>Statystyki</h2>
   <div class="card" id="stats"></div>
+  <h2>Aktualizacja</h2>
+  <div class="card">
+    <div id="wersjaStan"></div>
+    <button class="btn ghost sm" style="margin-top:10px" onclick="wymusAktualizacje()">Wymuś pełną aktualizację</button>
+    <div class="note" style="margin-top:8px">Kasuje pamięć podręczną aplikacji i pobiera plik od nowa.
+      Dane treningowe zostają nietknięte — siedzą w innym miejscu niż pamięć podręczna.</div>
+  </div>
   <h2>Kopia awaryjna</h2>
   <div class="card" id="kopieBox"></div>
   <h2>Kosz</h2>
@@ -1245,7 +1252,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '14';
+const WERSJA = '15';
 const WERSJA_DATA = '2026-08-06';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -1577,6 +1584,53 @@ function kopiaZrobWymuszona(){
   k.unshift({kiedy: new Date().toISOString(), treningi: (DB.workouts||[]).length,
              stan: JSON.stringify(DB), reczna: true});
   try { localStorage.setItem(KOPIEKEY, JSON.stringify(k.slice(0, 3))); } catch(e){}
+}
+
+/* Sprawdza, jaka wersja LEŻY NA SERWERZE, i mówi wprost, czy telefon
+   ma tę samą. Bez tego jedyną odpowiedzią na „wgrałem, a nie widzę zmian"
+   było zgadywanie, po czyjej stronie jest problem. */
+async function sprawdzWersjeSerwera(){
+  const el = document.getElementById('wersjaStan');
+  if(!el) return;
+  el.innerHTML = kv('Wersja w telefonie','<b>'+WERSJA+'</b>') +
+    '<div class="note">Sprawdzam serwer…</div>';
+  if(typeof location === 'undefined' || location.protocol !== 'https:'){
+    el.innerHTML = kv('Wersja w telefonie','<b>'+WERSJA+'</b>')+
+      '<div class="note">Otwarte lokalnie — nie ma czego porównywać.</div>';
+    return;
+  }
+  try{
+    const r = await fetch('index.html?w='+Date.now(), {cache:'no-store'});
+    const m = (await r.text()).match(/const WERSJA = '([^']+)'/);
+    const nap = m ? m[1] : '?';
+    const zgodne = nap === WERSJA;
+    el.innerHTML =
+      kv('Wersja w telefonie','<b>'+WERSJA+'</b>') +
+      kv('Wersja na serwerze','<b>'+esc(nap)+'</b>', zgodne ? 'up' : 'down') +
+      (zgodne
+        ? '<div class="tip ok" style="margin-top:9px">Telefon ma to, co serwer. Nic nie trzeba robić.</div>'
+        : '<div class="tip warn" style="margin-top:9px"><b>Serwer ma nowszą wersję ('+esc(nap)+')</b><br>'+
+          'Dotknij „Wymuś pełną aktualizację" poniżej.</div>');
+  }catch(e){
+    el.innerHTML = kv('Wersja w telefonie','<b>'+WERSJA+'</b>')+
+      '<div class="note">Nie udało się zapytać serwera: '+esc(String(e.message||e))+'</div>';
+  }
+}
+
+async function wymusAktualizacje(){
+  toast('Czyszczę pamięć podręczną…');
+  try{
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if(typeof caches !== 'undefined'){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  }catch(e){}
+  /* Dane treningowe zostają — kasujemy wyłącznie pamięć podręczną plików. */
+  setTimeout(() => { location.replace('index.html?w='+Date.now()); }, 400);
 }
 
 function renderKopie(){
@@ -5274,6 +5328,7 @@ function renderData(){
   renderSrv();
   renderKosz();
   renderKopie();
+  sprawdzWersjeSerwera();
   const wl=planWlasny();
   document.getElementById('planStan').innerHTML=
     '<div class="kv"><span class="k">Źródło planu</span><span class="v '+(wl?'up':'')+'">'+
