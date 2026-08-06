@@ -667,26 +667,66 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
    byłaby udawaniem precyzji.
    ============================================================ */
 const DOMYSLNE_REG = {
-  klatka_gora:   {n:'Klatka — góra',      grp:'Klatka',  min:4,  max:12},
-  klatka_srodek: {n:'Klatka — środek',    grp:'Klatka',  min:4,  max:12},
-  klatka_dol:    {n:'Klatka — dół',       grp:'Klatka',  min:3,  max:10},
-  plecy_pion:    {n:'Plecy — ciąg pionowy',grp:'Plecy',  min:5,  max:14},
-  plecy_poziom:  {n:'Plecy — ciąg poziomy',grp:'Plecy',  min:5,  max:14},
-  plecy_gora:    {n:'Kaptury / góra pleców',grp:'Plecy', min:3,  max:10},
-  bark_przod:    {n:'Bark — przód',       grp:'Barki',   min:2,  max:8},
-  bark_bok:      {n:'Bark — bok',         grp:'Barki',   min:6,  max:16},
-  bark_tyl:      {n:'Bark — tył',         grp:'Barki',   min:5,  max:14},
-  triceps_dluga: {n:'Triceps — głowa długa',grp:'Ramiona',min:3, max:10},
-  triceps_bocz:  {n:'Triceps — głowa boczna',grp:'Ramiona',min:3,max:10},
-  biceps:        {n:'Biceps',             grp:'Ramiona', min:5,  max:14},
-  przedramie:    {n:'Przedramiona',       grp:'Ramiona', min:0,  max:8},
-  czworoglowe:   {n:'Czworogłowe',        grp:'Nogi',    min:6,  max:16},
-  dwuglowe:      {n:'Dwugłowe uda',       grp:'Nogi',    min:5,  max:14},
-  posladki:      {n:'Pośladki',           grp:'Nogi',    min:5,  max:14},
-  lydki_stoj:    {n:'Łydki — brzuchaty',  grp:'Nogi',    min:3,  max:10},
-  lydki_sied:    {n:'Łydki — płaszczkowaty',grp:'Nogi',  min:3,  max:10},
-  prostowniki:   {n:'Prostowniki grzbietu',grp:'Tułów',  min:2,  max:8},
-  brzuch:        {n:'Brzuch',             grp:'Tułów',   min:3,  max:12}
+  klatka_gora:   {n:'Klatka — góra',      grp:'Klatka',  min:4,  max:12,
+                  o:'Część obojczykowa. Rośnie od wyciskania na skosie dodatnim (30°, nie wyżej) i od bramy z dołu do góry. Sama ławka płaska jej nie wystarczy.'},
+  klatka_srodek: {n:'Klatka — środek',    grp:'Klatka',  min:4,  max:12,
+                  o:'Największa część mostkowa. Wyciskanie leżąc, pompki, rozpiętki płasko.'},
+  klatka_dol:    {n:'Klatka — dół',       grp:'Klatka',  min:3,  max:10,
+                  o:'Dolne włókna. Dipy, skos ujemny, pompki z rękami wyżej niż stopy.'},
+  plecy_pion:    {n:'Plecy — ciąg pionowy',grp:'Plecy',  min:5,  max:14,
+                  o:'Najszerszy grzbietu w ruchu z góry: podciąganie, ściąganie drążka. To on daje szerokość.'},
+  plecy_poziom:  {n:'Plecy — ciąg poziomy',grp:'Plecy',  min:5,  max:14,
+                  o:'Wiosłowania. Środek pleców, równoważy całe wyciskanie i trzyma barki z tyłu.'},
+  plecy_gora:    {n:'Kaptury / góra pleców',grp:'Plecy', min:3,  max:10,
+                  o:'Czworoboczny i równoległoboczne. Szrugsy, face pull, martwy ciąg. Stabilizują łopatkę przy każdym ruchu ramienia.'},
+  bark_przod:    {n:'Bark — przód',       grp:'Barki',   min:2,  max:8,
+                  o:'Akton przedni. Dostaje mnóstwo pracy z każdego wyciskania — dlatego norma jest niska i rzadko trzeba go dokładać osobno.'},
+  bark_bok:      {n:'Bark — bok',         grp:'Barki',   min:6,  max:16,
+                  o:'Akton boczny — to on daje szerokość barków. Prawie nie pracuje przy wyciskaniu, potrzebuje unoszenia bokiem. Znosi dużo objętości.'},
+  bark_tyl:      {n:'Bark — tył',         grp:'Barki',   min:5,  max:14,
+                  o:'Akton tylny. Równoważy wyciskanie i chroni bark przed konfliktem podbarkowym. Face pull, odwrotne rozpiętki.'},
+  triceps_dluga: {n:'Triceps — głowa długa',grp:'Ramiona',min:3, max:10,
+                  o:'Jedyna przyczepiona do łopatki — pracuje naprawdę tylko przy ramieniu nad głową albo za tułowiem. Francuskie, wyciąg zza głowy, dipy.'},
+  triceps_bocz:  {n:'Triceps — głowa boczna',grp:'Ramiona',min:3,max:10,
+                  o:'Ta, którą widać z boku ramienia. Wyciąg prosto w dół, pompki diamentowe, wyciskanie wąsko.'},
+  triceps_przysr:{n:'Triceps — głowa przyśrodkowa',grp:'Ramiona',min:2,max:10,
+                  o:'Pracuje przy KAŻDYM prostowaniu łokcia, najmocniej na końcu ruchu i przy dużych ciężarach. Nie da się jej pominąć, ale łatwo ją niedociążyć samymi lekkimi wyciągami.'},
+  biceps_dluga:  {n:'Biceps — głowa długa',grp:'Ramiona', min:4,  max:12,
+                  o:'Biegnie po zewnętrznej stronie ramienia i przechodzi przez staw barkowy. Rośnie najlepiej przy ramieniu COFNIĘTYM za tułów — uginanie na skosie, na wyciągu zza siebie.'},
+  biceps_krotka: {n:'Biceps — głowa krótka',grp:'Ramiona', min:4,  max:12,
+                  o:'Wewnętrzna strona ramienia, buduje szerokość. Pracuje najmocniej przy ramieniu WYSUNIĘTYM do przodu — modlitewnik, uginanie z podparciem.'},
+  ramienny:      {n:'Mięsień ramienny',   grp:'Ramiona', min:3,  max:10,
+                  o:'Leży POD bicepsem i wypycha go do góry — dlatego jego rozwój realnie powiększa ramię. Chwyt młotkowy i neutralny, bo nie odwraca przedramienia.'},
+  /* Norma była 0 — czyli region nigdy nie zapalał się na czerwono, choćby
+     miał zero serii. Przedramiona dostają sporo pracy ubocznej z wiosłowania
+     i martwego ciągu, ale chwyt bywa wąskim gardłem przy ciągnięciu i warto
+     go pilnować jak każdego innego mięśnia. */
+  przedramie:    {n:'Przedramiona',       grp:'Ramiona', min:2,  max:8,
+                  o:'Zginacze palców i nadgarstka. Chwyt bywa wąskim gardłem przy ciągnięciu — utrzymanie sztangi, chód farmera, zwis.'},
+  czworoglowe:   {n:'Czworogłowe — obszerne',grp:'Nogi',min:6,  max:16,
+                  o:'Trzy głowy boczne i przyśrodkowe. Przysiady, wypychanie, hack — wszystko, co prostuje kolano pod obciążeniem.'},
+  udo_proste:    {n:'Mięsień prosty uda', grp:'Nogi',    min:3,  max:10,
+                  o:'Jedyna głowa czworogłowego przechodząca przez BIODRO. W przysiadzie pracuje słabo, bo biodro i kolano zginają się razem. Potrzebuje prostowania nóg.'},
+  dwuglowe:      {n:'Dwugłowe — od biodra',grp:'Nogi',   min:5,  max:14,
+                  o:'Prostowanie biodra przy wyprostowanym kolanie: martwy ciąg rumuński, good morning. Tu buduje się odporność na naderwania.'},
+  dwuglowe_kol:  {n:'Dwugłowe — od kolana',grp:'Nogi',   min:4,  max:12,
+                  o:'Zginanie kolana: uginanie nóg, nordic curl. Inny bodziec niż ciąg rumuński — same ciągi zostawiają tę funkcję niedotrenowaną.'},
+  posladki:      {n:'Pośladkowy wielki',  grp:'Nogi',    min:5,  max:14,
+                  o:'Największy prostownik biodra. Przysiad, hip thrust, martwy ciąg, wykroki.'},
+  posladki_sr:   {n:'Pośladkowy średni',  grp:'Nogi',    min:2,  max:10,
+                  o:'Stabilizuje miednicę przy każdym kroku i przy staniu na jednej nodze. Zaniedbany daje ból kolana i biodra przy bieganiu. Trenuje się jednonóż.'},
+  lydki_stoj:    {n:'Łydki — brzuchaty',  grp:'Nogi',    min:3,  max:10,
+                  o:'Dwie głowy przechodzące przez kolano — pracują tylko przy nodze WYPROSTOWANEJ. Wspięcia stojąc.'},
+  lydki_sied:    {n:'Łydki — płaszczkowaty',grp:'Nogi',  min:3,  max:10,
+                  o:'Leży pod brzuchatym, nie przechodzi przez kolano — dlatego trenuje się go SIEDZĄC, ze zgiętym kolanem. Wspięcia stojąc go prawie nie ruszają.'},
+  prostowniki:   {n:'Prostowniki grzbietu',grp:'Tułów',  min:2,  max:8,
+                  o:'Trzymają kręgosłup wyprostowany pod obciążeniem. Martwy ciąg, good morning, Superman. Bez nich przysiad się składa.'},
+  brzuch:        {n:'Brzuch — prosty',    grp:'Tułów',   min:3,  max:12,
+                  o:'Zginanie tułowia i unoszenie nóg. To on tworzy „kratkę".'},
+  skosne:        {n:'Brzuch — skośne',    grp:'Tułów',   min:2,  max:10,
+                  o:'Rotacja, zginanie boczne i opór przed nimi. Deska bokiem, allahy z rotacją, chód farmera z jednym ciężarem.'},
+  glebokie:      {n:'Stabilizacja głęboka',grp:'Tułów',  min:2,  max:10,
+                  o:'Poprzeczny brzucha i wielodzielne — trzymają kręgosłup, gdy coś próbuje go zgiąć. Plank, ab wheel, chód farmera. Nie widać ich, a bez nich przysiad się sypie.'}
 };
 
 /* ============================================================
@@ -695,58 +735,59 @@ const DOMYSLNE_REG = {
    inc = ile dokładać po domknięciu zakresu
    ============================================================ */
 const KALIS_LIB = {
-  'Pompki':                       {bw:true, rr:[12,25], mus:{klatka_srodek:1, triceps_bocz:.4, bark_przod:.3},
+  'Pompki':                       {bw:true, rr:[12,25], mus:{klatka_srodek:1, triceps_bocz:.4, triceps_przysr:.3, bark_przod:.3, glebokie:.3},
                                    cue:'Łokcie ~45° od tułowia, nie na boki. Ciało w jednej linii.'},
-  'Pompki nogi wyżej':            {bw:true, rr:[10,20], mus:{klatka_gora:1, bark_przod:.5, triceps_bocz:.3},
+  'Pompki nogi wyżej':            {bw:true, rr:[10,20], mus:{klatka_gora:1, bark_przod:.5, triceps_bocz:.3, triceps_przysr:.2},
                                    cue:'Stopy na krześle albo schodach — im wyżej, tym bardziej góra klatki.'},
   'Pompki szerokie':              {bw:true, rr:[12,20], mus:{klatka_srodek:1, klatka_dol:.3, bark_przod:.3}},
-  'Pompki diamentowe':            {bw:true, rr:[8,18],  mus:{triceps_bocz:1, triceps_dluga:.5, klatka_srodek:.5},
+  'Pompki diamentowe':            {bw:true, rr:[8,18],  mus:{triceps_bocz:1, triceps_przysr:.8, triceps_dluga:.3, klatka_srodek:.5},
                                    cue:'Dłonie razem pod klatką. Najprostszy triceps bez sprzętu.'},
   'Pompki w podporze przodem':    {bw:true, rr:[8,15],  mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.4},
                                    cue:'Biodra wysoko, głowa między rękami — to zamiennik wyciskania nad głowę.'},
-  'Dipy na krzesłach':            {bw:true, rr:[10,20], mus:{triceps_bocz:1, triceps_dluga:.6, klatka_dol:.4},
+  'Dipy na krzesłach':            {bw:true, rr:[10,20], mus:{triceps_bocz:1, triceps_dluga:.6, triceps_przysr:.6, klatka_dol:.4},
                                    cue:'Dwa krzesła albo krawędź. Nie schodź niżej niż bark do łokcia.'},
-  'Wiosłowanie australijskie':    {bw:true, rr:[10,18], mus:{plecy_poziom:1, plecy_gora:.4, biceps:.4, bark_tyl:.4},
+  'Wiosłowanie australijskie':    {bw:true, rr:[10,18], mus:{plecy_poziom:1, plecy_gora:.4, biceps_dluga:.3, biceps_krotka:.3, ramienny:.4, bark_tyl:.4},
                                    cue:'Pod stołem, barierką albo drążkiem nisko. Im bardziej poziomo, tym trudniej.'},
-  'Wiosłowanie australijskie podchwytem': {bw:true, rr:[10,18], mus:{biceps:1, plecy_poziom:.7, plecy_pion:.3}},
-  'Podciąganie podchwytem':       {bw:true, rr:[5,12],  mus:{biceps:1, plecy_pion:.8, plecy_poziom:.3}},
+  'Wiosłowanie australijskie podchwytem': {bw:true, rr:[10,18], mus:{biceps_dluga:.8, biceps_krotka:.9, ramienny:.4, plecy_poziom:.7, plecy_pion:.3}},
+  'Podciąganie podchwytem':       {bw:true, rr:[5,12],  mus:{biceps_dluga:.8, biceps_krotka:.9, ramienny:.4, plecy_pion:.8, plecy_poziom:.3}},
   'Zwis na drążku':               {bw:true, time:true, rr:[30,60], mus:{przedramie:1, plecy_pion:.2}},
-  'Przysiad bułgarski (masa własna)': {bw:true, rr:[10,20], mus:{czworoglowe:1, posladki:.7, dwuglowe:.2},
+  'Przysiad bułgarski (masa własna)': {bw:true, rr:[10,20], mus:{czworoglowe:1, udo_proste:.3, posladki:.7, posladki_sr:.5, dwuglowe:.2},
                                    cue:'Tylna noga na krześle. To najmocniejsze ćwiczenie nóg bez sprzętu.'},
-  'Przysiad jednonóż do ławki':   {bw:true, rr:[6,12],  mus:{czworoglowe:1, posladki:.6},
+  'Przysiad jednonóż do ławki':   {bw:true, rr:[6,12],  mus:{czworoglowe:1, udo_proste:.3, posladki:.6, posladki_sr:.6},
                                    cue:'Siadasz na jednej nodze na krzesło i wstajesz. Trzymaj się czegoś dla równowagi.'},
-  'Przysiad z wyskokiem':         {bw:true, rr:[8,15],  mus:{czworoglowe:1, posladki:.5, lydki_stoj:.4},
+  'Przysiad z wyskokiem':         {bw:true, rr:[8,15],  mus:{czworoglowe:1, udo_proste:.3, posladki:.5, lydki_stoj:.4},
                                    cue:'Ląduj miękko. Nie rób tego przy zakwasach w czworogłowych.'},
-  'Przysiad w miejscu wolno':     {bw:true, rr:[15,30], mus:{czworoglowe:1, posladki:.4},
+  'Przysiad w miejscu wolno':     {bw:true, rr:[15,30], mus:{czworoglowe:1, udo_proste:.3, posladki:.4},
                                    cue:'Trzy sekundy w dół, sekunda w górę — czas pod napięciem zastępuje ciężar.'},
-  'Wykroki chodzone (masa własna)': {bw:true, rr:[12,24], mus:{czworoglowe:1, posladki:.8, dwuglowe:.3}},
-  'Most biodrowy jednonóż':       {bw:true, rr:[12,20], mus:{posladki:1, dwuglowe:.6}},
-  'Nordic curl asystowany':       {bw:true, rr:[5,10],  mus:{dwuglowe:1, posladki:.3},
+  'Wykroki chodzone (masa własna)': {bw:true, rr:[12,24], mus:{czworoglowe:1, udo_proste:.3, posladki:.8, posladki_sr:.5, dwuglowe:.3}},
+  'Most biodrowy jednonóż':       {bw:true, rr:[12,20], mus:{posladki:1, posladki_sr:.5, dwuglowe:.6}},
+  'Nordic curl asystowany':       {bw:true, rr:[5,10],  mus:{dwuglowe_kol:1, dwuglowe:.4, posladki:.3},
                                    cue:'Zahacz stopy o coś ciężkiego, opadaj wolno, wspomagaj się rękami. Najlepsze dwugłowe bez sprzętu.'},
-  'Wspięcia na palce jednonóż':   {bw:true, rr:[15,25], mus:{lydki_stoj:1}},
-  'Unoszenie nóg leżąc':          {bw:true, rr:[12,20], mus:{brzuch:1}},
+  'Unoszenie nóg leżąc':          {bw:true, rr:[12,20], mus:{brzuch:1, glebokie:.3}},
   'Unoszenie bokiem — plecak':    {bw:true, rr:[12,20], mus:{bark_bok:1},
                                    cue:'Plecak z butelkami wody. Litr to kilogram — łatwo dobrać.'},
   'Odwrotne rozpiętki — plecak':  {bw:true, rr:[12,20], mus:{bark_tyl:1, plecy_gora:.5}},
   'Wyciskanie plecakiem nad głowę': {bw:true, rr:[10,18], mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.4},
                                    cue:'Plecak z butelkami. Żebra w dół, nie wyginaj lędźwi.'},
-  'Wchodzenie na podwyższenie':   {bw:true, rr:[10,20], mus:{czworoglowe:1, posladki:.8, lydki_stoj:.2},
+  'Wchodzenie na podwyższenie':   {bw:true, rr:[10,20], mus:{czworoglowe:1, udo_proste:.3, posladki:.8, posladki_sr:.5, lydki_stoj:.2},
                                    cue:'Krzesło albo murek do wysokości kolana. Wchodź bez odbicia tylną nogą.'},
-  'Deska bokiem':                 {bw:true, time:true, rr:[25,50], mus:{brzuch:1, prostowniki:.3},
-                                   cue:'Biodro wysoko, ciało w linii. Na każdą stronę osobno.'},
-  'Superman':                     {bw:true, rr:[12,20], mus:{prostowniki:1, posladki:.4},
+  'Pompki ręce wyżej':            {bw:true, rr:[12,25], mus:{klatka_dol:1, klatka_srodek:.5, triceps_bocz:.3, triceps_przysr:.2},
+                                   cue:'Dłonie na krześle albo parapecie. Im wyżej ręce, tym bardziej dolna część klatki.'},
+  'Francuskie z plecakiem':       {bw:true, rr:[10,18], mus:{triceps_dluga:1, triceps_bocz:.5, triceps_przysr:.4},
+                                   cue:'Leżysz, plecak trzymany oburącz, opuszczasz za głowę. Głowa długa tricepsa pracuje tylko przy ramieniu nad głową.'},
+  'Superman':                     {bw:true, rr:[12,20], mus:{prostowniki:1, posladki:.5, dwuglowe:.4},
                                    cue:'Leżąc na brzuchu unosisz ręce i nogi. Bez szarpania, dwie sekundy u góry.'}
 };
 
 const DOMYSLNA_LIB = {
   /* --- klatka --- */
-  'Wyciskanie leżąc':            {inc:2.5, mus:{klatka_srodek:1, klatka_dol:.3, triceps_bocz:.4, bark_przod:.3}},
-  'Wyciskanie hantlami płasko':  {hantle:true, inc:2.5, mus:{klatka_srodek:1, klatka_gora:.2, bark_przod:.3, triceps_bocz:.3}},
+  'Wyciskanie leżąc':            {inc:2.5, mus:{klatka_srodek:1, klatka_dol:.3, triceps_bocz:.4, triceps_przysr:.3, bark_przod:.3}},
+  'Wyciskanie hantlami płasko':  {hantle:true, inc:2.5, mus:{klatka_srodek:1, klatka_gora:.2, bark_przod:.3, triceps_bocz:.3, triceps_przysr:.2}},
   'Wyciskanie hantli, skos':     {hantle:true, inc:2.5, mus:{klatka_gora:1, klatka_srodek:.4, bark_przod:.4, triceps_bocz:.3},
                                   cue:'Ławka 30°. Wyżej niż 45° i robota przenosi się na barki.'},
   'Wyciskanie sztangą, skos':    {inc:2.5, mus:{klatka_gora:1, klatka_srodek:.4, bark_przod:.4, triceps_bocz:.3}},
-  'Wyciskanie, skos ujemny':     {inc:2.5, mus:{klatka_dol:1, klatka_srodek:.5, triceps_bocz:.4}},
-  'Dipy':                        {inc:2.5, bw:true, mus:{klatka_dol:1, klatka_srodek:.4, triceps_dluga:.6, triceps_bocz:.5},
+  'Wyciskanie, skos ujemny':     {inc:2.5, mus:{klatka_dol:1, klatka_srodek:.5, triceps_bocz:.4, triceps_przysr:.3}},
+  'Dipy':                        {inc:2.5, bw:true, mus:{klatka_dol:1, klatka_srodek:.4, triceps_dluga:.6, triceps_bocz:.5, triceps_przysr:.4},
                                   cue:'Lekkie pochylenie do przodu. Ból z przodu barku = schodzisz za nisko.'},
   'Rozpiętki płasko':            {hantle:true, inc:2.5, mus:{klatka_srodek:1}},
   'Rozpiętki na maszynie':       {inc:2.5, mus:{klatka_srodek:1, klatka_gora:.2}},
@@ -756,57 +797,73 @@ const DOMYSLNA_LIB = {
                                   cue:'Od góry w dół i do środka, ręce spotykają się na wysokości bioder.'},
 
   /* --- plecy --- */
-  'Podciąganie':                 {inc:2.5, bw:true, mus:{plecy_pion:1, biceps:.5, plecy_poziom:.2}},
-  'Ściąganie drążka':            {inc:2.5, mus:{plecy_pion:1, biceps:.4}},
-  'Ściąganie wąsko podchwytem':  {inc:2.5, mus:{plecy_pion:.9, biceps:.6}},
-  'Wiosłowanie sztangą':         {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.4, biceps:.3, prostowniki:.4}},
-  'Wiosłowanie hantlem':         {hantle:true, inc:2.5, mus:{plecy_poziom:1, plecy_pion:.3, biceps:.3}},
-  'Wiosłowanie na maszynie':     {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.3, biceps:.3}},
-  'Wiosłowanie na wyciągu':      {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.3, biceps:.3}},
+  'Podciąganie':                 {inc:2.5, bw:true, mus:{plecy_pion:1, biceps_dluga:.4, biceps_krotka:.4, ramienny:.3, plecy_poziom:.2}},
+  'Ściąganie drążka':            {inc:2.5, mus:{plecy_pion:1, biceps_dluga:.3, biceps_krotka:.3, ramienny:.2}},
+  'Ściąganie wąsko podchwytem':  {inc:2.5, mus:{plecy_pion:.9, biceps_dluga:.5, biceps_krotka:.5, ramienny:.3}},
+  'Wiosłowanie sztangą':         {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.4, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3, prostowniki:.4}},
+  'Wiosłowanie hantlem':         {hantle:true, inc:2.5, mus:{plecy_poziom:1, plecy_pion:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3}},
+  'Wiosłowanie na maszynie':     {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3}},
+  'Wiosłowanie na wyciągu':      {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3}},
 
   /* --- barki --- */
-  'Wyciskanie żołnierskie':      {inc:2.5, mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.5}},
-  'Wyciskanie hantli nad głowę': {hantle:true, inc:2.5, mus:{bark_przod:1, bark_bok:.5, triceps_bocz:.4}},
+  'Wyciskanie żołnierskie':      {inc:2.5, mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.5, triceps_przysr:.3}},
+  'Wyciskanie hantli nad głowę': {hantle:true, inc:2.5, mus:{bark_przod:1, bark_bok:.5, triceps_bocz:.4, triceps_przysr:.3}},
   'Arnold press':                {hantle:true, inc:2.5, mus:{bark_przod:1, bark_bok:.6}},
   'Unoszenie hantli bokiem':     {hantle:true, inc:2.5, mus:{bark_bok:1}},
   'Unoszenie bokiem na wyciągu': {inc:2.5, mus:{bark_bok:1},
                                   cue:'Wyciąg trzyma napięcie w dolnej fazie, gdzie hantle je gubią.'},
   'Unoszenie bokiem na maszynie':{inc:2.5, mus:{bark_bok:1}},
+  'Szrugsy ze sztangą':          {inc:5, rr:[12,20], mus:{plecy_gora:1, przedramie:.4},
+                                  cue:'Unosisz barki prosto w górę, bez krążenia. Sekunda przytrzymania u góry — to ona robi robotę.'},
+  'Szrugsy z hantlami':          {hantle:true, inc:2.5, rr:[12,20], mus:{plecy_gora:1, przedramie:.5},
+                                  cue:'Hantle wzdłuż tułowia. Pełny zakres: barki nisko, potem najwyżej jak się da.'},
+  'Odwodzenie nogi w bok':       {inc:2.5, rr:[15,25], mus:{posladki_sr:1, posladki:.3},
+                                  cue:'Stojąc albo leżąc na boku, noga prosta, unosisz ją w bok bez skręcania miednicy. Guma albo linka wyciągu.'},
+  'Chód boczny z gumą':          {bw:true, rr:[15,25], mus:{posladki_sr:1, posladki:.2},
+                                  cue:'Guma nad kolanami, półprzysiad, kroki w bok. Kolana cały czas rozpychają gumę.'},
   'Face pull':                   {inc:2.5, mus:{bark_tyl:1, plecy_gora:.6}},
   'Odwrotne rozpiętki':          {inc:2.5, mus:{bark_tyl:1, plecy_gora:.4}},
 
   /* --- ramiona --- */
-  'Prostowanie ramion wyciąg':   {inc:2.5, mus:{triceps_bocz:1, triceps_dluga:.3}},
-  'Francuskie zza głowy':        {inc:2.5, mus:{triceps_dluga:1, triceps_bocz:.5},
+  'Prostowanie ramion wyciąg':   {inc:2.5, mus:{triceps_bocz:1, triceps_dluga:.3, triceps_przysr:.7}},
+  'Francuskie zza głowy':        {inc:2.5, mus:{triceps_dluga:1, triceps_bocz:.5, triceps_przysr:.4},
                                   cue:'Ramię nad głową rozciąga głowę długą — bez tej pozycji jej nie ruszysz.'},
-  'Prostowanie zza głowy wyciąg':{inc:2.5, mus:{triceps_dluga:1, triceps_bocz:.4}},
-  'Uginanie ramion':             {inc:2.5, mus:{biceps:1, przedramie:.3}},
-  'Uginanie młotkowe':           {hantle:true, inc:2.5, mus:{biceps:.8, przedramie:1}},
-  'Uginanie na modlitewniku':    {inc:2.5, mus:{biceps:1}},
-  'Uginanie na wyciągu':         {inc:2.5, mus:{biceps:1}},
+  'Prostowanie zza głowy wyciąg':{inc:2.5, mus:{triceps_dluga:1, triceps_bocz:.4, triceps_przysr:.4}},
+  'Uginanie ramion':             {inc:2.5, mus:{biceps_dluga:.9, biceps_krotka:.9, ramienny:.4, przedramie:.3}},
+  'Uginanie młotkowe':           {hantle:true, inc:2.5, mus:{ramienny:1, biceps_dluga:.5, biceps_krotka:.3, przedramie:1}},
+  'Uginanie na modlitewniku':    {inc:2.5, mus:{biceps_krotka:1, biceps_dluga:.4, ramienny:.4}},
+  'Uginanie na wyciągu':         {inc:2.5, mus:{biceps_dluga:.9, biceps_krotka:.8, ramienny:.3}},
 
   /* --- nogi --- */
-  'Przysiad ze sztangą':         {inc:5,   mus:{czworoglowe:1, posladki:.6, prostowniki:.4}},
-  'Wypychanie nogami':           {inc:5,   mus:{czworoglowe:1, posladki:.5}},
-  'Hack squat':                  {inc:5,   mus:{czworoglowe:1, posladki:.3}},
-  'Przysiad bułgarski':          {hantle:true, inc:2.5, mus:{czworoglowe:.8, posladki:1}},
-  'Wykroki chodzone':            {hantle:true, inc:2.5, mus:{czworoglowe:.7, posladki:1}},
-  'Prostowanie nóg':             {inc:2.5, mus:{czworoglowe:1}},
-  'Martwy ciąg klasyczny':       {inc:5,   mus:{posladki:1, prostowniki:1, dwuglowe:.8, plecy_gora:.4}},
-  'Martwy ciąg rumuński':        {inc:5,   mus:{dwuglowe:1, posladki:.8, prostowniki:.6}},
-  'Uginanie nóg leżąc':          {inc:2.5, mus:{dwuglowe:1}},
-  'Uginanie nóg siedząc':        {inc:2.5, mus:{dwuglowe:1},
+  'Przysiad ze sztangą':         {inc:5,   mus:{czworoglowe:1, udo_proste:.3, posladki:.6, prostowniki:.4}},
+  'Wypychanie nogami':           {inc:5,   mus:{czworoglowe:1, udo_proste:.3, posladki:.5}},
+  'Hack squat':                  {inc:5,   mus:{czworoglowe:1, udo_proste:.3, posladki:.3}},
+  'Przysiad bułgarski':          {hantle:true, inc:2.5, mus:{czworoglowe:.8, udo_proste:.3, posladki:1, posladki_sr:.5}},
+  'Wykroki chodzone':            {hantle:true, inc:2.5, mus:{czworoglowe:.7, udo_proste:.3, posladki:1, posladki_sr:.4}},
+  'Prostowanie nóg':             {inc:2.5, mus:{czworoglowe:1, udo_proste:1}},
+  'Martwy ciąg klasyczny':       {inc:5,   mus:{posladki:1, posladki_sr:.2, prostowniki:1, dwuglowe:.8, dwuglowe_kol:.1, plecy_gora:.4, glebokie:.5}},
+  'Martwy ciąg rumuński':        {inc:5,   mus:{dwuglowe:1, dwuglowe_kol:.2, posladki:.8, prostowniki:.6}},
+  'Uginanie nóg leżąc':          {inc:2.5, mus:{dwuglowe_kol:1, dwuglowe:.3}},
+  'Uginanie nóg siedząc':        {inc:2.5, mus:{dwuglowe_kol:1, dwuglowe:.2},
                                   cue:'Wersja siedząca rozciąga dwugłowe mocniej niż leżąca.'},
-  'Hip thrust':                  {inc:5,   mus:{posladki:1, dwuglowe:.4}},
-  'Hip thrust jednonóż':         {inc:2.5, mus:{posladki:1, dwuglowe:.4},
+  'Hip thrust':                  {inc:5,   mus:{posladki:1, posladki_sr:.2, dwuglowe:.4}},
+  'Hip thrust jednonóż':         {inc:2.5, mus:{posladki:1, posladki_sr:.2, dwuglowe:.4},
                                   cue:'Jedna noga naraz wyrównuje różnice między stronami.'},
-  'Good morning':                {inc:2.5, mus:{dwuglowe:1, prostowniki:.8, posladki:.6},
+  'Good morning':                {inc:2.5, mus:{dwuglowe:1, dwuglowe_kol:.1, prostowniki:.8, posladki:.6},
                                   cue:'Lżej niż w martwym rumuńskim — to ćwiczenie na wzorzec, nie na ciężar.'},
-  'Utrzymanie sztangi':          {inc:5, time:true, rr:[20,45], mus:{przedramie:1, plecy_gora:.3, brzuch:.3},
+  'Utrzymanie sztangi':          {inc:5, time:true, rr:[20,45], mus:{przedramie:1, plecy_gora:.3, glebokie:.4, skosne:.3},
                                   cue:'Chwyt ogranicza martwy ciąg i wiosłowanie wcześniej niż plecy.'},
-  'Utrzymanie hantli':           {hantle:true, inc:2.5, time:true, rr:[20,45], mus:{przedramie:1, plecy_gora:.4, brzuch:.4},
+  'Utrzymanie hantli':           {hantle:true, inc:2.5, time:true, rr:[20,45], mus:{przedramie:1, plecy_gora:.4, glebokie:.5, skosne:.4},
                                   cue:'Hantle po bokach, tułów napięty. Łatwiej odłożyć niż sztangę.'},
   'Wspięcia na palce stojąc':    {inc:5,   mus:{lydki_stoj:1}},
+  /* Robi się i na siłowni (hantel na kolanach), i na wyjeździe (plecak),
+     więc mieszka w bibliotece głównej, nie w puli wyjazdowej. Wcześniej
+     siedziało w KALIS_LIB, a odwoływał się do niego slot siłowni C5 —
+     walidacja planu to wychwyciła. */
+  'Wspięcia na palce jednonóż':   {bw:true, rr:[15,25], mus:{lydki_stoj:1},
+                                  cue:'Jedna noga, druga zahaczona z tyłu. Pełny zakres: pięta nisko, potem najwyżej jak się da.'},
+  'Wspięcia siedząc z obciążeniem': {bw:true, rr:[15,25], mus:{lydki_sied:1},
+                                  cue:'Siedzisz, ciężar na kolanach, unosisz pięty. Zgięte kolano wyłącza brzuchaty i całą pracę bierze płaszczkowaty.'},
   'Wspięcia na palce siedząc':   {inc:2.5, mus:{lydki_sied:1},
                                   cue:'Zgięte kolano wyłącza brzuchatego — to jedyny sposób na płaszczkowatego.'},
 
@@ -818,17 +875,21 @@ const DOMYSLNA_LIB = {
      Dane, które wymagają komentarza, żeby coś znaczyły, są złymi danymi. */
   /* Plank ma własny zakres, bo slot C6 jest ustawiony pod powtórzenia
      (3×10) i bez tego proponowałby dziesięciosekundowy plank. */
-  'Plank':                       {inc:0, bw:true, time:true, rr:[30,60], mus:{brzuch:1},
+  'Plank':                       {inc:0, bw:true, time:true, rr:[30,60], mus:{glebokie:1, brzuch:.5},
                                   cue:'Pośladki napięte, biodra nie opadają. Gdy biodra zaczynają się zapadać — koniec serii.'},
-  'Ab wheel':                    {inc:0, bw:true, rr:[8,12], mus:{brzuch:1, plecy_pion:0.2},
+  'Ab wheel':                    {inc:0, bw:true, rr:[8,12], mus:{glebokie:1, brzuch:.8, plecy_pion:0.2},
                                   cue:'Wyjeżdżasz tak daleko, jak utrzymasz napięte pośladki i plecy bez wygięcia. Zakres rośnie z tygodniami.'},
   /* Stara nazwa zostaje, żeby wcześniejsze wpisy nadal się wyświetlały.
      Nie ma jej już w żadnej puli, więc nowe sesje jej nie zaproponują. */
   /* Pozostałość po czasach, gdy plank i ab wheel siedziały w jednej pozycji.
      Zostaje wyłącznie po to, żeby stare wpisy w historii dało się odczytać;
      `stare:true` trzyma je z dala od planowania. */
-  'Plank / ab wheel':            {inc:0, time:true, stare:true, mus:{brzuch:1}},
+  'Plank / ab wheel':            {inc:0, time:true, stare:true, mus:{glebokie:1, brzuch:.6}},
   'Unoszenie nóg w zwisie':      {inc:0, bw:true, rr:[8,15], mus:{brzuch:1}},
+  'Deska bokiem':                {bw:true, time:true, rr:[25,50], mus:{skosne:1, glebokie:.7, prostowniki:.2},
+                                  cue:'Biodro wysoko, ciało w jednej linii. Na każdą stronę osobno.'},
+  'Skłon boczny z hantlem':      {hantle:true, inc:2.5, rr:[12,20], mus:{skosne:1, glebokie:.4},
+                                  cue:'Hantel w jednej ręce, schylasz się w JEGO stronę i prostujesz. Druga ręka za głową. Bez rotacji.'},
   'Allahy na wyciągu':           {inc:2.5, rr:[12,20], mus:{brzuch:1}}
 };
 /* ============================================================
@@ -850,30 +911,41 @@ const DOMYSLNA_LIB = {
    więc zakresy są wyższe i sufit RPE nieco luźniejszy — przy masie własnej
    trudniej trafić w upadek przez przypadek.
    ============================================================ */
+/* Uwaga do puli poniżej: w trybie wyjazdowym większość slotów ma JEDNO
+   ćwiczenie, nie kilka. To wygląda ubogo, ale jest przemyślane — pomiar
+   pokazał, że przy rotacji dwóch opcji region dostawał połowę serii w co
+   drugim tygodniu, a niektóre (płaszczkowaty łydki, prostowniki) zera przez
+   kilka tygodni z rzędu. Bez sprzętu jest po prostu za mało zamienników,
+   żeby stać nas było na rotację. Urozmaicenie idzie przez trudność dźwigni. */
 const KALIS = {
   A1: ['Przysiad bułgarski (masa własna)', 'Przysiad jednonóż do ławki'],
   A2: ['Przysiad z wyskokiem', 'Przysiad w miejscu wolno'],
-  A3: ['Most biodrowy jednonóż', 'Nordic curl asystowany'],
-  A4: ['Nordic curl asystowany', 'Most biodrowy jednonóż'],
+  A3: ['Superman'],
+  C3: ['Most biodrowy jednonóż', 'Chód boczny z gumą'],
+  A4: ['Nordic curl asystowany'],
   A5: ['Wspięcia na palce jednonóż'],
-  A6: ['Plank', 'Deska bokiem'],
-  B1: ['Pompki', 'Pompki nogi wyżej'],
+  A6: ['Unoszenie nóg leżąc'],
+  /* Superman siedzi w A3 (prostowniki), skośne w C6, chwyt w C7 —
+     każdy region tułowia ma jeden pewny slot zamiast rotacji, która gubiła
+     go co drugi tydzień. */
+  B1: ['Pompki'],
   B2: ['Pompki w podporze przodem', 'Wyciskanie plecakiem nad głowę'],
   B3: ['Wiosłowanie australijskie'],
-  B4: ['Pompki nogi wyżej', 'Pompki szerokie'],
-  B5: ['Pompki diamentowe', 'Dipy na krzesłach'],
+  B4: ['Pompki ręce wyżej'],
+  B5: ['Francuskie z plecakiem'],
   B6: ['Unoszenie bokiem — plecak'],
   C1: ['Wykroki chodzone (masa własna)', 'Wchodzenie na podwyższenie'],
+  /* stabilizacja głęboka przenosi się do slotu chwytu — plank zamiast zwisu */
   C2: ['Przysiad jednonóż do ławki', 'Wykroki chodzone (masa własna)'],
-  C3: ['Most biodrowy jednonóż', 'Wykroki chodzone (masa własna)'],
+
   C4: ['Przysiad w miejscu wolno', 'Wchodzenie na podwyższenie'],
-  C5: ['Wspięcia na palce jednonóż'],
-  C6: ['Unoszenie nóg leżąc', 'Superman'],
+  C5: ['Wspięcia siedząc z obciążeniem'],
+  C6: ['Deska bokiem'],
   C7: ['Zwis na drążku'],
   D1: ['Podciąganie', 'Wiosłowanie australijskie'],
   D2: ['Wiosłowanie australijskie'],
-  D3: ['Pompki nogi wyżej', 'Pompki'],
-  D4: ['Odwrotne rozpiętki — plecak', 'Wiosłowanie australijskie'],
+  D3: ['Pompki nogi wyżej'],
+  D4: ['Odwrotne rozpiętki — plecak'],
   D5: ['Podciąganie podchwytem', 'Wiosłowanie australijskie podchwytem'],
   D6: ['Podciąganie', 'Wiosłowanie australijskie']
 };
@@ -900,15 +972,23 @@ const DOMYSLNY_PLAN = {
     {id:'A3', lab:'Wzorzec hinge', pool:['Martwy ciąg rumuński','Good morning'],
      t:['3×10 RPE6','3×8-10 RPE7','2×10 RPE5','3×6-8 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[6,8]]},
-    {id:'A4', lab:'Dwugłowe', pool:['Uginanie nóg leżąc','Uginanie nóg siedząc'],
-     t:['3×12','3×10-12','2×12','3×10-12'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
-    {id:'A5', lab:'Łydki', pool:['Wspięcia na palce stojąc','Wspięcia na palce siedząc'],
+    {id:'A4', lab:'Dwugłowe — zginanie kolana',
+     pool:['Uginanie nóg leżąc','Uginanie nóg siedząc'],
+     t:['4×12','4×10-12','2×12','4×10-12'],
+     s:[4,4,2,4], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    /* BŁĄD, który to naprawia: A5 i C5 rotowały między wspięciami stojąc
+       a siedząc, jakby to były warianty tego samego. To dwa różne mięśnie —
+       brzuchaty pracuje przy wyprostowanym kolanie, płaszczkowaty przy
+       zgiętym. Rotacja sprawiała, że w niektórych tygodniach jeden dostawał
+       siedem serii, a drugi zero. Teraz A5 to zawsze brzuchaty, C5 zawsze
+       płaszczkowaty, a rotacja idzie WEWNĄTRZ każdego z nich. */
+    {id:'A5', lab:'Łydki — brzuchaty (stojąc)',
+     pool:['Wspięcia na palce stojąc','Wspięcia na palce jednonóż'],
      t:['3×15','4×12-15','2×15','4×12-15'],
      s:[3,4,2,4], rr:[[15,15],[12,15],[15,15],[12,15]]},
     {id:'A6', lab:'Tułów', pool:['Plank','Ab wheel','Allahy na wyciągu','Unoszenie nóg w zwisie'],
-     t:['3×40s','3×50s','2×40s','3×60s'],
-     s:[3,3,2,3], rr:[[40,40],[50,50],[40,40],[60,60]]}
+     t:['4×40s','4×50s','2×40s','4×60s'],
+     s:[4,4,2,4], rr:[[40,40],[50,50],[40,40],[60,60]]}
   ]},
 
   B: { name:'Góra — push', grp:'góra', slots:[
@@ -928,21 +1008,30 @@ const DOMYSLNY_PLAN = {
            'Dipy','Rozpiętki na maszynie','Wyciskanie, skos ujemny'],
      t:['3×15','3×12-15','2×15','3×12-15'],
      s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
-    {id:'B5', lab:'Triceps',
-     pool:['Prostowanie ramion wyciąg','Francuskie zza głowy','Prostowanie zza głowy wyciąg'],
+    /* Slot dedykowany GŁOWIE DŁUGIEJ. Wcześniej rotował z prostowaniem
+       na wyciągu w dół — a to ćwiczenie prawie jej nie rusza, bo długa głowa
+       przyczepia się do łopatki i pracuje dopiero przy ramieniu nad głową.
+       W tygodniach z wyciągiem długa spadała do 2,7 przy normie 3-10.
+       Boczna i przyśrodkowa mają po 6-7 serii z samego wyciskania. */
+    {id:'B5', lab:'Triceps — głowa długa',
+     pool:['Francuskie zza głowy','Prostowanie zza głowy wyciąg'],
      t:['3×12','3×10-12','2×12','3×10-12'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    /* Cztery serie zamiast trzech: pomiar dawał 4,8 przy normie 6-16.
+       Boczny akton naramiennego znosi dużą objętość i szybko się regeneruje —
+       to jeden z niewielu mięśni, przy których więcej serii naprawdę pomaga. */
     {id:'B6', lab:'Bark — bok',
      pool:['Unoszenie hantli bokiem','Unoszenie bokiem na wyciągu','Unoszenie bokiem na maszynie'],
-     t:['3×15','3×12-15','2×15','3×15-20'],
-     s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[15,20]]}
+     t:['5×15','5×12-15','2×15','5×15-20'],
+     s:[5,5,2,5], rr:[[15,15],[12,15],[15,15],[15,20]]}
   ]},
 
   C: { name:'Nogi — martwy ciąg', grp:'nogi', slots:[
     {id:'C1', lab:'Główny bój', fixed:'Martwy ciąg klasyczny',
      t:['— pomijasz w tyg. 1-2','3×5 RPE7','2×5 RPE5','4×3-5 RPE8'],
      s:[0,3,2,4], rr:[[0,0],[5,5],[5,5],[3,5]]},
-    {id:'C2', lab:'Jednonóż', pool:['Przysiad bułgarski','Wykroki chodzone'],
+    {id:'C2', lab:'Jednonóż / stabilizacja miednicy',
+     pool:['Przysiad bułgarski','Wykroki chodzone','Odwodzenie nogi w bok'],
      t:['3×10/nogę RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
     {id:'C3', lab:'Pośladki', pool:['Hip thrust','Hip thrust jednonóż'],
@@ -951,10 +1040,14 @@ const DOMYSLNY_PLAN = {
     {id:'C4', lab:'Czworogłowe — izolacja', pool:['Prostowanie nóg','Hack squat'],
      t:['3×15','3×12-15','2×15','3×12-15'],
      s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
-    {id:'C5', lab:'Łydki', pool:['Wspięcia na palce siedząc','Wspięcia na palce stojąc'],
+    {id:'C5', lab:'Łydki — płaszczkowaty (siedząc)',
+     pool:['Wspięcia na palce siedząc','Wspięcia siedząc z obciążeniem'],
      t:['3×15','3×15-20','2×15','3×15-20'],
      s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
-    {id:'C6', lab:'Tułów', pool:['Unoszenie nóg w zwisie','Ab wheel','Allahy na wyciągu','Plank'],
+    /* Skośne miały 0,7 serii tygodniowo przy normie 2-10 — nie było w planie
+       ANI JEDNEGO ćwiczenia, które by je obciążało. Dzień A pilnuje prostego
+       i stabilizacji, dzień C skośnych. */
+    {id:'C6', lab:'Tułów — skośne', pool:['Deska bokiem','Skłon boczny z hantlem'],
      t:['3×10','3×12','2×10','3×12-15'],
      s:[3,3,2,3], rr:[[10,10],[12,12],[10,10],[12,15]]},
     {id:'C7', lab:'Chwyt', pool:['Utrzymanie sztangi','Utrzymanie hantli'],
@@ -970,14 +1063,22 @@ const DOMYSLNY_PLAN = {
      pool:['Wiosłowanie hantlem','Wiosłowanie sztangą','Wiosłowanie na maszynie'],
      t:['3×10 RPE6','4×8-10 RPE8','2×10 RPE5','4×6-8 RPE8'],
      s:[3,4,2,4], rr:[[10,10],[8,10],[10,10],[6,8]]},
-    {id:'D3', lab:'Klatka — region',
-     pool:['Wyciskanie hantli, skos','Wyciskanie hantlami płasko','Dipy',
-           'Brama góra→dół','Wyciskanie sztangą, skos'],
-     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    {id:'D4', lab:'Tył barku / góra pleców', pool:['Face pull','Odwrotne rozpiętki'],
-     t:['3×15','3×15-20','2×15','3×15-20'],
-     s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
+    /* Slot dedykowany GÓRZE klatki. Wcześniej była tu ogólna „klatka — region"
+       z pulą, w której skos był jedną z pięciu opcji — i pomiar pokazał
+       3,0 serii tygodniowo przy normie 4-12 przez dziesięć tygodni z rzędu.
+       Środek klatki ma wyciskanie leżąc jako główny bój, dół ma B4;
+       góra nie miała nic swojego. */
+    {id:'D3', lab:'Klatka — góra',
+     pool:['Wyciskanie hantli, skos','Wyciskanie sztangą, skos','Brama dół→góra'],
+     t:['4×10 RPE6','4×8-10 RPE8','2×10 RPE5','4×8-10 RPE8'],
+     s:[4,4,2,4], rr:[[10,10],[8,10],[10,10],[8,10]]},
+    /* Tył barku miał 3,0 przy normie 5-14 — a to on równoważy całe wyciskanie
+       i chroni bark przed konfliktem podbarkowym. Cztery serie plus dorzucenie
+       tyłu barku do dnia push (B3). */
+    {id:'D4', lab:'Tył barku / góra pleców',
+     pool:['Face pull','Odwrotne rozpiętki','Szrugsy ze sztangą','Szrugsy z hantlami'],
+     t:['5×15','5×15-20','2×15','5×15-20'],
+     s:[5,5,2,5], rr:[[15,15],[15,20],[15,15],[15,20]]},
     {id:'D5', lab:'Biceps',
      pool:['Uginanie ramion','Uginanie młotkowe','Uginanie na modlitewniku','Uginanie na wyciągu'],
      t:['3×12','3×10-12','2×12','3×8-10'],
@@ -1144,7 +1245,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '11';
+const WERSJA = '14';
 const WERSJA_DATA = '2026-08-06';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2612,6 +2713,123 @@ function seriaPrzelozen(){
   return ile;
 }
 
+/* ============================================================
+   OBWÓD NA CZAS
+   Prosty trening bez planowania: nastawiasz stoper, robisz rundę za rundą,
+   liczysz ile ich wyszło. Znany z „Cindy" — dwadzieścia minut, w każdej
+   rundzie podciąganie, pompki i przysiady, tyle rund ile dasz radę.
+
+   Po co to jest: na wyjeździe, w hotelu, w parku — wtedy, gdy sześć ćwiczeń
+   z kolejnością i ciężarami to za dużo zachodu. Liczy się jako pełnoprawny
+   trening: rundy zamieniają się na serie, więc pokrycie mięśni i historia
+   działają tak samo jak przy zwykłej sesji.
+
+   Czego to NIE jest: zamiennik treningu siłowego na dłuższą metę. Przy
+   masie własnej i wysokich powtórzeniach bodziec idzie bardziej w wytrzymałość
+   niż w siłę. Jako jedna–dwie sesje w tygodniu wakacji — bardzo dobrze.
+   Jako całość planu przez miesiąc — siła zacznie schodzić.
+   ============================================================ */
+const OBWODY = {
+  cindy: {n:'Cindy', min:20, opis:'Klasyk. Dwadzieścia minut, tyle rund ile dasz radę.',
+    cw:[['Podciąganie',5],['Pompki',10],['Przysiad w miejscu wolno',15]]},
+  cindy_bez: {n:'Cindy bez drążka', min:20, opis:'To samo, gdy nie ma na czym się podciągnąć.',
+    cw:[['Wiosłowanie australijskie',8],['Pompki',10],['Przysiad w miejscu wolno',15]]},
+  krotki: {n:'Dziesięć minut', min:10, opis:'Gdy masz kwadrans i chcesz cokolwiek zrobić.',
+    cw:[['Pompki',10],['Przysiad w miejscu wolno',15],['Unoszenie nóg leżąc',10]]},
+  nogi: {n:'Nogi i pośladki', min:15, opis:'Bez drążka i bez pompek — same nogi.',
+    cw:[['Wykroki chodzone (masa własna)',10],['Most biodrowy jednonóż',10],['Wspięcia na palce jednonóż',15]]}
+};
+
+let KOLKO = null;   /* {id, start, rundy, cel} */
+
+function startObwod(id){
+  const o = OBWODY[id];
+  if(!o) return;
+  const brak = o.cw.filter(([n]) => !LIB[n]);
+  if(brak.length){ toast('Brakuje ćwiczeń w bibliotece'); return; }
+  KOLKO = {id, start: Date.now(), rundy: 0, min: o.min};
+  zapiszObwod(); renderSub();
+}
+function zapiszObwod(){
+  try { KOLKO ? localStorage.setItem('trening-obwod', JSON.stringify(KOLKO))
+            : localStorage.removeItem('trening-obwod'); } catch(e){}
+}
+function wczytajObwod(){
+  try { const r = JSON.parse(localStorage.getItem('trening-obwod') || 'null');
+        if(r && r.start && Date.now() - r.start < 3*3600e3) KOLKO = r; } catch(e){}
+}
+function rundaPlus(){
+  if(!KOLKO) return;
+  KOLKO.rundy++; zapiszObwod(); renderSub();
+  if(navigator.vibrate) navigator.vibrate(25);
+}
+function rundaMinus(){
+  if(!KOLKO || KOLKO.rundy <= 0) return;
+  KOLKO.rundy--; zapiszObwod(); renderSub();
+}
+function przerwijObwod(){
+  if(!confirm('Przerwać obwód? Rundy przepadną.')) return;
+  KOLKO = null; zapiszObwod(); renderSub();
+}
+function konczObwod(){
+  if(!KOLKO) return;
+  const o = OBWODY[KOLKO.id];
+  if(!KOLKO.rundy){ toast('Zero rund — nie ma czego zapisywać'); return; }
+  const minuty = Math.max(1, Math.round((Date.now() - KOLKO.start) / 60000));
+  /* Runda = jedna seria każdego ćwiczenia. Dzięki temu pokrycie mięśni,
+     historia i wykresy liczą obwód tak samo jak zwykły trening — bez
+     osobnej ścieżki, która musiałaby się zgadzać z resztą. */
+  const wpis = {
+    id: uid('o'), date: today(), day: 'X', week: weekNo(), dur: minuty,
+    obwod: {id: KOLKO.id, nazwa: o.n, rundy: KOLKO.rundy},
+    note: o.n + ' — ' + KOLKO.rundy + ' rund w ' + minuty + ' min',
+    exercises: o.cw.map(([n, powt], i) => ({
+      slot: null, name: n, lab: 'obwód', target: KOLKO.rundy + '×' + powt,
+      sets: Array.from({length: KOLKO.rundy}, () => ({w: 0, r: powt, rpe: null}))
+    }))
+  };
+  DB.workouts.push(wpis);
+  DB.workouts.sort((a,b) => a.date.localeCompare(b.date));
+  KOLKO = null; zapiszObwod();
+  save(); zsynchronizuj(); renderSub();
+  toast(o.n + ': ' + wpis.obwod.rundy + ' rund zapisane');
+}
+
+function renderObwod(){
+  if(KOLKO){
+    const o = OBWODY[KOLKO.id];
+    const uplyw = Math.floor((Date.now() - KOLKO.start) / 1000);
+    const zostalo = Math.max(0, KOLKO.min*60 - uplyw);
+    const m = Math.floor(zostalo/60), sek = zostalo % 60;
+    const koniec = zostalo === 0;
+    return '<div class="tip '+(koniec?'ok':'warn')+'">'+
+      '<b>'+esc(o.n)+'</b> · '+ (koniec ? 'czas minął' : m+':'+String(sek).padStart(2,'0')+' do końca')+
+      '<div style="font-size:44px;font-weight:800;text-align:center;margin:10px 0;'+
+      'font-variant-numeric:tabular-nums">'+KOLKO.rundy+'</div>'+
+      '<div class="hm" style="text-align:center;margin-top:-8px">'+
+        esc(o.cw.map(([n,r]) => r+'× '+n).join(' · '))+'</div>'+
+      '<button class="btn" style="width:100%;margin-top:12px;padding:16px" onclick="rundaPlus()">+ RUNDA</button>'+
+      '<div style="display:flex;gap:8px;margin-top:8px">'+
+      '<button class="btn ghost sm" style="flex:1" onclick="rundaMinus()">− runda</button>'+
+      '<button class="btn ghost sm" style="flex:2" onclick="konczObwod()">Zakończ i zapisz</button>'+
+      '<button class="btn ghost sm" style="flex:1" onclick="przerwijObwod()">Anuluj</button>'+
+      '</div></div>';
+  }
+  return '<h2>Obwód na czas</h2><div class="card">'+
+    '<div class="note">Nastawiasz stoper, robisz rundę za rundą, liczysz ile ich wyszło. '+
+    'Zapisuje się jak zwykły trening — rundy liczą się jako serie, więc mapa mięśni '+
+    'i historia widzą go tak samo.</div>'+
+    Object.entries(OBWODY).map(([k,o]) =>
+      '<div class="hist"><div><div class="hd">'+esc(o.n)+' · '+o.min+' min</div>'+
+      '<div class="hm">'+esc(o.cw.map(([n,r]) => r+'× '+n).join(' · '))+'</div>'+
+      '<div class="note" style="margin-top:2px">'+esc(o.opis)+'</div></div>'+
+      '<button class="btn ghost sm" onclick="startObwod(\''+k+'\')">Start</button></div>').join('')+
+    '<div class="note" style="margin-top:10px"><b>Uczciwie:</b> przy masie własnej '+
+    'i wysokich powtórzeniach bodziec idzie bardziej w wytrzymałość niż w siłę. '+
+    'Jako jedna–dwie sesje w tygodniu wakacji — świetnie. Jako całość planu '+
+    'przez miesiąc — siła zacznie schodzić.</div></div>';
+}
+
 let PLAN_ROZW = false, KOLEJNE_ROZW = false;
 function przelaczKolejne(){ KOLEJNE_ROZW = !KOLEJNE_ROZW; renderHub(); }
 function przelaczPlan(){ PLAN_ROZW = !PLAN_ROZW; renderHub(); }
@@ -3097,7 +3315,7 @@ function renderHub(){
     /* Kolejność jest teraz według pilności, nie według historii dopisywania:
        najpierw to, co robisz teraz, potem to, czego aplikacja od Ciebie chce,
        potem kontekst, na końcu sprawy techniczne. */
-    renderNowaWersja() + resume + renderDzis() + renderPoranne() + renderBraki() + coach +
+    renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume + renderDzis() + renderPoranne() + renderBraki() + coach +
     planBox + renderKolejne() + odpBox + czekaBox + renderPrzeloz() + syncBox;
 }
 
@@ -3608,6 +3826,51 @@ function finishSession(){
    w zakresy, czy RPE pasuje do fazy, co silnik zrobi z ciężarami — da się
    policzyć z samych danych. Zostaje w telefonie i jest od razu.
    ============================================================ */
+/* Które konkretnie mięśnie dostały pracę w tej sesji — nie „triceps",
+   tylko która głowa. Po rozbiciu regionów raport, który mówi „góra ciała
+   zrobiona", przestał wystarczać: można zrobić cały dzień push i nie tknąć
+   długiej głowy tricepsa ani tyłu barku. */
+function pokrycieSesji(w){
+  const suma = {};
+  (w.exercises || []).forEach(e => {
+    const robocze = (e.sets || []).filter(x => !x.wu).length;
+    if(!robocze) return;
+    Object.entries((LIB[e.name] || {}).mus || {}).forEach(([r, u]) => {
+      suma[r] = (suma[r] || 0) + u * robocze;
+    });
+  });
+  const lista = Object.entries(suma).filter(([,v]) => v >= 0.5)
+    .sort((a,b) => b[1] - a[1]);
+  if(!lista.length) return '';
+
+  /* to, co ta sesja obrobiła najmocniej */
+  const mocno = lista.filter(([,v]) => v >= 2).map(([k,v]) =>
+    (REG[k] || {n:k}).n + ' ' + fmtKg(v));
+  const musnieto = lista.filter(([,v]) => v < 2).map(([k]) => (REG[k]||{n:k}).n);
+
+  /* czego brakuje w skali dwóch tygodni — po sesji to najlepszy moment,
+     żeby to powiedzieć, bo wtedy zapada decyzja o następnym dniu */
+  const cov = regionSets(14);
+  const chude = Object.entries(REG)
+    .filter(([k,R]) => R.min > 0 && (cov[k] || 0) < R.min)
+    .sort((a,b) => (cov[a[0]]||0)/a[1].min - (cov[b[0]]||0)/b[1].min)
+    .slice(0, 4);
+
+  return '<h2>Co obrobiła ta sesja</h2><div class="card">'+
+    '<div class="hd">Główna praca</div>'+
+    '<div class="hm">'+esc(mocno.join(' · ') || '—')+'</div>'+
+    (musnieto.length ? '<div class="hd" style="margin-top:9px">Muśnięte</div>'+
+      '<div class="hm">'+esc(musnieto.join(', '))+'</div>' : '')+
+    '</div>'+
+    (chude.length
+      ? '<div class="tip warn"><b>Pod normą w ostatnich 14 dniach</b><br>'+
+        chude.map(([k,R]) => esc(R.n)+' — '+fmtKg(cov[k]||0)+' z '+R.min).join('<br>')+
+        '<div class="note" style="margin-top:6px">'+esc((chude[0][1].o) || '')+'</div>'+
+        '<div class="note" style="margin-top:4px">Silnik sam po to sięgnie przy '+
+        'najbliższej rotacji akcesoriów — nie musisz nic zmieniać.</div></div>'
+      : '<div class="tip ok">Wszystkie 28 partii w normie w ostatnich 14 dniach.</div>');
+}
+
 function raportSesji(w){
   if(!w) return '';
   const p = phaseOf(weekNo(w.date)), faza = PHASES[p] || {};
@@ -3617,6 +3880,15 @@ function raportSesji(w){
   const srRpe = rpe.length ? rpe.reduce((a,b)=>a+b,0)/rpe.length : null;
   const doUpadku = rpe.filter(x => x >= 10).length;
   const dz = DB.daily.find(x => x.date === w.date) || {};
+
+  if(w.obwod)
+    return '<h2>Obwód: '+esc(w.obwod.nazwa)+'</h2>'+
+      '<div class="tip ok"><b>'+w.obwod.rundy+' rund w '+(w.dur||'?')+' min</b>'+
+      '<div class="hm" style="margin-top:4px">'+
+      esc(w.exercises.map(e => (e.sets.length*(e.sets[0]||{}).r)+'× '+e.name).join(' · '))+
+      '</div><div class="note" style="margin-top:8px">Rundy liczą się jako serie, '+
+      'więc ten trening widać na mapie mięśni i w historii tak samo jak każdy inny.</div></div>'+
+      renderCoverage();
 
   const n = DB.nastepny;
   const czyjPlan = (n && n.data === w.date)
@@ -3689,6 +3961,9 @@ function raportSesji(w){
       'ciężaru, przy którym domkniesz pełne serie. Stamtąd progresja rusza szybciej '+
       'niż przy szarpaniu się ze zbyt dużym.</div></div>';
   }
+
+  /* --- co ta sesja realnie obrobiła, w rozbiciu na głowy --- */
+  h += pokrycieSesji(w);
 
   /* --- pokrycie i regeneracja --- */
   h += renderCoverage();
@@ -4140,6 +4415,7 @@ function renderRun(){
     'Tempo, w którym prowadzisz rozmowę pełnymi zdaniami. Jeśli dyszysz — za szybko.'+
     (r.z2n?' '+esc(r.z2n):''));
   h += karta('Bieg jakościowy', sJak, r.q, esc(r.qn));
+  h += KOLKO ? '' : renderObwod();
   h+='<h2>Zapisz aktywność</h2><div class="card">'+
     '<div class="fld"><label>Data</label><input type="date" id="rDate" value="'+today()+'"></div>'+
     '<div class="dayin" style="margin-top:10px">'+
@@ -4597,11 +4873,11 @@ function bodyMap(cov){
   sh('klatka_gora','<rect x="64" y="62" width="42" height="11" rx="3"/>')+
   sh('klatka_srodek','<rect x="62" y="74" width="46" height="13" rx="3"/>')+
   sh('klatka_dol','<rect x="64" y="88" width="42" height="10" rx="3"/>')+
-  sh('biceps','<rect x="45" y="72" width="12" height="30" rx="5"/><rect x="113" y="72" width="12" height="30" rx="5"/>')+
+  sh(['biceps_dluga','biceps_krotka','ramienny'],'<rect x="45" y="72" width="12" height="30" rx="5"/><rect x="113" y="72" width="12" height="30" rx="5"/>')+
   sh('przedramie','<rect x="43" y="104" width="12" height="30" rx="5"/><rect x="115" y="104" width="12" height="30" rx="5"/>')+
-  sh('brzuch','<rect x="68" y="100" width="34" height="34" rx="4"/>')+
+  sh(['brzuch','skosne','glebokie'],'<rect x="68" y="100" width="34" height="34" rx="4"/>')+
   '<rect x="66" y="136" width="38" height="12" rx="4" class="hd"/>'+
-  sh('czworoglowe','<rect x="65" y="150" width="17" height="52" rx="7"/><rect x="88" y="150" width="17" height="52" rx="7"/>')+
+  sh(['czworoglowe','udo_proste'],'<rect x="65" y="150" width="17" height="52" rx="7"/><rect x="88" y="150" width="17" height="52" rx="7"/>')+
   sh('lydki_stoj','<rect x="67" y="208" width="14" height="42" rx="6"/><rect x="89" y="208" width="14" height="42" rx="6"/>')+
   '<text x="85" y="264" class="lb">ŁYDKI — BRZUCHATY</text>'+
 
@@ -4612,13 +4888,73 @@ function bodyMap(cov){
   sh('bark_tyl','<ellipse cx="227" cy="62" rx="12" ry="11"/><ellipse cx="283" cy="62" rx="12" ry="11"/>')+
   sh('plecy_pion','<path d="M233 66 L250 66 L250 104 L238 96 Z"/><path d="M277 66 L260 66 L260 104 L272 96 Z"/>')+
   sh('plecy_poziom','<rect x="251" y="66" width="8" height="38" rx="2"/>')+
-  sh(['triceps_dluga','triceps_bocz'],'<rect x="215" y="74" width="12" height="30" rx="5"/><rect x="283" y="74" width="12" height="30" rx="5"/>')+
+  sh(['triceps_dluga','triceps_bocz','triceps_przysr'],'<rect x="215" y="74" width="12" height="30" rx="5"/><rect x="283" y="74" width="12" height="30" rx="5"/>')+
   sh('prostowniki','<rect x="243" y="106" width="24" height="26" rx="4"/>')+
-  sh('posladki','<rect x="235" y="136" width="18" height="22" rx="7"/><rect x="257" y="136" width="18" height="22" rx="7"/>')+
-  sh('dwuglowe','<rect x="235" y="160" width="17" height="42" rx="7"/><rect x="258" y="160" width="17" height="42" rx="7"/>')+
+  sh(['posladki','posladki_sr'],'<rect x="235" y="136" width="18" height="22" rx="7"/><rect x="257" y="136" width="18" height="22" rx="7"/>')+
+  sh(['dwuglowe','dwuglowe_kol'],'<rect x="235" y="160" width="17" height="42" rx="7"/><rect x="258" y="160" width="17" height="42" rx="7"/>')+
   sh('lydki_sied','<rect x="237" y="208" width="14" height="42" rx="6"/><rect x="259" y="208" width="14" height="42" rx="6"/>')+
   '<text x="255" y="264" class="lb">ŁYDKI — PŁASZCZKOWATY</text>'+
   '</svg>';
+}
+
+/* ============================================================
+   ROZBICIE NA GŁOWY
+   Mięsień to nie jedna rzecz. Triceps ma trzy głowy i tylko jedna z nich
+   przyczepia się do łopatki — pracuje naprawdę dopiero przy ramieniu nad
+   głową. Biceps ma dwie plus mięsień ramienny pod spodem. Czworogłowy ma
+   trzy głowy działające na kolano i jedną, która przechodzi przez biodro.
+
+   Dopóki liczyliśmy je razem, „triceps w normie" mogło znaczyć „boczna
+   głowa przetrenowana, długa nietknięta". Pomiar to potwierdził: po
+   rozbiciu okazało się, że długa głowa siedziała pod normą przez trzy
+   tygodnie z rzędu, a skośne brzucha miały 0,7 serii przy normie 2.
+
+   Na mapie kształt ciała pokazuje stan CAŁEJ grupy — najgorszej z jej
+   głów. Rozwinięcie pokazuje każdą osobno, razem z tym, czym się ją trenuje.
+   ============================================================ */
+let GRUPA_ROZW = null;
+function przelaczGrupe(g){
+  GRUPA_ROZW = (GRUPA_ROZW === g) ? null : g;
+  renderSub();
+}
+
+function rozbicieGrup(cov){
+  const grupy = {};
+  Object.entries(REG).forEach(([k, R]) => {
+    (grupy[R.grp] = grupy[R.grp] || []).push([k, R]);
+  });
+
+  return '<h2>Mięsień po mięśniu</h2>' + Object.entries(grupy).map(([g, lista]) => {
+    const stany = lista.map(([k]) => regStatus(k, cov));
+    const stan = stany.includes('none') ? 'bad' : stany.includes('low') ? 'warn'
+               : stany.every(x => x === 'over') ? '' : 'ok';
+    const otw = GRUPA_ROZW === g;
+    const podsum = lista.filter(([k]) => {
+      const st = regStatus(k, cov); return st === 'none' || st === 'low';
+    }).map(([,R]) => R.n).join(', ');
+
+    return '<div class="tip '+stan+'" onclick="przelaczGrupe(\''+g+'\')" '+
+      'style="cursor:pointer;-webkit-tap-highlight-color:transparent">'+
+      '<b>'+esc(g)+'</b> · '+lista.length+' '+(lista.length===1?'mięsień':lista.length<5?'mięśnie':'mięśni')+
+      (podsum ? ' · <span class="bad">'+esc(podsum)+'</span>' : ' · wszystkie w normie')+
+      '<span style="float:right;opacity:.6">'+(otw?'▴':'▾')+'</span>'+
+      (otw ? '<div style="margin-top:9px">' + lista.map(([k, R]) => {
+        const ile = Math.round((cov[k]||0)*10)/10;
+        const st = regStatus(k, cov);
+        const kolor = st === 'none' ? 'var(--bad)' : st === 'low' ? 'var(--warn)'
+                    : st === 'over' ? '#b98cff' : 'var(--ok)';
+        const proc = Math.max(4, Math.min(100, Math.round(ile / R.max * 100)));
+        return '<div style="margin:9px 0">'+
+          '<div class="kv" style="padding:2px 0;border:none">'+
+            '<span class="k" style="color:var(--txt)">'+esc(R.n)+'</span>'+
+            '<span class="v" style="color:'+kolor+'">'+fmtKg(ile)+' / '+R.min+'-'+R.max+'</span></div>'+
+          '<div style="height:5px;border-radius:3px;background:var(--line);overflow:hidden">'+
+            '<div style="height:100%;width:'+proc+'%;background:'+kolor+'"></div></div>'+
+          (R.o ? '<div class="note" style="margin-top:4px">'+esc(R.o)+'</div>' : '')+
+        '</div>';
+      }).join('') + '</div>' : '')+
+      '</div>';
+  }).join('');
 }
 
 function renderCoverage(){
@@ -4648,8 +4984,10 @@ function renderCoverage(){
   if(!none.length&&!low.length&&!over.length&&Object.values(cov).some(x=>x>0))
     out+='<div class="tip ok">Wszystkie partie w zakresie. Nic nie wymaga korekty.</div>';
 
+  out += rozbicieGrup(cov);
+
   out+='<div class="tip">Serie liczone ułamkowo: seria wyciskania leżąc to 1,0 na środek klatki i 0,4 na triceps — '+
-    'ćwiczenie złożone nie daje pełnej serii każdemu mięśniowi. Dotknij partii, żeby zobaczyć liczbę.</div>';
+    'ćwiczenie złożone nie daje pełnej serii każdemu mięśniowi.</div>';
   return out;
 }
 /* ============================================================
@@ -5182,6 +5520,7 @@ function applyUpdateIfIdle(){
 }
 /* pobranie od trenera przy starcie — cicho, żeby brak sieci na siłowni
    nie witał Cię komunikatem o błędzie */
+wczytajObwod();
 if(srvGotowy()) setTimeout(()=>srvPull(true), 800);
 
 /* Sprawdzenie wersji po numerze, a nie po service workerze.
