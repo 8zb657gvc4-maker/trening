@@ -159,8 +159,12 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .kv{display:flex;justify-content:space-between;padding:9px 0;
   border-bottom:1px solid var(--line);font-size:14px;gap:12px}
 .kv:last-child{border-bottom:none}
-.kv .k{color:var(--dim)}
-.kv .v{font-weight:650;font-variant-numeric:tabular-nums;text-align:right}
+.kv .k{color:var(--dim);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Wartość nigdy się nie skraca — obcięta liczba jest gorsza niż brak liczby.
+   „2026-08-06.10" pokazywało się jako „...06.1" i nie dało się odróżnić
+   nowej wersji od starej. */
+.kv .v{font-weight:650;font-variant-numeric:tabular-nums;text-align:right;
+  flex:0 0 auto;white-space:nowrap}
 .up{color:var(--ok)}.down{color:var(--bad)}.flat{color:var(--dim)}
 
 .empty{text-align:center;color:var(--dim);padding:34px 20px;font-size:14px;line-height:1.5}
@@ -1136,7 +1140,12 @@ function zastosujPlan(){
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
-const WERSJA = '2026-08-06.10';       /* podbijaj przy każdej zmianie — widać w zakładce Dane */
+/* Numer buduje się jak licznik, nie jak data. Data z kropką na końcu
+   („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
+   poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
+   stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
+const WERSJA = '11';
+const WERSJA_DATA = '2026-08-06';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -2397,6 +2406,23 @@ function renderDzis(){
     '</div></div>';
 }
 
+/* Po wgraniu nowej wersji nie było jak stwierdzić, czy się udało — trzeba
+   było wejść w Dane i porównać numer, który na dodatek się obcinał. Teraz
+   aplikacja sama mówi to raz, na ekranie głównym. */
+const WERSJAKEY = 'trening-ostatnia-wersja';
+function renderNowaWersja(){
+  let ost = null;
+  try { ost = localStorage.getItem(WERSJAKEY); } catch(e){ return ''; }
+  if(ost === WERSJA) return '';
+  return '<div class="tip ok"><b>Wersja '+WERSJA+' wgrana</b>'+
+    (ost ? ' — poprzednio '+ost : ' — pierwsze uruchomienie')+
+    '<div style="margin-top:8px"><button class="btn ghost sm" onclick="potwierdzWersje()">Rozumiem</button></div></div>';
+}
+function potwierdzWersje(){
+  try { localStorage.setItem(WERSJAKEY, WERSJA); } catch(e){}
+  renderSub();
+}
+
 function renderPrzeloz(){
   const n = DB.nastepny;
   if(!n || n.data !== today() || DB.workouts.some(w => w.date === today())) return '';
@@ -3071,7 +3097,7 @@ function renderHub(){
     /* Kolejność jest teraz według pilności, nie według historii dopisywania:
        najpierw to, co robisz teraz, potem to, czego aplikacja od Ciebie chce,
        potem kontekst, na końcu sprawy techniczne. */
-    resume + renderDzis() + renderPoranne() + renderBraki() + coach +
+    renderNowaWersja() + resume + renderDzis() + renderPoranne() + renderBraki() + coach +
     planBox + renderKolejne() + odpBox + czekaBox + renderPrzeloz() + syncBox;
 }
 
@@ -4938,7 +4964,7 @@ function renderData(){
     kv('Pierwszy trening',DB.workouts.length?plDate(DB.workouts[0].date):'—')+
     kv('Rozmiar danych',Math.round(JSON.stringify(DB).length/1024)+' kB')+
     kv('Zdjęcia',fotoLoad().length+' · '+Math.round(JSON.stringify(fotoLoad()).length/1024)+' kB')+
-    kv('Wersja aplikacji',WERSJA);
+    kv('Wersja aplikacji','<b style="font-size:17px">'+WERSJA+'</b> · '+plDate(WERSJA_DATA));
 
   const pooled=[...new Set(ORDER.flatMap(k=>PLAN[k].slots.flatMap(s=>s.pool||[])))].sort();
   document.getElementById('skipList').innerHTML = pooled.map(n=>
