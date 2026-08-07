@@ -1252,7 +1252,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '18';
+const WERSJA = '19';
 const WERSJA_DATA = '2026-08-06';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -5013,9 +5013,61 @@ function bodyMap(cov){
    głów. Rozwinięcie pokazuje każdą osobno, razem z tym, czym się ją trenuje.
    ============================================================ */
 let GRUPA_ROZW = null;
+/* BŁĄD, przez który rozwijanie nie działało: mapa mięśni pojawia się i w
+   zakładce Raport, i w podsumowaniu treningu, a przełącznik odświeżał tylko
+   ten drugi widok. W Raporcie dotknięcie ustawiało stan i nic się nie działo —
+   zmiana pokazywała się dopiero po przejściu do innej zakładki i z powrotem.
+   Teraz odrysowujemy ten widok, który jest właśnie na ekranie. */
+function odswiezWidok(){
+  const akt = ['train','daily','report','data'].find(v => {
+    const el = document.getElementById('v-' + v);
+    return el && el.classList && el.classList.contains('on');
+  });
+  if(akt === 'report') renderReport();
+  else if(akt === 'daily') renderDaily();
+  else if(akt === 'data') renderData();
+  else renderSub();
+}
+
 function przelaczGrupe(g){
   GRUPA_ROZW = (GRUPA_ROZW === g) ? null : g;
-  renderSub();
+  odswiezWidok();
+}
+
+/* Rozpiska „z czego się to wzięło" pod każdym mięśniem. */
+function skladHtml(region){
+  const l = skladPokrycia(region, 14);
+  if(!l.length) return '<div class="note" style="margin-top:4px;opacity:.7">'+
+    'Nic w ostatnich 14 dniach.</div>';
+  return '<div style="margin-top:6px;padding-left:9px;border-left:2px solid var(--line)">'+
+    l.map(x => '<div class="hm" style="padding:2px 0">'+
+      esc(x.name)+' — <b>'+x.serie+'</b> '+(x.serie===1?'seria':x.serie<5?'serie':'serii')+
+      ' × '+fmtKg(x.udzial)+' = '+fmtKg(x.wklad)+
+      (x.razy > 1 ? ' <span style="opacity:.6">('+x.razy+' sesje)</span>' : '')+
+      '</div>').join('')+'</div>';
+}
+
+/* Które ćwiczenia z ostatnich 14 dni obciążyły dany mięsień i ile z tego
+   wyszło serii. Bez tego liczba „4,2 / 6-16" nic nie mówi — nie wiadomo,
+   czy to jedno ćwiczenie na cztery serie, czy cztery ćwiczenia po jednej. */
+function skladPokrycia(region, dni){
+  const od = daysAgo(dni || 14);
+  const suma = {};
+  (DB.workouts || []).filter(w => w.date >= od).forEach(w =>
+    (w.exercises || []).forEach(e => {
+      const udzial = ((LIB[e.name] || {}).mus || {})[region];
+      if(!udzial) return;
+      const serie = (e.sets || []).filter(x => !x.wu).length;
+      if(!serie) return;
+      const k = e.name;
+      suma[k] = suma[k] || {serie: 0, wklad: 0, udzial, dni: new Set()};
+      suma[k].serie += serie;
+      suma[k].wklad += serie * udzial;
+      suma[k].dni.add(w.date);
+    }));
+  return Object.entries(suma)
+    .map(([n, x]) => ({name: n, serie: x.serie, wklad: x.wklad, udzial: x.udzial, razy: x.dni.size}))
+    .sort((a, b) => b.wklad - a.wklad);
 }
 
 function rozbicieGrup(cov){
@@ -5051,6 +5103,7 @@ function rozbicieGrup(cov){
           '<div style="height:5px;border-radius:3px;background:var(--line);overflow:hidden">'+
             '<div style="height:100%;width:'+proc+'%;background:'+kolor+'"></div></div>'+
           (R.o ? '<div class="note" style="margin-top:4px">'+esc(R.o)+'</div>' : '')+
+          skladHtml(k)+
         '</div>';
       }).join('') + '</div>' : '')+
       '</div>';
