@@ -1252,7 +1252,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '17';
+const WERSJA = '18';
 const WERSJA_DATA = '2026-08-06';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3111,14 +3111,28 @@ function suggestNext(naJutro){
   let clash = false;
   if(!cand.length){ cand = pool; clash = true; }
 
-  /* Komparator musi być spójny, inaczej sort daje losowy wynik. */
+  /* BŁĄD, który to naprawia: kolejność zależała wyłącznie od tego, kiedy
+     ostatnio robiłeś DANY DZIEŃ (A/B/C/D). Gdy dwa dni nie były jeszcze
+     robione, decydował alfabet — i po nogach z A wychodziły nogi z C,
+     mimo że góra ciała odpoczywała dłużej.
+
+     Teraz pierwszym kryterium jest PARTIA: nogi czy góra. Wygrywa ta,
+     która czekała dłużej. Przy podziale na cztery dni to jest cały sens
+     układu — nogi, góra, nogi, góra — a bez tego można zrobić dwa dni nóg
+     pod rząd z jednym dniem przerwy i zostawić plecy na tydzień. */
   const lastDate = d => { const x=DB.workouts.filter(y=>y.day===d).slice(-1)[0]; return x?x.date:''; };
+  const grpDate = g => {
+    const x = DB.workouts.filter(y => PLAN[y.day] && PLAN[y.day].grp === g).slice(-1)[0];
+    return x ? x.date : '';
+  };
+  /* '' znaczy „nigdy" i ma pierwszeństwo przed każdą datą */
+  const starsze = (a, b) => (!a && !b) ? 0 : !a ? -1 : !b ? 1 : a.localeCompare(b);
   cand = cand.slice().sort((a,b)=>{
-    const la=lastDate(a), lb=lastDate(b);
-    if(la===lb) return ORDER.indexOf(a)-ORDER.indexOf(b);
-    if(!la) return -1;
-    if(!lb) return 1;
-    return la.localeCompare(lb);
+    const pg = starsze(grpDate(PLAN[a].grp), grpDate(PLAN[b].grp));
+    if(pg !== 0) return pg;
+    const pd = starsze(lastDate(a), lastDate(b));
+    if(pd !== 0) return pd;
+    return ORDER.indexOf(a)-ORDER.indexOf(b);
   });
   const day = cand[0];
 
@@ -3127,6 +3141,19 @@ function suggestNext(naJutro){
     ? 'W tym tygodniu zrobiłeś '+doneWeek.length+' z 4 treningów. Brakuje: '+missing.join(', ')+'.'
     : 'Plan tygodnia wykonany w całości. To trening z kolejnej rotacji.');
   if(yest.length && !clash) why.push('Wczoraj trenowałeś '+yest.join(' i ')+' — dziś inna partia, żeby dać jej 48 h.');
+  {
+    const mojaGrp = PLAN[day].grp;
+    const ost = grpDate(mojaGrp);
+    const druga = mojaGrp === 'nogi' ? 'góra' : 'nogi';
+    const ostD = grpDate(druga);
+    if(!ost) why.push('Partia „'+mojaGrp+'" nie była jeszcze trenowana w tym bloku.');
+    else {
+      const dni = Math.round((new Date(ref) - new Date(ost)) / 864e5);
+      const dniD = ostD ? Math.round((new Date(ref) - new Date(ostD)) / 864e5) : null;
+      why.push('Partia „'+mojaGrp+'" odpoczywa '+dni+' '+(dni===1?'dzień':'dni')+
+        (dniD != null ? ', „'+druga+'" '+dniD+' — dlatego dziś ta pierwsza.' : '.'));
+    }
+  }
   if(clash) why.push('Uwaga: wczoraj też była ta sama partia. Jeśli czujesz zakwasy, przełóż to na jutro.');
 
   /* obciążenie biegowe — ACWR liczone dystansem ważonym intensywnością */
