@@ -1252,7 +1252,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '16';
+const WERSJA = '17';
 const WERSJA_DATA = '2026-08-06';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3212,18 +3212,36 @@ function goHome(){
   if(SUB==='ses') clearSes();
   setSub('hub');
 }
+/* Jeden wyjątek nie może wygasić całego ekranu. Tak właśnie stało się
+   z ekranem głównym: kod pisał do usuniętego kafelka, poleciał wyjątek
+   i wszystko poniżej — plan, poranne pytania, historia — po prostu
+   przestało się rysować. Bez komunikatu, bez śladu, po cichu.
+   Teraz każdy widok jest opakowany osobno, a awaria jest WIDOCZNA:
+   na ekranie pojawia się ramka z nazwą funkcji i treścią błędu. */
+function bezpiecznie(nazwa, f){
+  try { f(); }
+  catch(e){
+    console.error(nazwa, e);
+    const box = document.getElementById('coachBox') || document.getElementById('sugBody');
+    if(box) box.innerHTML = '<div class="tip bad"><b>Coś się zepsuło przy rysowaniu ekranu</b>'+
+      '<div class="hm" style="margin-top:4px">'+esc(nazwa+': '+(e && e.message || e))+'</div>'+
+      '<div class="note" style="margin-top:6px">Dane są całe — to błąd wyświetlania. '+
+      'Pokaż mi ten komunikat, naprawię.</div></div>';
+  }
+}
+
 function renderSub(){
   const w=weekNo(), p=phaseOf(w);
-  document.getElementById('hBadge').textContent='T'+w;
-  document.getElementById('hSub').textContent=PHASES[p].n+' · '+dayName(today());
-  if(SUB==='hub') renderHub();
-  if(SUB==='pick') renderPick();
-  if(SUB==='sug') renderSuggest();
-  if(SUB==='run') renderRun();
-  if(SUB==='sum') renderSummary();
-  if(SUB==='hist') renderHist();
-  if(SUB==='tren') renderTrening();
-  if(SUB==='ses'&&SES) renderSession();
+  const bad = document.getElementById('hBadge'); if(bad) bad.textContent='T'+w;
+  const sub = document.getElementById('hSub');   if(sub) sub.textContent=PHASES[p].n+' · '+dayName(today());
+  if(SUB==='hub')  bezpiecznie('renderHub', renderHub);
+  if(SUB==='pick') bezpiecznie('renderPick', renderPick);
+  if(SUB==='sug')  bezpiecznie('renderSuggest', renderSuggest);
+  if(SUB==='run')  bezpiecznie('renderRun', renderRun);
+  if(SUB==='sum')  bezpiecznie('renderSummary', renderSummary);
+  if(SUB==='hist') bezpiecznie('renderHist', renderHist);
+  if(SUB==='tren') bezpiecznie('renderTrening', renderTrening);
+  if(SUB==='ses'&&SES) bezpiecznie('renderSession', renderSession);
 }
 function openPick(){ setSub('pick'); }
 function openSuggest(){ setSub('sug'); }
@@ -3260,11 +3278,12 @@ function renderHub(){
   renderWeekStrip();
   document.getElementById('phaseTip').innerHTML='<b>'+PHASES[p].n+'</b> — '+PHASES[p].d;
   const s=suggestNext();
-  document.getElementById('hubSugSub').textContent = s.rest
-    ? 'Dziś już trenowałeś — zobacz, co zamiast tego'
-    : 'Dziś: '+s.day+' — '+dayName2(s.day);
-  document.getElementById('hubStartSub').textContent =
-    'Wybierz dzień sam · '+new Set(DB.workouts.filter(x=>inWeek(x.date,w)).map(x=>x.date)).size+' z 4 w tym tygodniu';
+  /* BŁĄD, przez który cały ekran główny był pusty: usunąłem z HTML dwa
+     kafelki (zastąpił je kafelek „Dziś"), ale kod nadal do nich pisał.
+     `getElementById` zwracał null, wyjątek leciał w połowie renderowania
+     i wszystko poniżej — plan, poranne pytania, ostatnie treningi —
+     nigdy się nie rysowało. Atrapa DOM-u w testach tworzy brakujące
+     elementy w locie, więc testy tego nie zobaczyły. */
   document.getElementById('hubRunSub').textContent =
     'Plan na tydzień '+w+' · '+DB.runs.filter(x=>inWeek(x.date,w)).length+' z 2 przebiegnięte';
 
@@ -5179,6 +5198,88 @@ function znajdzCiecie(html){
 
 let RAPORT_ROZW = false;
 
+/* ============================================================
+   RAPORT DNIA — także wtedy, gdy nie było treningu
+   Dzień bez siłowni to nie jest dziura w danych. Odpuszczony trening,
+   powód odpuszczenia, sen, HRV, gotowość i to, ile partii czeka pod normą —
+   wszystko to są informacje, na podstawie których podejmuje się następną
+   decyzję. Wcześniej raport pojawiał się wyłącznie po sesji, więc w dniu,
+   w którym najbardziej przydałaby się podpowiedź, ekran milczał.
+   ============================================================ */
+function raportDnia(){
+  const d = today();
+  const dzisiejszy = DB.workouts.find(x => x.date === d);
+  if(dzisiejszy) return '';                       /* jest sesja — jest jej raport */
+
+  const dz = DB.daily.find(x => x.date === d) || {};
+  const wolne = (DB.odpoczynek || []).find(x => x.date === d);
+  const przel = (DB.przelozone || []).slice().reverse().find(x => x.z === d);
+  const g = gotowosc();
+  const maDane = dz.samopoczucie != null || dz.sleep != null || dz.hrv != null;
+
+  /* ile dni od ostatniego treningu */
+  const ost = DB.workouts.length ? DB.workouts[DB.workouts.length-1] : null;
+  const luka = ost ? Math.round((new Date(d) - new Date(ost.date)) / 864e5) : null;
+
+  let naglowek, stan;
+  if(wolne || przel){
+    const powod = (POWODY[(wolne||przel).powod] || {}).n || 'bez powodu';
+    naglowek = 'Dzień bez siłowni — ' + powod.toLowerCase();
+    stan = 'ok';
+  } else if(luka != null && luka >= 3){
+    naglowek = luka + ' dni od ostatniego treningu';
+    stan = luka >= 5 ? 'warn' : '';
+  } else {
+    naglowek = 'Dziś jeszcze bez treningu';
+    stan = '';
+  }
+
+  let h = '<h2>Dziś</h2><div class="tip ' + stan + '"><b>' + esc(naglowek) + '</b>';
+
+  const linie = [];
+  if(dz.sleep != null) linie.push('sen ' + fmtKg(dz.sleep) + ' h');
+  if(dz.hrv != null)   linie.push('HRV ' + dz.hrv);
+  if(dz.bb != null)    linie.push('Body Battery ' + dz.bb);
+  if(maDane)           linie.push('gotowość ' + g.pkt + '/100');
+  if(linie.length) h += '<div class="hm" style="margin-top:4px">' + esc(linie.join(' · ')) + '</div>';
+  else h += '<div class="hm" style="margin-top:4px">Brak dzisiejszych danych — '+
+    'wpisz sen i HRV w Dzienniku, wtedy powiem więcej.</div>';
+
+  /* co to znaczy dla treningu */
+  if(wolne || przel){
+    h += '<div class="note" style="margin-top:8px">Plan czeka nietknięty. '+
+      'Przerwa krótsza niż dziesięć dni nie rusza ciężarów — wrócisz do tych samych liczb.</div>';
+  } else if(luka != null && luka >= 10){
+    const pr = przerwaSkala(luka);
+    h += '<div class="note" style="margin-top:8px">Przy następnej sesji ciężary zejdą o '+
+      Math.round((1-pr.s)*100)+'%. ' + esc(pr.why) + '</div>';
+  } else if(maDane && g.pkt < 70){
+    h += '<div class="note" style="margin-top:8px">Gotowość niska. Jeśli dziś pójdziesz, '+
+      'aplikacja sama zetnie sesję — to nie jest powód, żeby nie iść, tylko żeby iść lżej.</div>';
+  }
+  h += '</div>';
+
+  /* co czeka */
+  const gp = planDoPokazania();
+  if(gp) h += '<div class="tip"><b>Czeka: dzień ' + gp.dzien + '</b>'+
+    (gp.cwiczenia ? ' · ' + gp.cwiczenia.length + ' ćwiczeń' : '') +
+    (gp.zalegly ? ' · przełożony ' + gp.zalegly + ' dni temu' : '') + '</div>';
+
+  /* czego brakuje — najostrzejszy sygnał w dniu bez treningu */
+  const cov = regionSets(14);
+  const chude = Object.entries(REG)
+    .filter(([k,R]) => R.min > 0 && (cov[k] || 0) < R.min)
+    .sort((a,b) => (cov[a[0]]||0)/a[1].min - (cov[b[0]]||0)/b[1].min);
+  if(chude.length)
+    h += '<div class="tip warn"><b>' + chude.length + ' '+
+      (chude.length === 1 ? 'partia' : chude.length < 5 ? 'partie' : 'partii')+
+      ' pod normą (14 dni)</b><div class="hm" style="margin-top:4px">'+
+      chude.slice(0,5).map(([k,R]) => esc(R.n)+' '+fmtKg(cov[k]||0)+'/'+R.min).join(' · ')+
+      (chude.length > 5 ? ' · +'+(chude.length-5) : '')+'</div></div>';
+
+  return h;
+}
+
 function renderReport(){
   const w=weekNo(), p=phaseOf(w);
   const cur=DB.workouts.filter(x=>inWeek(x.date,w));
@@ -5189,6 +5290,8 @@ function renderReport(){
   const [ws,we]=weekRange(w);
   let h='<div class="tip"><b>Tydzień '+w+'</b> · '+PHASES[p].n+' · '+plDate(ws)+' – '+plDate(we)+'</div>';
 
+  h += raportDnia();
+
   if(DB.raport){
     /* Raport potrafi mieć cztery tysiące znaków. Cały naraz to ściana, przez
        którą przewija się do końca i nie czyta nic — a najważniejsze zdania
@@ -5196,7 +5299,14 @@ function renderReport(){
        resztę na żądanie. */
     const pelny = md(DB.raport);
     const ciecie = znajdzCiecie(pelny);
-    h += '<h2>Od trenera</h2>';
+    /* Raport ode mnie bywa sprzed kilku dni, a wyglądał na dzisiejszy —
+       i to on wprowadzał w błąd w dni bez treningu. Teraz podaje swój wiek. */
+    const wiekR = DB.coach && DB.coach.date
+      ? Math.round((new Date(today()) - new Date(DB.coach.date)) / 864e5) : null;
+    h += '<h2>Od trenera</h2>' + (wiekR != null && wiekR >= 1
+      ? '<div class="tip '+(wiekR >= 3 ? 'warn' : '')+'">Ten raport jest sprzed '+
+        wiekR+' '+(wiekR === 1 ? 'dnia' : 'dni')+' — dotyczy treningu z '+
+        plDate(DB.coach.date)+', nie dzisiejszego dnia.</div>' : '');
     if(ciecie > 0 && !RAPORT_ROZW){
       h += '<div class="card mdbox">' + pelny.slice(0, ciecie) +
         '<button class="btn ghost sm" style="margin-top:13px" onclick="RAPORT_ROZW=true;renderReport()">'+
