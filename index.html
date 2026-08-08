@@ -16,14 +16,48 @@
   --ok:#3ecf8e; --warn:#ffb340; --bad:#ff6b6b; --run:#b98cff;
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 /* Układ bez position:fixed — iOS potrafi odczepiać przyklejone elementy
    przy przewijaniu z rozpędem. Tu ekran ma stałą wysokość, przewija się
    wyłącznie <main>, a nagłówek i nawigacja są poza obszarem przewijania,
    więc nie mają jak odjechać. */
-html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+html,/* SPRZĘŻENIE ZWROTNE ZAMIAST WIBRACJI.
+   WebKit nie udostępnia Vibration API — na iPhonie `navigator.vibrate` nie
+   robi nic. Aplikacja miała dziesięć miejsc, w których „potwierdzała" dotyk
+   wibracją, czyli była zupełnie niema. Przy tętnie 130 i wzroku na sztandze
+   brak potwierdzenia kończy się podwójnym dotknięciem.
+   Odpowiedź jest natychmiastowa i czysto wizualna: przycisk gaśnie i kurczy
+   się w chwili dotknięcia, bez czekania na cokolwiek w JavaScripcie. */
+button,.hub,.rpeb,.step button,.btn,nav button{touch-action:manipulation}
+button:active,.hub:active,.rpeb:active,.btn:active{
+  transform:scale(.96);filter:brightness(1.45);transition:none}
+button,.hub,.rpeb,.btn{transition:transform .12s,filter .12s}
+
+/* Świeżo dodana seria błyska na zielono — to jedyne potwierdzenie, jakie
+   naprawdę jest potrzebne: „zapisało się". */
+@keyframes blysk{0%{background:rgba(62,207,142,.42)}100%{background:transparent}}
+.srow.nowa{animation:blysk .55s ease-out}
+
+body{margin:0;padding:0;background:var(--bg);color:var(--txt);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   font-size:16px;height:100%;overflow:hidden;overscroll-behavior:none}
+/* SPRZĘŻENIE ZWROTNE ZAMIAST WIBRACJI.
+   WebKit nie udostępnia Vibration API — na iPhonie `navigator.vibrate` nie
+   robi nic. Aplikacja miała dziesięć miejsc, w których „potwierdzała" dotyk
+   wibracją, czyli była zupełnie niema. Przy tętnie 130 i wzroku na sztandze
+   brak potwierdzenia kończy się podwójnym dotknięciem.
+   Odpowiedź jest natychmiastowa i czysto wizualna: przycisk gaśnie i kurczy
+   się w chwili dotknięcia, bez czekania na cokolwiek w JavaScripcie. */
+button,.hub,.rpeb,.step button,.btn,nav button{touch-action:manipulation}
+button:active,.hub:active,.rpeb:active,.btn:active{
+  transform:scale(.96);filter:brightness(1.45);transition:none}
+button,.hub,.rpeb,.btn{transition:transform .12s,filter .12s}
+
+/* Świeżo dodana seria błyska na zielono — to jedyne potwierdzenie, jakie
+   naprawdę jest potrzebne: „zapisało się". */
+@keyframes blysk{0%{background:rgba(62,207,142,.42)}100%{background:transparent}}
+.srow.nowa{animation:blysk .55s ease-out}
+
 body{height:100vh;height:100dvh;display:flex;flex-direction:column}
 button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;color:inherit}
 input,select{font-family:inherit;font-size:16px;background:var(--card2);color:var(--txt);
@@ -97,12 +131,16 @@ h2:first-child{margin-top:0}
   color:var(--dim);font-weight:700;flex-shrink:0}
 .sv{flex:1;font-variant-numeric:tabular-nums}
 .sx{background:none;color:var(--dim);font-size:19px;padding:2px 8px;line-height:1}
+/* Kasowanie serii — pełny cel dotykowy, odsunięte od reszty wiersza. */
+.sdel{margin-left:auto;min-width:44px;min-height:38px;font-size:22px;
+  padding:0;border-radius:9px;color:#7d8a9c}
+.sdel:active{background:rgba(255,107,107,.18);color:var(--bad)}
 
 .inrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
 .fld label{display:block;font-size:10.5px;color:var(--dim);margin-bottom:4px;
   text-transform:uppercase;letter-spacing:.5px;font-weight:700}
 .step{display:flex;align-items:center;gap:0}
-.step button{width:34px;height:44px;background:var(--card2);border:1px solid var(--line);
+.step button{width:46px;height:46px;background:var(--card2);border:1px solid var(--line);
   font-size:19px;color:var(--acc);flex-shrink:0;font-weight:600}
 .step button:first-child{border-radius:10px 0 0 10px}
 .step button:last-child{border-radius:0 10px 10px 0}
@@ -329,13 +367,13 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .dayin .fld{display:flex;flex-direction:column;justify-content:flex-end}
 .dayin .fld label{min-height:13px}
 .mono{font-variant-numeric:tabular-nums}
-.rpe{display:flex;gap:5px;margin-top:5px}
+.rpe{display:flex;gap:7px;margin-top:6px;flex-wrap:wrap}
 .autor{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.06em;
   padding:1px 5px;border-radius:4px;vertical-align:middle;text-transform:uppercase}
 .autor.trener{background:var(--ok);color:#06210f}
 .autor.apka{background:var(--line);color:var(--dim)}
-.rpeb{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:11px;
-  padding:9px 0 7px;color:var(--dim);display:flex;flex-direction:column;align-items:center;
+.rpeb{flex:1;min-width:44px;min-height:46px;background:var(--card2);border:1px solid var(--line);border-radius:11px;
+  padding:10px 0 8px;color:var(--dim);display:flex;flex-direction:column;align-items:center;
   gap:1px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:.12s}
 .rpeb b{font-size:17px;font-weight:750;line-height:1}
 .rpeb span{font-size:9.5px;opacity:.75;line-height:1}
@@ -441,7 +479,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
       <label>Data</label><input type="date" id="dDate" onchange="renderDaily()">
     </div>
     <div class="note" style="margin-bottom:8px"><b>Rano, zaraz po przebudzeniu.</b>
-      Te liczby opisują noc i to na nich liczy się gotowość na dziś.</div>
+      Na nich liczy się dzisiejsza gotowość.</div>
     <div class="dayin">
       <div class="fld"><label>Sen (h)</label><input type="number" inputmode="decimal" step="0.1" id="dSleep" placeholder="np. 7,5"></div>
       <div class="fld"><label>Tętno spocz.</label><input type="number" inputmode="numeric" id="dRhr" placeholder="np. 52"></div>
@@ -450,8 +488,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
       <div class="fld"><label>Waga (kg)</label><input type="number" inputmode="decimal" step="0.1" id="dWeight" placeholder="np. 75,4"></div>
     </div>
     <div class="note" style="margin:14px 0 8px"><b>Wieczorem, na koniec dnia.</b>
-      Kroki narastają przez cały dzień — rano pokazują zero i nic nie znaczą.
-      Liczą się do gotowości <b>następnego</b> dnia, jako obciążenie z chodzenia.</div>
+      Liczą się do gotowości <b>następnego</b> dnia.</div>
     <div class="dayin">
       <div class="fld"><label>Kroki</label><input type="number" inputmode="numeric" id="dSteps" placeholder="np. 8500"></div>
     </div>
@@ -466,7 +503,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   </div>
 
   <h2>Suplementy</h2>
-  <div class="note" style="margin-bottom:9px">Odhaczasz wtedy, kiedy naprawdę bierzesz — nie rano razem z Garminem.</div>
+  <div class="note" style="margin-bottom:9px">Odhaczasz, kiedy bierzesz.</div>
   <div class="card" id="suplDzis"></div>
   <div class="card" id="suplBox"></div>
   <h2>Ostatnie 10 dni</h2>
@@ -477,7 +514,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   <div class="card" id="histList"></div>
 
   <h2>Obwody (cm)</h2>
-  <div class="note" style="margin-bottom:9px">Raz w miesiącu, rano na czczo, zawsze w tym samym miejscu. Waga sama myli — przy odbudowie masy obwody mówią, czy przybywa mięśni czy reszty.</div>
+  <div class="note" style="margin-bottom:9px">Raz w miesiącu, rano na czczo, w tym samym miejscu.</div>
   <div class="card">
     <div class="fld" style="margin-bottom:11px"><label>Data</label><input type="date" id="mDate"></div>
     <div class="dayin">
@@ -493,7 +530,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   <div class="card" id="measureList"></div>
 
   <h2>Pytania do trenera</h2>
-  <div class="note" style="margin-bottom:9px">Zadaj pytanie, a odpowiedź dostaniesz w nocnej analizie i wróci do aplikacji przy wczytaniu pliku.</div>
+  <div class="note" style="margin-bottom:9px">Odpowiedź wróci przy najbliższej synchronizacji.</div>
   <div class="card">
     <div class="fld"><label>Pytanie</label>
       <input type="text" id="qText" placeholder="np. czy mogę zamienić martwy ciąg na hip thrust?"></div>
@@ -502,7 +539,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   <div class="card" id="qList"></div>
 
   <h2>Ból i kontuzje</h2>
-  <div class="note" style="margin-bottom:9px">Notuj wszystko, nawet drobne. Powtarzający się ból w tym samym miejscu to sygnał, który widać dopiero po kilku wpisach — a wtedy jeszcze da się zareagować.</div>
+  <div class="note" style="margin-bottom:9px">Notuj też drobne — wzorzec widać dopiero po kilku wpisach.</div>
   <div class="card">
     <div class="fld" style="margin-bottom:11px"><label>Data</label><input type="date" id="pDate"></div>
     <div class="dayin">
@@ -532,7 +569,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   <div class="card" id="painList"></div>
 
   <h2>Zdjęcia sylwetki</h2>
-  <div class="note" style="margin-bottom:9px">To samo światło, ta sama pora, ta sama poza. Zdjęcia trzymane są osobno od reszty danych i nie trafiają do zwykłego eksportu.</div>
+  <div class="note" style="margin-bottom:9px">To samo światło, pora i poza.</div>
   <div class="card">
     <button class="btn ghost sm" onclick="document.getElementById('fotoIn').click()">Dodaj zdjęcie</button>
     <input type="file" id="fotoIn" accept="image/*" style="display:none" onchange="addFoto(event)">
@@ -546,7 +583,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 <!-- ================= DANE ================= -->
 <div class="view" id="v-data">
   <h2>Kopia zapasowa</h2>
-  <div class="tip warn">Dane siedzą wyłącznie w pamięci tej przeglądarki. Wyczyszczenie danych przeglądarki albo zmiana telefonu = utrata wszystkiego. Eksportuj co niedzielę.</div>
+  <div class="tip warn">Dane są tylko w tym telefonie. Eksportuj co niedzielę.</div>
   <div class="card">
     <div class="btn2">
       <button class="btn sm" onclick="exportData()">Wyślij do iCloud</button>
@@ -570,7 +607,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     </label>
     <button class="btn sm" onclick="srvZapiszUstawienia()">Zapisz ustawienia</button>
     <button class="btn ghost sm" style="margin-top:9px" onclick="srvSync()">Synchronizuj teraz</button>
-    <div class="note" style="margin-top:11px">Po włączeniu aplikacja wysyła stan po każdym zakończonym treningu i pobiera raport przy starcie. Token siedzi tylko w tym telefonie i nie trafia do eksportu.</div>
+    <div class="note" style="margin-top:11px">Token zostaje w telefonie i nie trafia do eksportu.</div>
   </div>
 
   <h2>Plan treningowy</h2>
@@ -581,25 +618,25 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
       <button class="btn ghost sm" onclick="document.getElementById('impf').click()">Wczytaj plan</button>
     </div>
     <button class="btn ghost sm" style="margin-top:9px" onclick="planDomyslny()">Przywróć plan domyślny</button>
-    <div class="note" style="margin-top:11px">Plan to teraz dane, nie kod. Wyeksportuj go, prześlij mi do analizy, a odeślę wersję dopasowaną do tego, co realnie robisz. Historia treningów jest niezależna od planu.</div>
+    <div class="note" style="margin-top:11px">Historia treningów jest niezależna od planu.</div>
   </div>
 
   <h2>Sprzęt niedostępny</h2>
-  <div class="note" style="margin-bottom:9px">Zaznacz ćwiczenia, których nie masz jak zrobić — silnik przestanie je proponować.</div>
+  <div class="note" style="margin-bottom:9px">Odznacz to, czego nie masz jak zrobić.</div>
   <div class="card" id="skipList"></div>
 
   <h2>Ustawienia</h2>
   <div class="card">
     <div class="fld"><label>Start planu (poniedziałek)</label><input type="date" id="setStart"></div>
     <div class="fld" style="margin-top:11px"><label>Domyślna przerwa (sek)</label><input type="number" inputmode="numeric" id="setRest"></div>
+    <div class="fld" style="margin-top:11px"><label>Waga gryfu (kg)</label>
+      <input type="number" inputmode="decimal" step="0.5" id="setGryf" placeholder="20">
+      <div class="note" style="margin-top:4px">Olimpijski 20, damski 15, łamany 7,5–10.</div></div>
     <button class="btn ghost sm" style="margin-top:12px" onclick="saveSettings()">Zapisz ustawienia</button>
   </div>
   <h2>Tryb wyjazdowy</h2>
   <div class="card">
-    <div class="note">Bez siłowni. Każde ćwiczenie dostaje zamiennik z masy własnej
-      trafiający w ten sam region — nie „pompki zamiast wszystkiego", bo to po dwóch
-      tygodniach zostawia plecy i dwugłowe bez pracy. Progresja idzie powtórzeniami
-      i trudnością dźwigni, nie kilogramami. Historia i rotacja działają dalej.</div>
+    <div class="note">Bez siłowni — zamienniki z masy własnej w te same partie.</div>
     <div class="dayin" style="margin-top:11px">
       <div class="fld"><label>Od</label><input type="date" id="wyjOd"></div>
       <div class="fld"><label>Do</label><input type="date" id="wyjDo"></div>
@@ -614,8 +651,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   <div class="card">
     <div id="wersjaStan"></div>
     <button class="btn ghost sm" style="margin-top:10px" onclick="wymusAktualizacje()">Wymuś pełną aktualizację</button>
-    <div class="note" style="margin-top:8px">Kasuje pamięć podręczną aplikacji i pobiera plik od nowa.
-      Dane treningowe zostają nietknięte — siedzą w innym miejscu niż pamięć podręczna.</div>
+    <div class="note" style="margin-top:8px">Czyści pamięć podręczną. Dane treningowe zostają.</div>
   </div>
   <h2>Kopia awaryjna</h2>
   <div class="card" id="kopieBox"></div>
@@ -684,66 +720,91 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
    nie da się ich rozdzielić treningowo, więc rotacja po nich
    byłaby udawaniem precyzji.
    ============================================================ */
+/* MINIMA TYLKO TAM, GDZIE MAJĄ SENS — I SKALIBROWANE DO REALIÓW.
+
+   Drugi błąd, obok pilnowania minimum dla trzech głów tricepsa: same normy
+   były pisane pod plan o dużo większej objętości niż ten, który człowiek jest
+   w stanie zregenerować przy czterech dniach siłowni, dwóch biegach i śnie
+   po pięć–siedem godzin. „Bark — bok 6–16 serii" to wartość dla kogoś, kto
+   trenuje wyłącznie siłowo i śpi osiem godzin. Dla wracającego 70-kilogramowca
+   cztery dobre serie tygodniowo robią robotę.
+
+   Minima są teraz ustawione tam, gdzie zaczyna się wzrost, a nie tam, gdzie
+   kończy się optimum zawodowca. Górne granice zostały, bo pilnują drugiej
+   strony — momentu, w którym objętość zaczyna kosztować regenerację, nie dawać
+   efekty.
+   Rozbicie na 28 regionów zostaje, bo dzięki niemu wyszło, że tył barku miał
+   zero serii, a skośne brzucha 0,7 przy normie 2 — bez tego siedziałoby to
+   ukryte w średniej „barki" i „brzuch". Ale pilnowanie MINIMUM osobno dla
+   trzech głów tricepsa i dwóch głów bicepsa u amatora o masie 70 kg to
+   złudzenie precyzji: kończy się dokładaniem serii po to, żeby pasek zrobił
+   się zielony. Sam w to wpadłem — podniosłem sześć slotów, żeby zazielenić
+   raport, i dołożyłem osiem serii tygodniowo bez żadnego uzasadnienia
+   treningowego.
+
+   Regiony z `min: 0` są nadal LICZONE i POKAZYWANE, ale nie zapalają się na
+   czerwono i nie każą niczego dokładać. Widzisz, ile dostały, i tyle.
+   Minimum zostaje przy dwunastu wzorcach, które realnie decydują o efekcie. */
 const DOMYSLNE_REG = {
-  klatka_gora:   {n:'Klatka — góra',      grp:'Klatka',  min:4,  max:12,
+  klatka_gora:   {n:'Klatka — góra',      grp:'Klatka',  min:3,  max:10,
                   o:'Część obojczykowa. Rośnie od wyciskania na skosie dodatnim (30°, nie wyżej) i od bramy z dołu do góry. Sama ławka płaska jej nie wystarczy.'},
   klatka_srodek: {n:'Klatka — środek',    grp:'Klatka',  min:4,  max:12,
                   o:'Największa część mostkowa. Wyciskanie leżąc, pompki, rozpiętki płasko.'},
-  klatka_dol:    {n:'Klatka — dół',       grp:'Klatka',  min:3,  max:10,
+  klatka_dol:    {n:'Klatka — dół',       grp:'Klatka',  min:2,  max:8,
                   o:'Dolne włókna. Dipy, skos ujemny, pompki z rękami wyżej niż stopy.'},
-  plecy_pion:    {n:'Plecy — ciąg pionowy',grp:'Plecy',  min:5,  max:14,
+  plecy_pion:    {n:'Plecy — ciąg pionowy',grp:'Plecy',  min:4,  max:12,
                   o:'Najszerszy grzbietu w ruchu z góry: podciąganie, ściąganie drążka. To on daje szerokość.'},
-  plecy_poziom:  {n:'Plecy — ciąg poziomy',grp:'Plecy',  min:5,  max:14,
+  plecy_poziom:  {n:'Plecy — ciąg poziomy',grp:'Plecy',  min:4,  max:12,
                   o:'Wiosłowania. Środek pleców, równoważy całe wyciskanie i trzyma barki z tyłu.'},
-  plecy_gora:    {n:'Kaptury / góra pleców',grp:'Plecy', min:3,  max:10,
+  plecy_gora:    {n:'Kaptury / góra pleców',grp:'Plecy', min:2,  max:8,
                   o:'Czworoboczny i równoległoboczne. Szrugsy, face pull, martwy ciąg. Stabilizują łopatkę przy każdym ruchu ramienia.'},
-  bark_przod:    {n:'Bark — przód',       grp:'Barki',   min:2,  max:8,
+  bark_przod:    {n:'Bark — przód',       grp:'Barki',   min:0,  max:8,
                   o:'Akton przedni. Dostaje mnóstwo pracy z każdego wyciskania — dlatego norma jest niska i rzadko trzeba go dokładać osobno.'},
-  bark_bok:      {n:'Bark — bok',         grp:'Barki',   min:6,  max:16,
+  bark_bok:      {n:'Bark — bok',         grp:'Barki',   min:4,  max:14,
                   o:'Akton boczny — to on daje szerokość barków. Prawie nie pracuje przy wyciskaniu, potrzebuje unoszenia bokiem. Znosi dużo objętości.'},
-  bark_tyl:      {n:'Bark — tył',         grp:'Barki',   min:5,  max:14,
+  bark_tyl:      {n:'Bark — tył',         grp:'Barki',   min:3,  max:10,
                   o:'Akton tylny. Równoważy wyciskanie i chroni bark przed konfliktem podbarkowym. Face pull, odwrotne rozpiętki.'},
-  triceps_dluga: {n:'Triceps — głowa długa',grp:'Ramiona',min:3, max:10,
+  triceps_dluga: {n:'Triceps — głowa długa',grp:'Ramiona',min:0, max:10,
                   o:'Jedyna przyczepiona do łopatki — pracuje naprawdę tylko przy ramieniu nad głową albo za tułowiem. Francuskie, wyciąg zza głowy, dipy.'},
-  triceps_bocz:  {n:'Triceps — głowa boczna',grp:'Ramiona',min:3,max:10,
+  triceps_bocz:  {n:'Triceps — głowa boczna',grp:'Ramiona',min:0,max:10,
                   o:'Ta, którą widać z boku ramienia. Wyciąg prosto w dół, pompki diamentowe, wyciskanie wąsko.'},
-  triceps_przysr:{n:'Triceps — głowa przyśrodkowa',grp:'Ramiona',min:2,max:10,
+  triceps_przysr:{n:'Triceps — głowa przyśrodkowa',grp:'Ramiona',min:0,max:10,
                   o:'Pracuje przy KAŻDYM prostowaniu łokcia, najmocniej na końcu ruchu i przy dużych ciężarach. Nie da się jej pominąć, ale łatwo ją niedociążyć samymi lekkimi wyciągami.'},
-  biceps_dluga:  {n:'Biceps — głowa długa',grp:'Ramiona', min:4,  max:12,
+  biceps_dluga:  {n:'Biceps — głowa długa',grp:'Ramiona', min:0,  max:12,
                   o:'Biegnie po zewnętrznej stronie ramienia i przechodzi przez staw barkowy. Rośnie najlepiej przy ramieniu COFNIĘTYM za tułów — uginanie na skosie, na wyciągu zza siebie.'},
-  biceps_krotka: {n:'Biceps — głowa krótka',grp:'Ramiona', min:4,  max:12,
+  biceps_krotka: {n:'Biceps — głowa krótka',grp:'Ramiona', min:0,  max:12,
                   o:'Wewnętrzna strona ramienia, buduje szerokość. Pracuje najmocniej przy ramieniu WYSUNIĘTYM do przodu — modlitewnik, uginanie z podparciem.'},
-  ramienny:      {n:'Mięsień ramienny',   grp:'Ramiona', min:3,  max:10,
+  ramienny:      {n:'Mięsień ramienny',   grp:'Ramiona', min:0,  max:10,
                   o:'Leży POD bicepsem i wypycha go do góry — dlatego jego rozwój realnie powiększa ramię. Chwyt młotkowy i neutralny, bo nie odwraca przedramienia.'},
   /* Norma była 0 — czyli region nigdy nie zapalał się na czerwono, choćby
      miał zero serii. Przedramiona dostają sporo pracy ubocznej z wiosłowania
      i martwego ciągu, ale chwyt bywa wąskim gardłem przy ciągnięciu i warto
      go pilnować jak każdego innego mięśnia. */
-  przedramie:    {n:'Przedramiona',       grp:'Ramiona', min:2,  max:8,
+  przedramie:    {n:'Przedramiona',       grp:'Ramiona', min:0,  max:8,
                   o:'Zginacze palców i nadgarstka. Chwyt bywa wąskim gardłem przy ciągnięciu — utrzymanie sztangi, chód farmera, zwis.'},
-  czworoglowe:   {n:'Czworogłowe — obszerne',grp:'Nogi',min:6,  max:16,
+  czworoglowe:   {n:'Czworogłowe — obszerne',grp:'Nogi',min:5,  max:14,
                   o:'Trzy głowy boczne i przyśrodkowe. Przysiady, wypychanie, hack — wszystko, co prostuje kolano pod obciążeniem.'},
-  udo_proste:    {n:'Mięsień prosty uda', grp:'Nogi',    min:3,  max:10,
+  udo_proste:    {n:'Mięsień prosty uda', grp:'Nogi',    min:0,  max:10,
                   o:'Jedyna głowa czworogłowego przechodząca przez BIODRO. W przysiadzie pracuje słabo, bo biodro i kolano zginają się razem. Potrzebuje prostowania nóg.'},
-  dwuglowe:      {n:'Dwugłowe — od biodra',grp:'Nogi',   min:5,  max:14,
+  dwuglowe:      {n:'Dwugłowe — od biodra',grp:'Nogi',   min:4,  max:12,
                   o:'Prostowanie biodra przy wyprostowanym kolanie: martwy ciąg rumuński, good morning. Tu buduje się odporność na naderwania.'},
-  dwuglowe_kol:  {n:'Dwugłowe — od kolana',grp:'Nogi',   min:4,  max:12,
+  dwuglowe_kol:  {n:'Dwugłowe — od kolana',grp:'Nogi',   min:3,  max:10,
                   o:'Zginanie kolana: uginanie nóg, nordic curl. Inny bodziec niż ciąg rumuński — same ciągi zostawiają tę funkcję niedotrenowaną.'},
-  posladki:      {n:'Pośladkowy wielki',  grp:'Nogi',    min:5,  max:14,
+  posladki:      {n:'Pośladkowy wielki',  grp:'Nogi',    min:4,  max:14,
                   o:'Największy prostownik biodra. Przysiad, hip thrust, martwy ciąg, wykroki.'},
-  posladki_sr:   {n:'Pośladkowy średni',  grp:'Nogi',    min:2,  max:10,
+  posladki_sr:   {n:'Pośladkowy średni',  grp:'Nogi',    min:0,  max:10,
                   o:'Stabilizuje miednicę przy każdym kroku i przy staniu na jednej nodze. Zaniedbany daje ból kolana i biodra przy bieganiu. Trenuje się jednonóż.'},
-  lydki_stoj:    {n:'Łydki — brzuchaty',  grp:'Nogi',    min:3,  max:10,
+  lydki_stoj:    {n:'Łydki — brzuchaty',  grp:'Nogi',    min:2,  max:8,
                   o:'Dwie głowy przechodzące przez kolano — pracują tylko przy nodze WYPROSTOWANEJ. Wspięcia stojąc.'},
-  lydki_sied:    {n:'Łydki — płaszczkowaty',grp:'Nogi',  min:3,  max:10,
+  lydki_sied:    {n:'Łydki — płaszczkowaty',grp:'Nogi',  min:2,  max:8,
                   o:'Leży pod brzuchatym, nie przechodzi przez kolano — dlatego trenuje się go SIEDZĄC, ze zgiętym kolanem. Wspięcia stojąc go prawie nie ruszają.'},
   prostowniki:   {n:'Prostowniki grzbietu',grp:'Tułów',  min:2,  max:8,
                   o:'Trzymają kręgosłup wyprostowany pod obciążeniem. Martwy ciąg, good morning, Superman. Bez nich przysiad się składa.'},
-  brzuch:        {n:'Brzuch — prosty',    grp:'Tułów',   min:3,  max:12,
+  brzuch:        {n:'Brzuch — prosty',    grp:'Tułów',   min:2,  max:10,
                   o:'Zginanie tułowia i unoszenie nóg. To on tworzy „kratkę".'},
-  skosne:        {n:'Brzuch — skośne',    grp:'Tułów',   min:2,  max:10,
+  skosne:        {n:'Brzuch — skośne',    grp:'Tułów',   min:0,  max:10,
                   o:'Rotacja, zginanie boczne i opór przed nimi. Deska bokiem, allahy z rotacją, chód farmera z jednym ciężarem.'},
-  glebokie:      {n:'Stabilizacja głęboka',grp:'Tułów',  min:2,  max:10,
+  glebokie:      {n:'Stabilizacja głęboka',grp:'Tułów',  min:0,  max:10,
                   o:'Poprzeczny brzucha i wielodzielne — trzymają kręgosłup, gdy coś próbuje go zgiąć. Plank, ab wheel, chód farmera. Nie widać ich, a bez nich przysiad się sypie.'}
 };
 
@@ -982,8 +1043,8 @@ function trybWyjazdowy(){
 const DOMYSLNY_PLAN = {
   A: { name:'Nogi — przysiad', grp:'nogi', slots:[
     {id:'A1', lab:'Główny bój', fixed:'Przysiad ze sztangą',
-     t:['3×8 RPE6','4×6-8 RPE8','2×8 RPE5','4×4-6 RPE9'],
-     s:[3,4,2,4], rr:[[8,8],[6,8],[8,8],[4,6]]},
+     t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
+     s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
     {id:'A2', lab:'Czworogłowe — maszyna', pool:['Wypychanie nogami','Hack squat'],
      t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
@@ -992,8 +1053,8 @@ const DOMYSLNY_PLAN = {
      s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[6,8]]},
     {id:'A4', lab:'Dwugłowe — zginanie kolana',
      pool:['Uginanie nóg leżąc','Uginanie nóg siedząc'],
-     t:['4×12','4×10-12','2×12','4×10-12'],
-     s:[4,4,2,4], rr:[[12,12],[10,12],[12,12],[10,12]]},
+     t:['3×12','3×10-12','2×12','3×10-12'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
     /* BŁĄD, który to naprawia: A5 i C5 rotowały między wspięciami stojąc
        a siedząc, jakby to były warianty tego samego. To dwa różne mięśnie —
        brzuchaty pracuje przy wyprostowanym kolanie, płaszczkowaty przy
@@ -1002,21 +1063,21 @@ const DOMYSLNY_PLAN = {
        płaszczkowaty, a rotacja idzie WEWNĄTRZ każdego z nich. */
     {id:'A5', lab:'Łydki — brzuchaty (stojąc)',
      pool:['Wspięcia na palce stojąc','Wspięcia na palce jednonóż'],
-     t:['3×15','4×12-15','2×15','4×12-15'],
-     s:[3,4,2,4], rr:[[15,15],[12,15],[15,15],[12,15]]},
-    {id:'A6', lab:'Tułów', pool:['Plank','Ab wheel','Allahy na wyciągu','Unoszenie nóg w zwisie'],
-     t:['4×40s','4×50s','2×40s','4×60s'],
-     s:[4,4,2,4], rr:[[40,40],[50,50],[40,40],[60,60]]}
+     t:['2×15','2×12-15','2×15','2×12-15'],
+     s:[2,2,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]},
+    {id:'A6', lab:'Tułów', pool:['Ab wheel','Allahy na wyciągu','Unoszenie nóg w zwisie','Plank'],
+     t:['3×40s','3×50s','2×40s','3×60s'],
+     s:[3,3,2,3], rr:[[40,40],[50,50],[40,40],[60,60]]}
   ]},
 
   B: { name:'Góra — push', grp:'góra', slots:[
     {id:'B1', lab:'Główny bój', fixed:'Wyciskanie leżąc',
-     t:['3×8 RPE6','4×6-8 RPE8','2×8 RPE5','4×4-6 RPE9'],
-     s:[3,4,2,4], rr:[[8,8],[6,8],[8,8],[4,6]]},
+     t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
+     s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
     {id:'B2', lab:'Wyciskanie pionowe',
      pool:['Wyciskanie żołnierskie','Wyciskanie hantli nad głowę','Arnold press'],
-     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','4×6-8 RPE8'],
-     s:[3,3,2,4], rr:[[10,10],[8,10],[10,10],[6,8]]},
+     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×6-8 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[6,8]]},
     {id:'B3', lab:'Ciąg poziomy (balans barków)',
      pool:['Wiosłowanie sztangą','Wiosłowanie na wyciągu','Wiosłowanie na maszynie'],
      t:['3×10 RPE6','3×8-10 RPE7','2×10 RPE5','3×8-10 RPE8'],
@@ -1033,35 +1094,35 @@ const DOMYSLNY_PLAN = {
        Boczna i przyśrodkowa mają po 6-7 serii z samego wyciskania. */
     {id:'B5', lab:'Triceps — głowa długa',
      pool:['Francuskie zza głowy','Prostowanie zza głowy wyciąg'],
-     t:['3×12','3×10-12','2×12','3×10-12'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
+     t:['2×12','3×10-12','2×12','2×10-12'],
+     s:[2,3,2,2], rr:[[12,12],[10,12],[12,12],[10,12]]},
     /* Cztery serie zamiast trzech: pomiar dawał 4,8 przy normie 6-16.
        Boczny akton naramiennego znosi dużą objętość i szybko się regeneruje —
        to jeden z niewielu mięśni, przy których więcej serii naprawdę pomaga. */
     {id:'B6', lab:'Bark — bok',
      pool:['Unoszenie hantli bokiem','Unoszenie bokiem na wyciągu','Unoszenie bokiem na maszynie'],
-     t:['5×15','5×12-15','2×15','5×15-20'],
-     s:[5,5,2,5], rr:[[15,15],[12,15],[15,15],[15,20]]}
+     t:['3×15','3×12-15','2×15','3×15-20'],
+     s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[15,20]]}
   ]},
 
   C: { name:'Nogi — martwy ciąg', grp:'nogi', slots:[
     {id:'C1', lab:'Główny bój', fixed:'Martwy ciąg klasyczny',
-     t:['— pomijasz w tyg. 1-2','3×5 RPE7','2×5 RPE5','4×3-5 RPE8'],
-     s:[0,3,2,4], rr:[[0,0],[5,5],[5,5],[3,5]]},
+     t:['— pomijasz w tyg. 1-2','3×5 RPE7','2×5 RPE5','3×3-5 RPE8'],
+     s:[0,3,2,3], rr:[[0,0],[5,5],[5,5],[3,5]]},
     {id:'C2', lab:'Jednonóż / stabilizacja miednicy',
      pool:['Przysiad bułgarski','Wykroki chodzone','Odwodzenie nogi w bok'],
-     t:['3×10/nogę RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
+     t:['2×10/nogę RPE6','3×8-10 RPE8','2×10 RPE5','2×8-10 RPE8'],
+     s:[2,3,2,2], rr:[[10,10],[8,10],[10,10],[8,10]]},
     {id:'C3', lab:'Pośladki', pool:['Hip thrust','Hip thrust jednonóż'],
-     t:['4×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
-     s:[4,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
+     t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
     {id:'C4', lab:'Czworogłowe — izolacja', pool:['Prostowanie nóg','Hack squat'],
      t:['3×15','3×12-15','2×15','3×12-15'],
      s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
     {id:'C5', lab:'Łydki — płaszczkowaty (siedząc)',
      pool:['Wspięcia na palce siedząc','Wspięcia siedząc z obciążeniem'],
-     t:['3×15','3×15-20','2×15','3×15-20'],
-     s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
+     t:['2×15','2×15-20','2×15','2×15-20'],
+     s:[2,2,2,2], rr:[[15,15],[15,20],[15,15],[15,20]]},
     /* Skośne miały 0,7 serii tygodniowo przy normie 2-10 — nie było w planie
        ANI JEDNEGO ćwiczenia, które by je obciążało. Dzień A pilnuje prostego
        i stabilizacji, dzień C skośnych. */
@@ -1075,12 +1136,12 @@ const DOMYSLNY_PLAN = {
 
   D: { name:'Góra — pull', grp:'góra', slots:[
     {id:'D1', lab:'Główny bój', fixed:'Podciąganie',
-     t:['3×6-8 RPE6','4×6-10 RPE8','2×6 RPE5','4×5-8 + obciążenie'],
-     s:[3,4,2,4], rr:[[6,8],[6,10],[6,6],[5,8]]},
+     t:['3×6-8 RPE6','3×6-10 RPE8','2×6 RPE5','3×5-8 + obciążenie'],
+     s:[3,3,2,3], rr:[[6,8],[6,10],[6,6],[5,8]]},
     {id:'D2', lab:'Ciąg poziomy',
      pool:['Wiosłowanie hantlem','Wiosłowanie sztangą','Wiosłowanie na maszynie'],
-     t:['3×10 RPE6','4×8-10 RPE8','2×10 RPE5','4×6-8 RPE8'],
-     s:[3,4,2,4], rr:[[10,10],[8,10],[10,10],[6,8]]},
+     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×6-8 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[6,8]]},
     /* Slot dedykowany GÓRZE klatki. Wcześniej była tu ogólna „klatka — region"
        z pulą, w której skos był jedną z pięciu opcji — i pomiar pokazał
        3,0 serii tygodniowo przy normie 4-12 przez dziesięć tygodni z rzędu.
@@ -1088,23 +1149,23 @@ const DOMYSLNY_PLAN = {
        góra nie miała nic swojego. */
     {id:'D3', lab:'Klatka — góra',
      pool:['Wyciskanie hantli, skos','Wyciskanie sztangą, skos','Brama dół→góra'],
-     t:['4×10 RPE6','4×8-10 RPE8','2×10 RPE5','4×8-10 RPE8'],
-     s:[4,4,2,4], rr:[[10,10],[8,10],[10,10],[8,10]]},
+     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
     /* Tył barku miał 3,0 przy normie 5-14 — a to on równoważy całe wyciskanie
        i chroni bark przed konfliktem podbarkowym. Cztery serie plus dorzucenie
        tyłu barku do dnia push (B3). */
     {id:'D4', lab:'Tył barku / góra pleców',
      pool:['Face pull','Odwrotne rozpiętki','Szrugsy ze sztangą','Szrugsy z hantlami'],
-     t:['5×15','5×15-20','2×15','5×15-20'],
-     s:[5,5,2,5], rr:[[15,15],[15,20],[15,15],[15,20]]},
+     t:['3×15','3×15-20','2×15','3×15-20'],
+     s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
     {id:'D5', lab:'Biceps',
      pool:['Uginanie ramion','Uginanie młotkowe','Uginanie na modlitewniku','Uginanie na wyciągu'],
-     t:['3×12','3×10-12','2×12','3×8-10'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
+     t:['2×12','3×10-12','2×12','2×8-10'],
+     s:[2,3,2,2], rr:[[12,12],[10,12],[12,12],[8,10]]},
     {id:'D6', lab:'Ciąg pionowy — dodatkowy',
      pool:['Ściąganie drążka','Ściąganie wąsko podchwytem'],
-     t:['3×8','3×10-12','2×8','3×10-12'],
-     s:[3,3,2,3], rr:[[8,8],[10,12],[8,8],[10,12]]}
+     t:['2×8','2×10-12','2×8','2×10-12'],
+     s:[2,2,2,2], rr:[[8,8],[10,12],[8,8],[10,12]]}
   ]}
 };
 const DOMYSLNY_ORDER = ['A','B','C','D'];
@@ -1263,7 +1324,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '20';
+const WERSJA = '24';
 const WERSJA_DATA = '2026-08-06';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -1380,8 +1441,15 @@ function zalegaWysylka(){
                 !DB.measures.length && !DB.questions.length && !DB.pain.length;
   return !pusto && SRV.wyslany !== odciskStanu();
 }
-function srvUrl(zasob){
-  return SRV.adres.replace(/\/+$/,'') + '/' + zasob + '/' + encodeURIComponent(SRV.token);
+/* Token idzie w nagłówku, nie w adresie. Adresy URL trafiają do logów
+   Cloudflare, do historii przeglądarki i do logów każdego serwera po drodze —
+   sekret w ścieżce jest sekretem tylko z nazwy. */
+function srvUrl(zasob, unikat){
+  return SRV.adres.replace(/\/+$/,'') + '/' + zasob +
+    (unikat ? '/x' + unikat : '');
+}
+function srvNaglowki(dodatkowe){
+  return Object.assign({'Authorization': 'Bearer ' + SRV.token}, dodatkowe || {});
 }
 
 /* wysyłka stanu — po każdym zakończonym treningu i ręcznie */
@@ -1391,7 +1459,7 @@ async function srvPush(cicho){
     const ladunek = Object.assign({}, DB,
       {meta:{wersja:WERSJA, exportedAt:new Date().toISOString(), lib:LIB, reg:REG}});
     const r = await fetch(srvUrl('dane'), {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:srvNaglowki({'Content-Type':'application/json'}),
       body: JSON.stringify(ladunek)
     });
     const j = await r.json().catch(()=>({}));
@@ -1416,7 +1484,7 @@ async function srvPush(cicho){
 async function srvPull(cicho){
   if(!srvGotowy()) return false;
   try{
-    const r = await fetch(srvUrl('trener'), {headers:{'Accept':'application/json'}});
+    const r = await fetch(srvUrl('trener'), {headers:srvNaglowki({'Accept':'application/json'})});
     if(r.status===404){ if(!cicho) toast('Nic nowego od trenera'); return false; }
     if(!r.ok) throw new Error('status '+r.status);
     const t = await r.json();
@@ -1520,8 +1588,21 @@ function mergeDB(a, b){
     });
     out[pole] = [...mapa.values()].sort((x,y)=>(x.date||'').localeCompare(y.date||''));
   };
+  /* BŁĄD zgłoszony w przeglądzie: rozstrzyganie po liczbie serii wskrzeszało
+     pomyłki. Kasujesz błędną serię na laptopie, telefon dostaje wpis o jedną
+     serię krótszy, uznaje go za „gorszy" i zostawia swoją wersję. Poprawka
+     nie miała jak przejść.
+
+     Teraz decyduje czas ostatniej zmiany. Gdy któryś wpis go nie ma — bo
+     pochodzi ze starszej wersji aplikacji — wracamy do dawnej reguły, żeby
+     nie stracić danych z archiwum. */
   scal('workouts', w => w.id || (w.date+'|'+w.day),
-       (nowy, stary) => setCount(nowy) > setCount(stary));
+       (nowy, stary) => {
+         if(nowy.updatedAt && stary.updatedAt) return nowy.updatedAt > stary.updatedAt;
+         if(nowy.updatedAt && !stary.updatedAt) return true;
+         if(!nowy.updatedAt && stary.updatedAt) return false;
+         return setCount(nowy) > setCount(stary);
+       });
   scal('runs',     r => r.id || (r.date+'|'+r.type));
   scal('daily',    d => d.date);
   scal('measures', m => m.date);
@@ -1655,14 +1736,33 @@ function renderKopie(){
         '<button class="btn ghost sm" onclick="kopiaPrzywroc('+i+')">Przywróć</button></div>').join('')
     : '<div class="empty">Kopia zrobi się przy pierwszym zapisie po treningu.</div>')+
     '<button class="btn ghost sm" style="margin-top:10px" onclick="kopiaZrobWymuszona();renderKopie();toast(\'Kopia zrobiona\')">Zrób kopię teraz</button>'+
-    '<div class="note" style="margin-top:8px">Trzy migawki w pamięci telefonu, jedna na dobę. '+
-    'Działają bez sieci i bez laptopa. Nie zastępują eksportu — jeśli skasujesz aplikację, '+
-    'znikną razem z nią.</div>';
+    '<div class="note" style="margin-top:8px">Trzy migawki, jedna na dobę. Nie zastępują eksportu.</div>';
 }
 
 function save(){
-  try{ localStorage.setItem(KEY, JSON.stringify(DB)); kopiaZrob(); }
-  catch(e){ toast('Błąd zapisu — brak miejsca?'); }
+  try{ localStorage.setItem(KEY, JSON.stringify(DB)); kopiaZrob(); ZAPIS_PADL = false; }
+  catch(e){
+    /* Najgorszy możliwy moment: właśnie skończyłeś trening, a on nie ma
+       gdzie się zapisać. Toast znika po dwóch sekundach i można go przegapić,
+       więc od teraz zostaje ostrzeżenie na ekranie, dopóki zapis nie wróci. */
+    ZAPIS_PADL = true;
+    try { alert('BRAK MIEJSCA W PAMIĘCI TELEFONU\n\n'+
+      'Trening NIE zapisał się na stałe. Zanim zamkniesz aplikację:\n'+
+      '1. Dane → Eksportuj (zapisz plik)\n'+
+      '2. Dane → Zdjęcia sylwetki → usuń kilka\n\n'+
+      'Zdjęcia zajmują najwięcej miejsca.'); } catch(e2){}
+    toast('BŁĄD ZAPISU — zrób eksport zanim zamkniesz');
+  }
+}
+let ZAPIS_PADL = false;
+
+/* Ostrzeżenie wisi na ekranie głównym, dopóki problem trwa. */
+function renderZapis(){
+  if(!ZAPIS_PADL) return '';
+  return '<div class="tip bad"><b>Ostatni zapis się nie udał — brak miejsca</b>'+
+    '<div class="note" style="margin-top:4px">To, co widzisz, siedzi tylko w pamięci '+
+    'otwartej aplikacji. Zamknięcie jej = utrata. Zrób eksport w zakładce Dane '+
+    'i usuń kilka zdjęć sylwetki.</div></div>';
 }
 
 /* ============================================================
@@ -1694,12 +1794,18 @@ function weekNo(dateStr){
    nie przed — odciąża się to, co się zmęczyło.
    ============================================================ */
 function phaseOf(w){
+  /* CYKL 3+1, nie 5+1.
+     Poprzednio deload wypadał co szósty tydzień: trzy tygodnie budowy, dwa
+     intensyfikacji, dopiero potem odciążenie. Dla kogoś, kto wraca po roku,
+     biega dwa razy w tygodniu i sypia po pięć–siedem godzin, to za późno —
+     do szóstego tygodnia zdąży się wyeksploatować, a wtedy deload przestaje
+     być narzędziem i staje się ratunkiem.
+
+     Teraz: dwa tygodnie reaktywacji, potem powtarzalny cykl czterotygodniowy
+     — dwa tygodnie budowy, tydzień intensyfikacji, tydzień deloadu. */
   if(w <= 2) return 0;      /* reaktywacja */
-  if(w <= 5) return 1;      /* budowa */
-  if(w === 6) return 2;     /* deload */
-  if(w <= 8) return 3;      /* intensyfikacja */
-  const k = (w - 9) % 6;
-  return k <= 2 ? 1 : k <= 4 ? 3 : 2;
+  const k = (w - 3) % 4;
+  return k <= 1 ? 1 : k === 2 ? 3 : 2;
 }
 /* Ostatni tydzień bieżącego odcinka tej samej fazy. Przy cyklu nie da się
    już pytać „który tydzień jest ostatni w fazie budowy" — jest ich wiele. */
@@ -1748,15 +1854,52 @@ function setCount(w){ return w.exercises.reduce((a,e)=>a+robocze(e.sets).length,
 function wuCount(w){ return w.exercises.reduce((a,e)=>a+(e.sets||[]).filter(s=>s.wu).length,0); }
 
 /* szacowany 1RM wg Epleya — wspólna miara „siły" serii */
-function e1rm(s){
-  const w=s.w||0, r=s.r||0;
-  if(!r) return 0;
-  return w>0 ? w*(1+r/30) : r;
+/* Ile realnie dźwigasz w tej serii. Przy ćwiczeniach z masą własną liczy się
+   ciało plus to, co doczepiłeś — inaczej dziesięć podciągnięć z pasem 5 kg
+   wychodzi „lżej" niż dwadzieścia bez obciążenia i silnik widzi załamanie
+   siły tam, gdzie był postęp. Przy podciąganiu i dipach ramiona podnoszą
+   praktycznie całe ciało, przy pompkach mniej więcej dwie trzecie. */
+const UDZIAL_CIALA = {
+  'Podciąganie': 1, 'Podciąganie podchwytem': 1, 'Dipy': 1, 'Zwis na drążku': 1,
+  'Wiosłowanie australijskie': 0.6, 'Wiosłowanie australijskie podchwytem': 0.6,
+  'Dipy na krzesłach': 0.65, 'Pompki': 0.65, 'Pompki nogi wyżej': 0.7,
+  'Pompki ręce wyżej': 0.55, 'Pompki szerokie': 0.65, 'Pompki diamentowe': 0.65,
+  'Pompki w podporze przodem': 0.7, 'Unoszenie nóg w zwisie': 0.5
+};
+
+function masaCiala(){
+  const z = (DB.daily || []).filter(x => x.weight != null).slice(-1)[0];
+  return z ? z.weight : 70;      /* rozsądny domyślny, gdy nigdy się nie ważył */
 }
-function bestSet(sets){
+
+/* Całkowite obciążenie serii: doczepiony ciężar + odpowiedni ułamek ciała. */
+function ciezarCalkowity(nazwa, w){
+  const L = LIB[nazwa] || {};
+  if(!L.bw) return w || 0;
+  const udzial = UDZIAL_CIALA[nazwa];
+  if(udzial == null) return w || 0;   /* np. przysiad bułgarski — nie modelujemy */
+  return (w || 0) + masaCiala() * udzial;
+}
+
+function e1rm(s, nazwa){
+  const w = nazwa ? ciezarCalkowity(nazwa, s.w) : (s.w || 0);
+  /* Wzór Epleya jest wiarygodny mniej więcej do dwunastu powtórzeń, wyżej
+     zaczyna wróżyć — dwadzieścia pięć powtórzeń dawałoby mnożnik 1,83.
+
+     BŁĄD, który tu był: ucinałem `r` na dwunastu. To urealniało liczbę, ale
+     ZABIJAŁO progresję przy masie własnej — dwadzieścia pompek i trzydzieści
+     pięć pompek dawały identyczny wynik, więc silnik widział zastój tam,
+     gdzie był postęp. Teraz powyżej dwunastu powtórzeń przyrost jest
+     tłumiony o połowę: liczba nadal rośnie, ale wolniej i bez fantazji. */
+  const rr = s.r || 0;
+  if(!(rr > 0)) return 0;
+  const mnoznik = rr <= 12 ? rr/30 : 12/30 + (rr - 12)/60;
+  return w>0 ? w*(1+mnoznik) : rr;
+}
+function bestSet(sets, nazwa){
   const r = robocze(sets);          /* rozgrzewka nigdy nie jest „najlepszą serią” */
   if(!r.length) return null;
-  return r.reduce((a,b)=> e1rm(b)>e1rm(a) ? b : a);
+  return r.reduce((a,b)=> e1rm(b,nazwa)>e1rm(a,nazwa) ? b : a);
 }
 function fmtSet(s, nazwa){
   if(!s.w) return s.r+' powt.';
@@ -1826,8 +1969,8 @@ function pr(name, doDaty){
     if(doDaty && w.date>=doDaty) return;
     const e=w.exercises.find(x=>x.name===name);
     if(!e) return;
-    const b=bestSet(e.sets);
-    if(b && (!best || e1rm(b)>e1rm(best.set))) best={set:b, date:w.date};
+    const b=bestSet(e.sets,name);
+    if(b && (!best || e1rm(b,name)>e1rm(best.set,name))) best={set:b, date:w.date};
   });
   return best;
 }
@@ -1851,7 +1994,7 @@ function historia(name){
 function zastoj(name){
   const h=historia(name).slice(0,3);
   if(h.length<3) return null;
-  const v=h.map(x=>e1rm(bestSet(x.sets)));
+  const v=h.map(x=>e1rm(bestSet(x.sets,name),name));
   const najlepszy=Math.max(...v);
   /* najnowszy wynik nie jest najlepszy z trójki i nie ma poprawy w czasie */
   if(v[0] >= najlepszy*0.999) return null;
@@ -1869,7 +2012,9 @@ function zastojeWszedzie(){
    ============================================================ */
 const TALERZE=[25,20,15,10,5,2.5,1.25];
 function plates(total, gryf){
-  gryf = gryf==null ? 20 : gryf;
+  /* Gryf nie zawsze waży 20 kg: damski 15, łamany 7,5–10. Bez tego rozkład
+     na talerze jest po prostu błędny i trzeba liczyć w głowie. */
+  gryf = gryf != null ? gryf : ((DB && DB.settings && DB.settings.gryf) || 20);
   let side=(total-gryf)/2;
   if(side<0) return null;
   if(side===0) return [];
@@ -1946,7 +2091,13 @@ function regionSets(days){
     w.exercises.forEach(e=>{
       const L = LIB[e.name];
       if(!L) return;
-      const ile = robocze(e.sets).length;   /* rozgrzewka nie buduje objętości */
+      /* Rundy obwodu to nie są serie hipertroficzne. Piętnaście rund „Cindy"
+         daje 45 „serii" i wrzuciłoby całe ciało w stan nadmiaru na dwa
+         tygodnie, blokując progresję w normalnych dniach. Obwód robi
+         zmęczenie i wydolność, nie napięcie mechaniczne — liczymy go
+         ułamkowo, ale nie zerujemy, bo praca jednak była. */
+      const mnoznik = w.obwod ? 0.3 : 1;
+      const ile = robocze(e.sets).length * mnoznik;
       Object.entries(L.mus).forEach(([r,wt])=>{ if(out[r]!=null) out[r]+= ile*wt; });
     });
   });
@@ -2218,7 +2369,10 @@ function suggestLoad(name, slot, phase, tydzien){
       return {w:0, r:Math.max(mn, Math.round(Math.min(...last.sets.map(s=>s.r||mn)) * pr.s)),
         sets, tag:'down', przerwa,
         why:'Przerwa '+przerwa+' dni. Masa własna, więc schodzisz powtórzeniami. '+pr.why};
-    const w = Math.max(2.5, roundTo(wTop0 * pr.s, 2.5));
+    const uc = UDZIAL_CIALA[name];
+    const w = (LIB[name] && LIB[name].bw && uc != null)
+      ? Math.max(0, roundTo((wTop0 + masaCiala()*uc) * pr.s - masaCiala()*uc, 2.5))
+      : Math.max(2.5, roundTo(wTop0 * pr.s, 2.5));
     return {w, r:mn, sets, tag:'down', przerwa,
       why:'Przerwa '+przerwa+' dni od ostatniego razu. Ostatnio '+fmtKg(wTop0)+
         ' kg — startujesz od '+fmtKg(w)+' kg. '+pr.why};
@@ -2239,7 +2393,13 @@ function suggestLoad(name, slot, phase, tydzien){
     /* ćwiczenia czasowe wracają do zaplanowanego czasu, bez dokładania sekund */
     if(L.time) return {w:wTop, r:mx, sets, tag:'down',
       why:'Tydzień deloadu. Ostatnio '+minR+' s — wracasz do '+mx+' s i '+sets+' serii.'};
-    const lekki = L.bw && !wTop ? 0 : roundTo(wTop*skala, 2.5);
+    /* Przy masie własnej z obciążeniem 20% liczone od samego pasa to żaden
+       deload: 20 kg → 16 kg, czyli z 90 kg całkowitych robi się 86. Skalujemy
+       CAŁOŚĆ i odejmujemy ciało — czasem wychodzi zero i to jest poprawny wynik. */
+    const udzialC = UDZIAL_CIALA[name];
+    const lekki = (L.bw && udzialC != null)
+      ? Math.max(0, roundTo((wTop + masaCiala()*udzialC) * skala - masaCiala()*udzialC, 2.5))
+      : (L.bw && !wTop ? 0 : roundTo(wTop*skala, 2.5));
     return {w:lekki, r:mn, sets, tag:'down',
       why:'Tydzień deloadu. Ostatnio '+prev+' — schodzisz do '+
         (lekki ? fmtKg(lekki)+' kg' : 'samej masy własnej')+
@@ -2266,7 +2426,7 @@ function suggestLoad(name, slot, phase, tydzien){
      dopiero przy RPE 9,5 — więc w fazie reaktywacji, gdzie celem jest RPE 6,
      seria zrobiona na RPE 8 i tak dawała +5 kg. To dokładnie odwrotność tego,
      po co jest faza reaktywacji. */
-  const celRPE = (PHASES[phase] && PHASES[phase].rpe) || 8;
+  const celRPE = sufitFazy(phase);
   if(full && minR>=mx && rpe!=null && rpe >= Math.min(9.5, celRPE+1.5))
     return {w:wTop, r:mn, sets, tag:'hold',
       why:'Ostatnio '+prev+' — zakres domknięty, ale przy RPE '+fmtKg(rpe)+
@@ -2492,20 +2652,20 @@ function ustawSamopoczucie(v){
   const d = wpisDnia();
   d.samopoczucie = d.samopoczucie === v ? null : v;
   save(); zsynchronizuj(); renderSub();
-  if(navigator.vibrate) navigator.vibrate(12);
+  sygnal(12);
 }
 function ustawUpal(v){
   const d = wpisDnia();
   d.upal = d.upal === v ? 0 : v;
   save(); zsynchronizuj(); renderSub();
-  if(navigator.vibrate) navigator.vibrate(12);
+  sygnal(12);
 }
 function ustawZakwasy(gdzie, poziom){
   const d = wpisDnia();
   d.zakwasy = d.zakwasy || {};
   d.zakwasy[gdzie] = d.zakwasy[gdzie] === poziom ? 0 : poziom;
   save(); zsynchronizuj(); renderSub();
-  if(navigator.vibrate) navigator.vibrate(12);
+  sygnal(12);
 }
 function wpisDnia(){
   const dzis = today();
@@ -2533,6 +2693,17 @@ function brakiDnia(){
 /* Ekran główny odpowiadał na pytanie „co się dzieje", a powinien odpowiadać
    na „co robię teraz". Ten kafelek jest tą odpowiedzią i stoi najwyżej:
    dzień, gotowość, jeden duży przycisk. Reszta to kontekst. */
+/* Aplikacja umiała ściąć sesję, ale nie umiała powiedzieć „dziś odpuść".
+   Przy gotowości poniżej czterdziestu punktów trening nie jest bodźcem,
+   tylko dokładaniem do długu. Lepiej przesunąć o dobę. */
+function odradzamDzis(){
+  const dz = DB.daily.find(x => x.date === today()) || {};
+  if(dz.samopoczucie == null && dz.sleep == null) return null;
+  const g = gotowosc();
+  if(g.pkt >= 40) return null;
+  return {pkt: g.pkt, powody: g.powody.map(x => x[1])};
+}
+
 function renderDzis(){
   const zrobiony = DB.workouts.find(w => w.date === today());
   const gp = planDoPokazania();
@@ -2555,6 +2726,19 @@ function renderDzis(){
   const dzien = gp ? gp.dzien : s.day;
   if(!dzien) return '<div class="tip"><b>Dziś odpoczynek</b><div class="hm" style="margin-top:3px">'+
     esc((s.why||[])[0]||'')+'</div></div>';
+
+  const odradzam = odradzamDzis();
+  if(odradzam)
+    return '<div class="tip bad"><b>Dziś lepiej odpuść</b>'+
+      '<div class="hm" style="margin-top:4px">Gotowość '+odradzam.pkt+'/100 — '+
+      esc(odradzam.powody.slice(0,2).join('; '))+'</div>'+
+      '<div class="note" style="margin-top:8px">Przy takiej regeneracji trening nie '+
+      'daje bodźca, tylko dokłada do długu. Przesuń o dobę — nie stracisz nic, '+
+      'bo przerwa krótsza niż dziesięć dni nie rusza ciężarów.</div>'+
+      '<div style="display:flex;gap:8px;margin-top:11px">'+
+      '<button class="btn" style="flex:2" onclick="dzienWolny(\'zmeczenie\')">Biorę wolne</button>'+
+      '<button class="btn ghost" style="flex:1" onclick="openSuggest()">Idę mimo to</button>'+
+      '</div></div>';
 
   const ile = gp ? gp.cwiczenia.length : 0;
   const stan = !maOdp ? '' : g.pkt>=85 ? ' ok' : g.pkt>=55 ? ' warn' : ' bad';
@@ -2826,7 +3010,7 @@ function wczytajObwod(){
 function rundaPlus(){
   if(!KOLKO) return;
   KOLKO.rundy++; zapiszObwod(); renderSub();
-  if(navigator.vibrate) navigator.vibrate(25);
+  sygnal(25);
 }
 function rundaMinus(){
   if(!KOLKO || KOLKO.rundy <= 0) return;
@@ -2881,18 +3065,13 @@ function renderObwod(){
       '</div></div>';
   }
   return '<h2>Obwód na czas</h2><div class="card">'+
-    '<div class="note">Nastawiasz stoper, robisz rundę za rundą, liczysz ile ich wyszło. '+
-    'Zapisuje się jak zwykły trening — rundy liczą się jako serie, więc mapa mięśni '+
-    'i historia widzą go tak samo.</div>'+
+    '<div class="note">Stoper, rundy, tyle ile dasz radę.</div>'+
     Object.entries(OBWODY).map(([k,o]) =>
       '<div class="hist"><div><div class="hd">'+esc(o.n)+' · '+o.min+' min</div>'+
       '<div class="hm">'+esc(o.cw.map(([n,r]) => r+'× '+n).join(' · '))+'</div>'+
       '<div class="note" style="margin-top:2px">'+esc(o.opis)+'</div></div>'+
       '<button class="btn ghost sm" onclick="startObwod(\''+k+'\')">Start</button></div>').join('')+
-    '<div class="note" style="margin-top:10px"><b>Uczciwie:</b> przy masie własnej '+
-    'i wysokich powtórzeniach bodziec idzie bardziej w wytrzymałość niż w siłę. '+
-    'Jako jedna–dwie sesje w tygodniu wakacji — świetnie. Jako całość planu '+
-    'przez miesiąc — siła zacznie schodzić.</div></div>';
+    '<div class="note" style="margin-top:10px"><b>Uczciwie:</b> to wytrzymałość, nie siła. Raz–dwa w tygodniu — dobrze. Jako cały plan — siła zejdzie.</div></div>';
 }
 
 let PLAN_ROZW = false, KOLEJNE_ROZW = false;
@@ -2939,8 +3118,13 @@ function wyjazdowySlot(slot){
   if(!pula || !pula.length) return slot;
   const dost = pula.filter(n => LIB[n]);
   if(!dost.length) return slot;
+  /* Seria z masą własną na kilkanaście powtórzeń niesie mniejszy bodziec niż
+     seria ze sztangą blisko granicy — przy tej samej liczbie serii tydzień
+     bez sprzętu byłby po prostu lżejszy. Dokładamy jedną serię do slotu,
+     co mniej więcej wyrównuje bodziec bez wydłużania sesji o połowę. */
   return Object.assign({}, slot, {
     fixed: null, pool: dost, wyjazd: true,
+    s: slot.s.map(x => x > 0 ? x + 1 : 0),
     rr: KALIS_RR,
     t: KALIS_RR.map(r => '3×' + (r[0]===r[1] ? r[0] : r[0]+'-'+r[1]))
   });
@@ -3016,6 +3200,22 @@ function dostosuj(lista, day){
    od zdolności do ciężkiej pracy — nie po równo, bo sen i zakwasy w partii,
    którą dziś trenujesz, ważą inaczej niż samopoczucie.
    ============================================================ */
+/* Średni sen z ostatnich dwóch tygodni. RPE 9 przy chronicznym niedosypianiu
+   to nie jest intensyfikacja, tylko proszenie się o kontuzję — te same 60 kg
+   po ośmiu godzinach snu odczuwasz jako RPE 6, a po czterech jako RPE 9.
+   Dopóki średnia nie sięgnie siedmiu godzin, sufit stoi na 8. */
+function sredniSen(){
+  const l = (DB.daily || []).filter(x => x.date >= daysAgo(14) && x.sleep != null).map(x => x.sleep);
+  return l.length >= 4 ? l.reduce((a,b)=>a+b,0)/l.length : null;
+}
+
+function sufitFazy(faza){
+  const bazowy = (PHASES[faza] || {}).rpe || 8;
+  const sen = sredniSen();
+  if(sen != null && sen < 7 && bazowy > 8) return 8;
+  return bazowy;
+}
+
 function gotowosc(data){
   const d = data || today();
   const dz = DB.daily.find(x => x.date === d) || {};
@@ -3240,6 +3440,31 @@ function suggestNext(naJutro){
 /* ============================================================
    NAWIGACJA
    ============================================================ */
+/* GEST COFANIA NA iOS.
+   Na iPhonie naturalnym ruchem powrotu jest pociągnięcie kciukiem od lewej
+   krawędzi. Aplikacja zmieniała ekrany wyłącznie w JavaScripcie, więc ten
+   gest wyrzucał z niej na ekran główny systemu — w środku treningu.
+   Teraz każde wejście w podekran dokłada wpis do historii, a gest cofania
+   zamyka ten podekran zamiast całej aplikacji. */
+let HISTORIA_GOTOWA = false;
+
+function zapiszHistorie(){
+  if(typeof history === 'undefined' || !history.pushState) return;
+  try { history.pushState({v: 'x'}, ''); } catch(e){}
+}
+
+function wstecz(){
+  /* Kolejność ma znaczenie: najpierw zamykamy to, co jest najgłębiej. */
+  if(typeof zamknijModal === 'function' && zamknijModal()) return true;
+  if(SUB && SUB !== 'hub' && SUB !== 'ses'){ setSub('hub'); return true; }
+  const akt = ['daily','report','data'].find(v => {
+    const el = document.getElementById('v-' + v);
+    return el && el.classList && el.classList.contains('on');
+  });
+  if(akt){ go('train'); return true; }
+  return false;
+}
+
 function go(v){
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
   document.getElementById('v-'+v).classList.add('on');
@@ -3252,13 +3477,16 @@ function go(v){
   if(v==='daily') renderDaily();
   if(v==='data') renderData();
   if(v==='train') renderSub();
+  if(v !== 'train') zapiszHistorie();
 }
 function setSub(s){
+  const poprzedni = SUB;
   SUB=s;
   document.querySelectorAll('.sub').forEach(x=>x.classList.remove('on'));
   document.getElementById('s-'+s).classList.add('on');
   document.getElementById('hBack').style.display = s==='hub' ? 'none' : '';
   scrollTop();
+  if(s !== 'hub' && poprzedni !== s) zapiszHistorie();
   renderSub();
 }
 function goHome(){
@@ -3445,7 +3673,7 @@ function renderHub(){
     /* Kolejność jest teraz według pilności, nie według historii dopisywania:
        najpierw to, co robisz teraz, potem to, czego aplikacja od Ciebie chce,
        potem kontekst, na końcu sprawy techniczne. */
-    renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume + renderDzis() + renderPoranne() + renderBraki() + coach +
+    renderZapis() + renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume + renderDzis() + renderPoranne() + renderBraki() + coach +
     planBox + renderKolejne() + odpBox + czekaBox + renderPrzeloz() + syncBox;
 }
 
@@ -3464,6 +3692,7 @@ function przywrocTrening(id){
   if(i < 0){ toast('Nie ma go już w koszu'); return; }
   const {wpis} = DB.kosz[i];
   DB.kosz.splice(i, 1);
+  wpis.updatedAt = new Date().toISOString();
   DB.workouts.push(wpis);
   DB.workouts.sort((a,b) => a.date.localeCompare(b.date));
   DB.nastepny = planNastepnego();
@@ -3479,6 +3708,7 @@ function delWorkout(id){
   if(!confirm('Usunąć ten trening?\n\n'+opis+'\n\nWyląduje w koszu — przez 30 dni da się go przywrócić.')) return;
   DB.kosz.unshift({usunieto:new Date().toISOString(), wpis:w});
   DB.workouts=DB.workouts.filter(x=>x.id!==id);
+  DB.usuniete = (DB.usuniete || []).concat([{id, kiedy: new Date().toISOString()}]).slice(-50);
   /* Plan na jutro był policzony z historią, która właśnie się zmieniła —
      zostawienie go znaczyłoby proponowanie ciężarów opartych na treningu,
      którego już nie ma. Liczymy od nowa; korekta trenera przepada świadomie,
@@ -3602,17 +3832,24 @@ function sesCzas(){
    decyduje, czy technika trzyma się do trzeciej serii.
    Krótka i konkretna, bo rozgrzewka, której nikt nie robi, jest bezużyteczna.
    ============================================================ */
+/* Rozgrzewka jest DYNAMICZNA, bez rozciągania statycznego.
+   Trzymanie mięśnia w rozciągnięciu przez pół minuty tuż przed ciężką serią
+   obniża zdolność do generowania siły na kilkanaście–kilkadziesiąt minut.
+   Przy wyciskaniu i przysiadzie to strata powtórzeń bez żadnego zysku.
+   Statyczne rozciąganie ma sens, ale wieczorem albo po treningu. */
 const ROZGRZEWKA = {
   nogi: ['5 min rower albo orbitrek — aż zrobi się ciepło, nie do zadyszki',
          '10× krążenie bioder w każdą stronę',
          '10× przysiad bez obciążenia, powoli, pełny zakres',
          '10× wykrok w miejscu na nogę',
-         'Rozciąganie łydek o ścianę, 30 s na nogę'],
+         '10× wymach nogą w przód i w tył, trzymając się czegoś',
+         '8× „dzień dobry" bez obciążenia — rozrusza dwugłowe i lędźwie'],
   gora: ['5 min wiosła albo orbitrek z pracą ramion',
          '10× krążenie ramion w przód i w tył',
          '10× odwodzenie łopatek w podporze („scapular push-up")',
          '15× odwodzenie ramion z gumą albo bez obciążenia',
-         'Rozciąganie klatki w futrynie, 30 s'],
+         '10× rotacja zewnętrzna z gumą — na zdrowie barku',
+         '10× szeroki wymach ramion w poziomie, otwierając klatkę'],
 };
 
 function renderRozgrzewka(){
@@ -3636,7 +3873,7 @@ function renderRozgrzewka(){
 function przelaczRozgrzewke(){
   SES.rozgrzewka = !SES.rozgrzewka;
   saveSes(); renderSession();
-  if(navigator.vibrate) navigator.vibrate(12);
+  sygnal(12);
 }
 
 function renderSession(){
@@ -3664,8 +3901,8 @@ function renderSession(){
        nie jest jeszcze w DB.workouts, a filtr po dacie gubiłby wcześniejszy
        trening z tego samego dnia. */
     const rekord=pr(e.name);
-    const teraz=bestSet(e.sets);
-    const bije = teraz && rekord && e1rm(teraz)>e1rm(rekord.set) && !L.time;
+    const teraz=bestSet(e.sets,e.name);
+    const bije = teraz && rekord && e1rm(teraz,e.name)>e1rm(rekord.set,e.name) && !L.time;
 
     /* rozgrzewka i talerze liczone z propozycji albo ostatniego ciężaru */
     const cel = (e.sug&&e.sug.w) || (last&&Math.max(...last.sets.map(s=>s.w||0))) || 0;
@@ -3697,12 +3934,19 @@ function renderSession(){
         wuTxt+
         (function(){ let nr=0; return e.sets.map((s,j)=>{
           if(!s.wu) nr++;
-          return '<div class="srow'+(s.wu?' wus':'')+'">'+
+          /* Krzyżyk i ołówek stały obok siebie, po kilka pikseli każdy,
+             na ekranie obsługiwanym spoconą ręką. Notatkę otwiera się teraz
+             dotknięciem CAŁEGO wiersza, a kasowanie zostało odsunięte na
+             prawy skraj i powiększone do pełnego celu dotykowego. */
+          return '<div class="srow'+(s.wu?' wus':'')+'" id="sr'+i+'_'+j+'">'+
             '<div class="sn">'+(s.wu?'R':nr)+'</div>'+
-            '<div class="sv">'+esc(fmtSet(s, e.name))+
-              (s.n?'<div class="snote">'+esc(s.n)+'</div>':'')+'</div>'+
-            '<button class="sx" title="notatka" onclick="noteSet('+i+','+j+')">✎</button>'+
-            '<button class="sx" onclick="delSet('+i+','+j+')">×</button></div>';
+            '<div class="sv" onclick="noteSet('+i+','+j+')" '+
+              'style="cursor:pointer;-webkit-tap-highlight-color:transparent">'+
+              esc(fmtSet(s, e.name))+
+              (s.n ? '<div class="snote">'+esc(s.n)+'</div>'
+                   : '<div class="snote" style="opacity:.35">dotknij, żeby dopisać notatkę</div>')+
+              '</div>'+
+            '<button class="sx sdel" onclick="delSet('+i+','+j+')">×</button></div>';
         }).join(''); })()+
         '<div class="inrow">'+
           /* Bez tego dopisku nie da się zgadnąć, czy wpisać ciężar jednej hantli,
@@ -3748,6 +3992,14 @@ function renderSession(){
         '</div>'+
       '</div></div>';
   }).join('');
+  przywrocWpisane();
+  /* Zielony błysk na dopiero co dodanej serii — to jedyne potwierdzenie,
+     jakie naprawdę jest potrzebne, a wibracja na iPhonie go nie daje. */
+  if(OSTATNIA_SERIA){
+    const el = document.getElementById('sr' + OSTATNIA_SERIA.replace(':','_'));
+    if(el){ el.classList.add('nowa'); setTimeout(()=>el.classList.remove('nowa'), 600); }
+    OSTATNIA_SERIA = null;
+  }
   SES.exercises.forEach((e,i)=>{ if(e._open) odswiezTalerze(i); });
 }
 /* podpowiedź „co założyć na sztangę" pod polem ciężaru */
@@ -3773,6 +4025,7 @@ function odswiezTalerze(i){
     : 'Na stronę: <b>'+esc(t)+'</b>';
 }
 function toggleFlag(){
+  zbierzWpisane();
   SES.flag=!SES.flag; saveSes(); renderSession();
   if(SES.flag) toast('Przyjrzę się tej sesji uważniej');
 }
@@ -3784,8 +4037,12 @@ function noteSet(i,j){
   SES.exercises[i]._open=true; saveSes(); renderSession();
 }
 function swapEx(i){
+  zbierzWpisane();
   const e=SES.exercises[i];
   if(!e.pool||e.pool.length<2) return;
+  /* Po zamianie ćwiczenia wpisany ciężar dotyczy już czegoś innego —
+     20 kg z wyciskania nie ma nic wspólnego z rozpiętkami. */
+  if(SES_WPISANE){ delete SES_WPISANE['iw'+i]; delete SES_WPISANE['ir'+i]; }
   if(e.sets.length && !confirm('Zamienić ćwiczenie? Zapisane serie tego ćwiczenia przepadną.')) return;
   const k=(e.pool.indexOf(e.name)+1)%e.pool.length;
   e.name=e.pool[k]; e.sets=[]; e._open=true;
@@ -3793,6 +4050,35 @@ function swapEx(i){
   if(slot) e.sug=suggestLoad(e.name, slot, phaseOf(SES.week), SES.week);
   saveSes(); renderSession(); toast('Zamieniono na: '+e.name);
 }
+/* BŁĄD zgłoszony w przeglądzie: każde przerysowanie sesji odtwarzało pola
+   z historii, kasując to, co już wpisałeś, ale czego jeszcze nie dodałeś.
+   Wpisujesz 22,5, dotykasz innego ćwiczenia albo obrazka — i pole wraca do
+   starej wartości. Patrzysz, widzisz stary ciężar, dodajesz serię i zapisujesz
+   nieprawdę. Dlatego przed każdym przerysowaniem zdejmujemy zawartość pól,
+   a po nim wstawiamy ją z powrotem. */
+let SES_WPISANE = null;
+let OSTATNIA_SERIA = null;
+
+function zbierzWpisane(){
+  if(!SES) return;
+  SES_WPISANE = {};
+  SES.exercises.forEach((e, i) => {
+    ['iw','ir'].forEach(pre => {
+      const el = document.getElementById(pre + i);
+      if(el && el.value !== '' && el.value != null) SES_WPISANE[pre + i] = el.value;
+    });
+  });
+}
+
+function przywrocWpisane(){
+  if(!SES_WPISANE) return;
+  Object.entries(SES_WPISANE).forEach(([id, v]) => {
+    const el = document.getElementById(id);
+    if(el) el.value = v;
+  });
+  SES_WPISANE = null;
+}
+
 function prefill(e,f){
   if(e.sets.length) return e.sets[e.sets.length-1][f] ?? '';
   if(e.sug&&e.sug.w!=null){ if(f==='w') return e.sug.w; if(f==='r') return e.sug.r; return ''; }
@@ -3828,6 +4114,7 @@ function pokazObrazek(name){
 }
 
 function toggleEx(i){
+  zbierzWpisane();
   SES.exercises.forEach((e,j)=>{ if(j!==i) e._open=false; });
   SES.exercises[i]._open=!SES.exercises[i]._open;
   renderSession();
@@ -3860,7 +4147,7 @@ function ustawRpe(i, v){
   const box = pole.previousElementSibling;
   if(box) [...box.children].forEach(b =>
     b.classList.toggle('on', b.textContent.startsWith(String(pole.value)) && pole.value !== ''));
-  if(navigator.vibrate) navigator.vibrate(12);
+  sygnal(12);
 }
 
 function addSet(i, rozgrzewka){
@@ -3872,11 +4159,12 @@ function addSet(i, rozgrzewka){
   const s={w:w,r:r,rpe:rozgrzewka?null:rpe};
   if(rozgrzewka) s.wu=true;
   e.sets.push(s); e._open=true;
+  OSTATNIA_SERIA = i + ':' + (e.sets.length - 1);
   saveSes();
   renderSession();
   /* po rozgrzewkowej przerwa jest krótsza — nie ma po czym odpoczywać 3 minut */
-  startTimer(rozgrzewka ? Math.min(60, DB.settings.rest) : DB.settings.rest);
-  if(navigator.vibrate) navigator.vibrate(35);
+  startTimer(rozgrzewka ? Math.min(60, DB.settings.rest) : przerwaDla(e.name));
+  sygnal(35);
 }
 /* wpisuje całą rampę rozgrzewkową jednym tapnięciem */
 function wpiszRozgrzewke(i){
@@ -3892,6 +4180,12 @@ function wpiszRozgrzewke(i){
   toast(wu.length+' serie rozgrzewkowe dodane');
 }
 function delSet(i,j){
+  /* Krzyżyk stoi kilka milimetrów od ołówka notatki, a ekran obsługuje się
+     spoconą ręką między seriami. Skasowanej serii nie da się odtworzyć —
+     trzeba ją wpisać od nowa i zgadnąć, ile było. */
+  const s = SES.exercises[i].sets[j];
+  const opis = s ? ((s.w ? fmtKg(s.w)+' kg × ' : '') + s.r + (s.rpe ? ' @'+s.rpe : '')) : '';
+  if(!confirm('Usunąć serię?\n\n'+SES.exercises[i].name+'\n'+opis)) return;
   SES.exercises[i].sets.splice(j,1); SES.exercises[i]._open=true;
   saveSes(); renderSession();
 }
@@ -3921,8 +4215,8 @@ function finishSession(){
     /* bieżąca sesja nie jest jeszcze w DB.workouts, więc pr() bez filtra
        daty widzi dokładnie to, co było przed nią — łącznie z wcześniejszym
        treningiem z tego samego dnia */
-    const teraz=bestSet(e.sets), stary=pr(e.name);
-    if(teraz && (!stary || e1rm(teraz)>e1rm(stary.set)))
+    const teraz=bestSet(e.sets,e.name), stary=pr(e.name);
+    if(teraz && (!stary || e1rm(teraz,e.name)>e1rm(stary.set,e.name)))
       rekordy.push({name:e.name, set:teraz, stary:stary?stary.set:null, poprz:stary?stary.date:null});
   });
   /* poprzedni ten sam dzień — do porównania objętości */
@@ -3931,10 +4225,19 @@ function finishSession(){
   const dur = SES.t0 ? Math.max(1, Math.round((Date.now()-SES.t0)/60000)) : null;
   const wpis={id:uid('w'), date:SES.date, day:SES.day, week:SES.week, exercises:ex};
   if(SES.rozgrzewka) wpis.rozgrzewka=true;
-  if(dur) wpis.dur=dur;
+  /* iOS potrafi ubić aplikację w tle. Gdy wrócisz do niej rano i klikniesz
+     „Zakończ", surowa różnica czasów daje kilkanaście godzin i rujnuje
+     wszystkie wykresy gęstości pracy. Powyżej trzech godzin liczymy czas
+     z liczby serii — trzy minuty na serię to rozsądne przybliżenie. */
+  if(dur){
+    const serie = setCount(wpis) || 1;
+    wpis.dur = dur > 180 ? Math.min(180, Math.round(serie * 3)) : dur;
+    if(dur > 180) wpis.durSzac = true;
+  }
   if(SES.note && SES.note.trim()) wpis.note=SES.note.trim();
   if(SES.flag) wpis.flag=true;
 
+  wpis.updatedAt = new Date().toISOString();
   DB.workouts.push(wpis);
   DB.workouts.sort((a,b)=>a.date.localeCompare(b.date));
   save();
@@ -3962,8 +4265,9 @@ function finishSession(){
    długiej głowy tricepsa ani tyłu barku. */
 function pokrycieSesji(w){
   const suma = {};
+  const mnoznikObwodu = w.obwod ? 0.3 : 1;
   (w.exercises || []).forEach(e => {
-    const robocze = (e.sets || []).filter(x => !x.wu).length;
+    const robocze = (e.sets || []).filter(x => !x.wu).length * mnoznikObwodu;
     if(!robocze) return;
     Object.entries((LIB[e.name] || {}).mus || {}).forEach(([r, u]) => {
       suma[r] = (suma[r] || 0) + u * robocze;
@@ -4004,7 +4308,7 @@ function pokrycieSesji(w){
 function raportSesji(w){
   if(!w) return '';
   const p = phaseOf(weekNo(w.date)), faza = PHASES[p] || {};
-  const celRpe = faza.rpe || 7;
+  const celRpe = sufitFazy(p);
   const rob = w.exercises.flatMap(e => e.sets.filter(x => !x.wu));
   const rpe = rob.filter(x => x.rpe != null).map(x => x.rpe);
   const srRpe = rpe.length ? rpe.reduce((a,b)=>a+b,0)/rpe.length : null;
@@ -4138,13 +4442,13 @@ function renderSummary(){
       '<div class="prv">'+esc(fmtSet(r.set, r.name))+'</div>'+
       '<div class="prw">'+(r.stary
         ? 'Poprzedni: '+esc(fmtSet(r.stary, r.name))+' z '+plDate(r.poprz)+
-          ' · szacowany 1RM '+fmtKg(e1rm(r.stary))+' → '+fmtKg(e1rm(r.set))+' kg'
+          ' · szacowany 1RM '+fmtKg(e1rm(r.stary,r.name))+' → '+fmtKg(e1rm(r.set,r.name))+' kg'
         : 'Pierwszy zapisany wynik w tym ćwiczeniu')+'</div></div>').join('');
   }
 
   h+='<h2>Co zrobiłeś</h2><div class="card">';
   h+=wpis.exercises.map(e=>{
-    const b=bestSet(e.sets);
+    const b=bestSet(e.sets,e.name);
     return '<div class="hist"><div style="min-width:0">'+
       '<div class="hd">'+esc(e.name)+'</div>'+
       '<div class="hm">'+e.sets.map(fmtSet).join(' · ')+
@@ -4210,7 +4514,7 @@ function renderTrening(){
 
   h += '<h2>Ćwiczenia</h2><div class="card">'+ w.exercises.map(e=>{
     const rob = e.sets.filter(x=>!x.wu);
-    const najlepsza = bestSet(e.sets);
+    const najlepsza = bestSet(e.sets,e.name);
     return '<div style="padding:11px 0;border-bottom:1px solid var(--line)">'+
       '<div class="hrow"><div class="hd">'+esc(e.name)+'</div>'+
       '<button class="pill" onclick="openHist(\''+esc(e.name).replace(/'/g,"\\'")+'\')">wykres</button></div>'+
@@ -4219,7 +4523,7 @@ function renderTrening(){
         '<div class="hm">'+(i+1)+'. '+esc(fmtSet(x, e.name))+(x.n?' — '+esc(x.n):'')+'</div>'
       ).join('') +'</div>'+
       (najlepsza && !(LIB[e.name]||{}).time
-        ? '<div class="note" style="margin-top:4px">Szacowany 1RM: '+fmtKg(e1rm(najlepsza))+' kg</div>' : '')+
+        ? '<div class="note" style="margin-top:4px">Szacowany 1RM: '+fmtKg(e1rm(najlepsza,e.name))+' kg</div>' : '')+
       '</div>';
   }).join('') +'</div>';
 
@@ -4258,9 +4562,9 @@ function renderHist(){
   const rekord=pr(name);
   if(rekord && !L.time)
     h+='<div class="tip ok"><b>Rekord:</b> '+esc(fmtSet(rekord.set, rekord.name))+' ('+plDate(rekord.date)+
-       ') · szacowany 1RM '+fmtKg(e1rm(rekord.set))+' kg</div>';
+       ') · szacowany 1RM '+fmtKg(e1rm(rekord.set,name))+' kg</div>';
 
-  const punkty=h0.slice().reverse().map(x=>({v:e1rm(bestSet(x.sets)), d:x.date}));
+  const punkty=h0.slice().reverse().map(x=>({v:e1rm(bestSet(x.sets,name),name), d:x.date}));
   if(punkty.length>1){
     const p0=punkty[0].v, p1=punkty[punkty.length-1].v;
     /* Przy masie własnej bez obciążenia szacowany 1RM wychodzi zero, więc
@@ -4277,14 +4581,14 @@ function renderHist(){
   }
 
   h+='<div class="card">'+h0.map(x=>{
-    const b=bestSet(x.sets);
+    const b=bestSet(x.sets,x.name);
     return '<div class="hist"><div style="min-width:0">'+
       '<div class="hd">'+plDate(x.date)+' <span class="pill" style="margin-left:5px">'+x.day+'</span></div>'+
       '<div class="hm">'+robocze(x.sets).map(fmtSet).join(' · ')+
       (x.sets.some(s=>s.wu)?' <span style="opacity:.55">(rozgrz. '+
         x.sets.filter(s=>s.wu).map(s=>fmtKg(s.w)+'×'+s.r).join(', ')+')</span>':'')+
       (x.note?'<br>„'+esc(x.note)+'"':'')+'</div></div>'+
-      '<div class="exc mono">'+(L.time?'':fmtKg(e1rm(b))+' kg')+'</div></div>';
+      '<div class="exc mono">'+(L.time?'':fmtKg(e1rm(b,x.name))+' kg')+'</div></div>';
   }).join('')+'</div>';
 
   document.getElementById('histBody').innerHTML=h+wrocBtn();
@@ -4300,11 +4604,31 @@ function wrocBtn(){
 const PRESETS=[60,90,120,180];
 let TICK=null, T_END=0, T_LEN=90, AC=null, WL=null;
 
+/* Jedno miejsce zamiast dziesięciu rozsypanych wywołań. Na Androidzie
+   zawibruje, na iPhonie po prostu nic nie zrobi — ale wizualna odpowiedź
+   jest już w CSS i działa wszędzie. */
+function sygnal(ms){
+  try { if(navigator.vibrate) navigator.vibrate(ms || 15); } catch(e){}
+}
+
 function fmtTime(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 /* Timer też przeżywa ubicie aplikacji — koniec przerwy zapisujemy jako
    znacznik czasu. Bez tego iOS ubijał apkę i timer po prostu znikał,
    choć sesja się odtwarzała. */
 const TIMKEY='trening_timer';
+/* Ile odpoczywać. Fosfokreatyna odbudowuje się w mięśniu przez trzy do pięciu
+   minut — przy ciężkim przysiadzie 90 sekund gwarantuje spadek powtórzeń
+   w każdej kolejnej serii i zamienia trening siłowy w wydolnościowy.
+   Przy akcesoriach na kilkanaście powtórzeń półtorej minuty wystarcza. */
+function przerwaDla(nazwa){
+  const L = LIB[nazwa] || {};
+  if(L.time) return 60;
+  const glowny = ORDER.some(d => (PLAN[d].slots||[]).some(s => s.fixed === nazwa));
+  if(glowny) return 180;
+  if(/Martwy ciąg|Przysiad ze sztangą|Wyciskanie leżąc|Wyciskanie żołnierskie|Hip thrust|Wiosłowanie sztangą|Podciąganie/i.test(nazwa)) return 150;
+  return DB.settings.rest || 90;
+}
+
 function startTimer(sec){
   T_LEN=sec||DB.settings.rest||90; T_END=Date.now()+T_LEN*1000;
   try{ localStorage.setItem(TIMKEY, JSON.stringify({end:T_END, len:T_LEN})); }catch(e){}
@@ -4403,7 +4727,17 @@ document.addEventListener('visibilitychange',()=>{
 /* ============================================================
    BIEGANIE
    ============================================================ */
-function num(id){ const v=document.getElementById(id).value; return v===''?null:parseFloat(v); }
+/* Polska klawiatura wstawia przecinek. `type=number` zwykle go normalizuje,
+   ale w PWA na iOS bywa różnie — a cichy błąd o pół kilograma tydzień po
+   tygodniu jest dokładnie tym rodzajem usterki, której nikt nie zauważy. */
+function liczba(v){
+  if(v == null) return null;
+  const t = String(v).trim().replace(',', '.');
+  if(t === '') return null;
+  const x = parseFloat(t);
+  return Number.isFinite(x) ? x : null;
+}
+function num(id){ const el = document.getElementById(id); return el ? liczba(el.value) : null; }
 /* ============================================================
    BIEG A SIŁA
    Plan biegowy był dotąd sztywną tabelką, niezależną od tego, co robisz
@@ -4440,6 +4774,14 @@ function nogiDnia(data){
 function ocenDzienBiegowy(data, typ){
   const dzis = nogiDnia(data);
   if(dzis) return {ok:false, powod:'nogi tego samego dnia'};
+  /* Bieg jakościowy przy mocnych zakwasach ud to proszenie się o naderwanie:
+     mięsień z uszkodzeniami po ekscentryce ma obniżoną zdolność pochłaniania
+     energii, a to właśnie robi przy każdym lądowaniu. Spokojny Z2 wolno. */
+  if(typ === 'jakosc' && data === today()){
+    const dz = DB.daily.find(x => x.date === data) || {};
+    const zn = (dz.zakwasy || {}).nogi || 0;
+    if(zn >= 2) return {ok:false, powod:'zakwasy ud ('+(zn===3?'mocne':'średnie')+')'};
+  }
   if(typ === 'jakosc'){
     if(nogiDnia(przesun(data, 1)))  return {ok:false, powod:'nogi nazajutrz'};
     if(nogiDnia(przesun(data, -1))) return {ok:false, powod:'nogi dzień wcześniej'};
@@ -4557,10 +4899,7 @@ function renderRun(){
       '<div class="fld"><label>Tętno śr.</label><input type="number" inputmode="numeric" id="rHr" placeholder="np. 148"></div>'+
     '</div>'+
     '<div class="fld" style="margin-top:10px"><label>Notatka</label><input type="text" id="rNote" placeholder="np. ciężko szło, upał"></div>'+
-    '<div class="note" style="margin-top:8px">Pływanie i SUP też tu wpisujesz — '+
-    'aplikacja liczy z nich zmęczenie pleców, barków i tułowia, więc nie zaproponuje '+
-    'dnia ciągnięcia nazajutrz po dwóch godzinach w wodzie. Przy pływaniu i SUP '+
-    'najważniejszy jest <b>czas</b>, dystans możesz pominąć.</div>'+
+    '<div class="note" style="margin-top:8px">Pływanie i SUP też tutaj. Liczy się <b>czas</b>, dystans możesz pominąć.</div>'+
     '<button class="btn rn" style="margin-top:12px" onclick="saveRun()">Zapisz aktywność</button></div>';
   h+='<h2>Biegi w tym tygodniu ('+mine.length+'/2)</h2><div class="card">';
   const all=DB.runs.slice(-10).reverse();
@@ -4662,7 +5001,7 @@ function wzialem(k){
   const s = SUPLEMENTY.find(x => x.k === k);
   d[k] = d[k] ? null : s.cel;          // ponowne dotknięcie cofa
   save(); zsynchronizuj(); renderSupl();
-  if(navigator.vibrate) navigator.vibrate(12);
+  sygnal(12);
 }
 
 function renderSuplDzis(){
@@ -4724,7 +5063,7 @@ function ustawOdpoczynek(powod){
   else if(i >= 0) DB.odpoczynek[i].powod = powod;
   else DB.odpoczynek.push({date: d, powod, kiedy: new Date().toISOString()});
   save(); zsynchronizuj(); renderDaily();
-  if(navigator.vibrate) navigator.vibrate(12);
+  sygnal(12);
 }
 
 function renderRest(){
@@ -4738,9 +5077,7 @@ function renderRest(){
     (jest ? '<div class="note" style="width:100%;margin-top:6px">Dzień zaznaczony jako odpoczynek — '+
       esc((POWODY[jest.powod]||{n:jest.powod}).n.toLowerCase())+
       '. Dotknij ponownie, żeby odznaczyć. Jutrzejsza gotowość dostanie za to plus.</div>'
-      : '<div class="note" style="width:100%;margin-top:6px">Zaznacz, jeśli dziś świadomie '+
-      'nie trenujesz. To nie to samo co pominięcie treningu — odpoczynek liczy się '+
-      'na plus przy jutrzejszej gotowości.</div>');
+      : '<div class="note" style="width:100%;margin-top:6px">Świadomy odpoczynek liczy się na plus jutro.</div>');
 }
 
 function renderDaily(){
@@ -4982,7 +5319,7 @@ function kv(k,v,cls){ return '<div class="kv"><span class="k">'+esc(k)+'</span><
 function bestIn(list,name){
   let best=null;
   list.forEach(wk=>{ const e=wk.exercises.find(x=>x.name===name);
-    if(e){ const b=bestSet(e.sets); if(b&&(!best||e1rm(b)>e1rm(best))) best=b; }});
+    if(e){ const b=bestSet(e.sets,name); if(b&&(!best||e1rm(b,name)>e1rm(best,name))) best=b; }});
   return best;
 }
 /* ============================================================
@@ -5121,7 +5458,7 @@ function skladPokrycia(region, dni){
     (w.exercises || []).forEach(e => {
       const udzial = ((LIB[e.name] || {}).mus || {})[region];
       if(!udzial) return;
-      const serie = (e.sets || []).filter(x => !x.wu).length;
+      const serie = (e.sets || []).filter(x => !x.wu).length * (w.obwod ? 0.3 : 1);
       if(!serie) return;
       const k = e.name;
       suma[k] = suma[k] || {serie: 0, wklad: 0, udzial, dni: new Set()};
@@ -5217,7 +5554,7 @@ function renderTrendy(){
   BOJE.forEach(name=>{
     const h0=historia(name);
     if(h0.length<2) return;
-    const pkt=h0.slice().reverse().map(x=>({v:e1rm(bestSet(x.sets)), d:x.date}));
+    const pkt=h0.slice().reverse().map(x=>({v:e1rm(bestSet(x.sets,name),name), d:x.date}));
     const zm = pkt[0].v > 0 ? Math.round((pkt[pkt.length-1].v/pkt[0].v-1)*100) : null;
     bloki+='<div class="card"><div class="chdr">'+esc(name)+
       (zm==null ? '<span class="hm">masa własna</span>'
@@ -5479,7 +5816,7 @@ function renderReport(){
   const rows=KEYLIFTS.map(name=>{
     const c=bestIn(cur,name), pr=bestIn(prev,name);
     if(!c) return null;
-    const ce=e1rm(c), pe=pr?e1rm(pr):null;
+    const ce=e1rm(c,name), pe=pr?e1rm(pr,name):null;
     const dir=pe==null?'':ce>pe*1.01?'up':ce<pe*.99?'down':'flat';
     return kv(name,fmtSet(c, name)+(dir==='up'?' ↑':dir==='down'?' ↓':dir==='flat'?' →':''),dir);
   }).filter(Boolean);
@@ -5599,6 +5936,7 @@ function renderData(){
         (wy.do?' do '+plDate(wy.do):'')+'.</div>'
              : '<div class="note">Wyłączony.</div>');
   document.getElementById('setStart').value=DB.settings.start;
+  document.getElementById('setGryf').value = DB.settings.gryf || '';
   document.getElementById('setRest').value=DB.settings.rest;
   const tv=DB.workouts.reduce((a,x)=>a+vol(x),0);
   document.getElementById('stats').innerHTML=
@@ -5642,6 +5980,8 @@ function saveSettings(){
   const s=document.getElementById('setStart').value, r=parseInt(document.getElementById('setRest').value);
   if(s) DB.settings.start=s;
   if(r>0) DB.settings.rest=r;
+  const gr = num('setGryf');
+  DB.settings.gryf = (gr != null && gr > 0) ? gr : null;
   save(); renderSub(); toast('Zapisano ustawienia');
 }
 async function exportData(){
@@ -5688,7 +6028,7 @@ function exportCsv(){
     w.exercises.forEach(e=>{
       e.sets.forEach((s,i)=>{
         wier.push([w.date, weekNo(w.date), w.day, e.name, e.slot||'', i+1,
-          s.w??'', s.r??'', s.rpe??'', Math.round(e1rm(s)*10)/10,
+          s.w??'', s.r??'', s.rpe??'', String(Math.round(e1rm(s,e.name)*10)/10).replace('.',','),
           s.n||'', w.note||'', w.dur||''].map(esc2).join(';'));
       });
     });
@@ -5824,11 +6164,30 @@ let RELOAD_PENDING = false;
 function applyUpdateIfIdle(){
   if(!RELOAD_PENDING) return false;
   if(SES && setCount(SES)>0) return false;   /* trening w toku — czekamy */
+  if(KOLKO) return false;                     /* obwód w toku — licznik rund przepadłby */
+  /* Przeładowanie kasuje wszystko, co jest wpisane w formularzu, ale jeszcze
+     niezapisane: długa notatka w Dzienniku, opis bólu, obwody ciała. Robimy
+     to wyłącznie na ekranie głównym, gdzie nie ma czego stracić. */
+  const wDzienniku = ['v-daily','v-data','v-report'].some(v => {
+    const el = document.getElementById(v);
+    return el && el.classList && el.classList.contains('on');
+  });
+  if(wDzienniku) return false;
+  if(SUB && SUB !== 'hub') return false;
   location.reload();
   return true;
 }
 /* pobranie od trenera przy starcie — cicho, żeby brak sieci na siłowni
    nie witał Cię komunikatem o błędzie */
+/* Jeden wpis „w zapasie", żeby pierwszy gest cofania miał co zdjąć. */
+if(typeof window !== 'undefined' && window.addEventListener){
+  window.addEventListener('popstate', () => {
+    if(wstecz()) zapiszHistorie();      /* zostajemy w aplikacji */
+  });
+  zapiszHistorie();
+  HISTORIA_GOTOWA = true;
+}
+
 wczytajObwod();
 if(srvGotowy()) setTimeout(()=>srvPull(true), 800);
 
