@@ -1324,8 +1324,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '24';
-const WERSJA_DATA = '2026-08-06';
+const WERSJA = '25';
+const WERSJA_DATA = '2026-08-08';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -2697,9 +2697,8 @@ function brakiDnia(){
    Przy gotowości poniżej czterdziestu punktów trening nie jest bodźcem,
    tylko dokładaniem do długu. Lepiej przesunąć o dobę. */
 function odradzamDzis(){
-  const dz = DB.daily.find(x => x.date === today()) || {};
-  if(dz.samopoczucie == null && dz.sleep == null) return null;
   const g = gotowosc();
+  if(g.nieznana) return null;
   if(g.pkt >= 40) return null;
   return {pkt: g.pkt, powody: g.powody.map(x => x[1])};
 }
@@ -2748,7 +2747,8 @@ function renderDzis(){
           (gp.sprawdzony?'TRENER':'APLIKACJA')+'</span>' : '')+
     '<div class="hm" style="margin-top:4px">'+
       (ile ? ile+' ćwiczeń' : 'plan policzy się przy starcie')+
-      (maOdp ? ' · gotowość '+g.pkt+'/100' : ' · <b>odpowiedz na dwa pytania niżej</b>')+
+      (g.nieznana ? ' · <b>gotowość nieznana — wpisz dane niżej</b>'
+                  : ' · gotowość '+g.pkt+'/100')+
       (gp && gp.zalegly ? ' · czeka od '+gp.zalegly+' dni' : '')+'</div>'+
     '<div style="display:flex;gap:8px;margin-top:11px">'+
     '<button class="btn" style="flex:2" onclick="openSuggest()">Zacznij trening</button>'+
@@ -3288,7 +3288,14 @@ function gotowosc(data){
 
   /* Skala kończy się na 100. Wcześniej premie mogły ją przebić i wyświetlało
      się „110/100", co nie znaczy nic — gotowość ma być odsetkiem, nie punktacją. */
-  return {pkt: Math.max(0, Math.min(100, Math.round(pkt))), powody, zakwasy: dz.zakwasy || null};
+  /* BŁĄD: przy zerowej liczbie danych wychodziło 100/100, czyli „idealna
+     regeneracja" — a to znaczyło tylko tyle, że nic nie zostało wpisane.
+     Setka ma znaczyć „sprawdzone i dobre", nie „nie wiem". Bez ani jednej
+     liczby zwracamy `nieznana` i interfejs pyta o dane zamiast chwalić. */
+  const cokolwiek = dz.sleep != null || dz.hrv != null || dz.bb != null ||
+                    dz.samopoczucie != null || (dz.zakwasy && (dz.zakwasy.nogi || dz.zakwasy.gora));
+  return {pkt: Math.max(0, Math.min(100, Math.round(pkt))), powody,
+          nieznana: !cokolwiek, zakwasy: dz.zakwasy || null};
 }
 
 /* Zakwasy w partii, którą dziś trenujesz, to co innego niż zakwasy gdzie indziej.
@@ -4624,9 +4631,13 @@ function przerwaDla(nazwa){
   const L = LIB[nazwa] || {};
   if(L.time) return 60;
   const glowny = ORDER.some(d => (PLAN[d].slots||[]).some(s => s.fixed === nazwa));
-  if(glowny) return 180;
+  if(glowny) return Math.max(150, DB.settings.rest || 180);
   if(/Martwy ciąg|Przysiad ze sztangą|Wyciskanie leżąc|Wyciskanie żołnierskie|Hip thrust|Wiosłowanie sztangą|Podciąganie/i.test(nazwa)) return 150;
-  return DB.settings.rest || 90;
+  /* BŁĄD: ustawienie „domyślna przerwa" podnosiło też akcesoria. Filip miał
+     ustawione 180 s i uginanie młotkowe dostawało trzy minuty przerwy —
+     przy takim tempie sesja rośnie o kwadrans bez żadnego zysku. Akcesorium
+     nie potrzebuje więcej niż dwie minuty niezależnie od ustawienia. */
+  return Math.min(DB.settings.rest || 90, 120);
 }
 
 function startTimer(sec){
@@ -5721,7 +5732,7 @@ function raportDnia(){
   if(dz.sleep != null) linie.push('sen ' + fmtKg(dz.sleep) + ' h');
   if(dz.hrv != null)   linie.push('HRV ' + dz.hrv);
   if(dz.bb != null)    linie.push('Body Battery ' + dz.bb);
-  if(maDane)           linie.push('gotowość ' + g.pkt + '/100');
+  if(maDane && !g.nieznana) linie.push('gotowość ' + g.pkt + '/100');
   if(linie.length) h += '<div class="hm" style="margin-top:4px">' + esc(linie.join(' · ')) + '</div>';
   else h += '<div class="hm" style="margin-top:4px">Brak dzisiejszych danych — '+
     'wpisz sen i HRV w Dzienniku, wtedy powiem więcej.</div>';
