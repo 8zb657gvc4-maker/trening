@@ -1324,8 +1324,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '26';
-const WERSJA_DATA = '2026-08-08';
+const WERSJA = '27';
+const WERSJA_DATA = '2026-08-09';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -2561,6 +2561,11 @@ function planNastepnego(){
     utworzony: new Date().toISOString(),
     data: s.data, dzien: s.day, tydzien: s.week,
     faza: (PHASES[s.phase]||{}).n || '',
+    /* Powód wyboru dnia ginął tutaj. suggestNext() tłumaczy, dlaczego akurat
+       ta litera — a plan zapisywał tylko literę. Filip zobaczył „Plan na dzień C"
+       po dniu push i uznał, że aplikacja się pomyliła, bo nigdzie nie było
+       napisane, że C to nogi i że to jedyny dzień brakujący w tygodniu. */
+    dlaczego: (s.why || []).slice(),
     uwagi: s.notes.filter(n=>n[1]).map(n=>n[1]).concat(
       (items.wypadly && items.wypadly.length)
         ? ['Wypadło z dnia, bo wszystkie warianty masz odznaczone i nie ma zastępstwa: '+
@@ -3661,7 +3666,8 @@ function renderHub(){
     const naDzis = gp.data === today();
     planBox = '<div class="tip '+(gp.sprawdzony?'ok':'')+'" onclick="przelaczPlan()" '+
       'style="cursor:pointer;-webkit-tap-highlight-color:transparent">'+
-      '<b>Plan na dzień '+gp.dzien+'</b>'+
+      '<b>Plan na dzień '+gp.dzien+
+        ((PLAN[gp.dzien]||{}).name ? ' — '+esc(PLAN[gp.dzien].name) : '')+'</b>'+
       (naDzis ? ' · na dziś' : ' · na '+plDate(gp.data))+
       '<span class="autor '+(gp.sprawdzony?'trener':'apka')+'">'+
         (gp.sprawdzony?'TRENER':'APLIKACJA')+'</span>'+
@@ -3675,6 +3681,9 @@ function renderHub(){
             'jeśli coś dopisałeś później, zaproponuje zmianę i poczeka na Twoją zgodę.</div>'
           : '<div class="note" style="margin-bottom:8px">Ten plan ułożyła aplikacja i nikt go '+
             'jeszcze nie sprawdził. Patrz na ciężary uważniej niż zwykle.</div>')+
+        ((gp.dlaczego && gp.dlaczego.length)
+          ? '<div class="note" style="margin-bottom:9px"><b>Dlaczego ten dzień</b><br>'+
+            gp.dlaczego.map(esc).join('<br>')+'</div>' : '')+
         gp.cwiczenia.map(c=>
         '<div style="margin:7px 0;padding-left:9px;border-left:2px solid '+
         (c.tag==='coach'?'var(--ok)':'var(--line)')+'">'+
@@ -3690,7 +3699,9 @@ function renderHub(){
         (gp.propozycja ? propozycjaBox(gp.propozycja) : '')+
         '</div>';
     } else {
-      planBox += esc(gp.cwiczenia.slice(0,3).map(c=>
+      planBox += ((gp.dlaczego && gp.dlaczego.length)
+          ? '<div class="hm" style="margin-bottom:4px">'+esc(gp.dlaczego[0])+'</div>' : '')+
+        esc(gp.cwiczenia.slice(0,3).map(c=>
         c.name+' '+c.serie+'×'+c.powt+(c.ciezar?' @'+fmtKg(c.ciezar)+' kg':'')).join(' · '))+
         (gp.cwiczenia.length>3?' · +'+(gp.cwiczenia.length-3)+' więcej':'')+
         '<div class="note" style="margin-top:4px">Dotknij, żeby zobaczyć całość</div>';
