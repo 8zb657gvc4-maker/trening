@@ -1220,6 +1220,41 @@ const SPORTY = {
    wykonany bieg jakościowy i aplikacja przestałaby go proponować. */
 function czyBieg(r){ return !!(SPORTY[r.type] && SPORTY[r.type].bieg); }
 
+/* Lista rodzajów aktywności rośnie, a używa się dwóch–trzech naraz. SUP jest
+   potrzebny przez dwa tygodnie w roku i przez pozostałe pięćdziesiąt wisi
+   w rozwijanej liście, którą przewijasz spoconym kciukiem między seriami.
+
+   Ukrywanie dotyczy WYŁĄCZNIE listy wyboru. Wpisy z historii zostają
+   nietknięte i dalej liczą się do zmęczenia i do pokrycia — inaczej ukrycie
+   SUP-a skasowałoby tydzień Chorwacji z obliczeń. */
+function ukryteSporty(){
+  const u = (DB.settings && DB.settings.ukryteSporty) || [];
+  return Array.isArray(u) ? u.filter(k => SPORTY[k]) : [];
+}
+function widoczneSporty(){
+  const u = ukryteSporty();
+  const widac = Object.keys(SPORTY).filter(k => !u.includes(k));
+  /* nigdy nie zostawiamy pustej listy — z czegoś trzeba wybrać */
+  return widac.length ? widac : Object.keys(SPORTY);
+}
+function ukryjSport(){
+  const pole = document.getElementById('rType');
+  const k = pole && pole.value;
+  if(!k || !SPORTY[k]) return;
+  if(widoczneSporty().length <= 2){
+    toast('Zostaw przynajmniej dwa rodzaje do wyboru.');
+    return;
+  }
+  DB.settings.ukryteSporty = ukryteSporty().concat([k]);
+  save();
+  toast('Ukryte: '+SPORTY[k].n+'. Wpisy z historii zostają.');
+  renderSub();
+}
+function pokazWszystkieSporty(){
+  DB.settings.ukryteSporty = [];
+  save(); toast('Wszystkie rodzaje z powrotem na liście.'); renderSub();
+}
+
 function obciazenieSportem(region, dni){
   const od = daysAgo(dni || 3);
   return (DB.runs || []).filter(r => r.date >= od).reduce((a, r) => {
@@ -1339,7 +1374,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '30';
+const WERSJA = '31';
 const WERSJA_DATA = '2026-08-17';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -5146,14 +5181,21 @@ function renderRun(){
     '<div class="fld"><label>Data</label><input type="date" id="rDate" value="'+today()+'"></div>'+
     '<div class="dayin" style="margin-top:10px">'+
       '<div class="fld"><label>Rodzaj</label><select id="rType">'+
-        Object.entries(SPORTY).map(([k,v]) =>
-          '<option value="'+k+'">'+esc(v.n)+'</option>').join('')+'</select></div>'+
+        widoczneSporty().map(k =>
+          '<option value="'+k+'">'+esc(SPORTY[k].n)+'</option>').join('')+'</select></div>'+
       '<div class="fld"><label>Dystans (km)</label><input type="number" inputmode="decimal" step="0.1" id="rDist" placeholder="opcjonalnie"></div>'+
       '<div class="fld"><label>Czas (min)</label><input type="number" inputmode="decimal" step="0.1" id="rTime" placeholder="np. 30"></div>'+
       '<div class="fld"><label>Tętno śr.</label><input type="number" inputmode="numeric" id="rHr" placeholder="np. 148"></div>'+
     '</div>'+
     '<div class="fld" style="margin-top:10px"><label>Notatka</label><input type="text" id="rNote" placeholder="np. ciężko szło, upał"></div>'+
     '<div class="note" style="margin-top:8px">Pływanie i SUP też tutaj. Liczy się <b>czas</b>, dystans możesz pominąć.</div>'+
+    '<div class="note" style="margin-top:8px">'+
+      '<a href="javascript:void(0)" onclick="ukryjSport()">Ukryj wybrany rodzaj</a>'+
+      (ukryteSporty().length
+        ? ' · ukryte: '+ukryteSporty().map(k => esc((SPORTY[k]||{n:k}).n)).join(', ')+
+          ' — <a href="javascript:void(0)" onclick="pokazWszystkieSporty()">pokaż wszystkie</a>'
+        : '')+
+      '</div>'+
     '<button class="btn rn" style="margin-top:12px" onclick="saveRun()">Zapisz aktywność</button></div>';
   h+='<h2>Biegi w tym tygodniu ('+mine.length+'/2)</h2><div class="card">';
   const all=DB.runs.slice(-10).reverse();
