@@ -1374,7 +1374,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '31';
+const WERSJA = '32';
 const WERSJA_DATA = '2026-08-17';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2392,7 +2392,17 @@ function celCwiczenia(name, slot, phase, sug){
   const L = LIB[name] || {};
   const [mn, mx] = L.rr || slot.rr[phase] || [8, 8];
   const serie = (sug && sug.sets) || serieSlotu(slot, phase, weekNo()) || 3;
-  const zakres = mn === mx ? String(mn) : mn + '-' + mx;
+  /* Etykieta celu brała zakres ze SLOTU, a silnik osobno liczył swój.
+     Po dwunastu dniach przerwy silnik prosił o 9 powtórzeń w dipach,
+     a nad ćwiczeniem stało „3×15" — czyli liczba, której sam nie oczekiwał.
+     Filip zrobił 9/8/8 i wyszedł z siłowni przekonany, że nie dowiózł.
+
+     Gdy silnik podał własny cel, to on jest prawdą. Zakres ze slotu
+     zostaje tylko wtedy, gdy silnik nie ma nic do powiedzenia. */
+  const cel = sug && sug.r != null ? sug.r : null;
+  const zakres = cel != null
+    ? (cel >= mn && cel < mx ? cel + '-' + mx : String(cel))
+    : (mn === mx ? String(mn) : mn + '-' + mx);
   const jedn = L.time ? ' s' : '';
   const rpe = (slot.t[phase] || '').match(/RPE\s*[\d,.]+/);
   return serie + '×' + zakres + jedn + (rpe ? ' ' + rpe[0] : '');
@@ -4504,7 +4514,9 @@ function finishSession(){
   const poprz=DB.workouts.filter(w=>w.day===SES.day).slice(-1)[0]||null;
 
   const dur = SES.t0 ? Math.max(1, Math.round((Date.now()-SES.t0)/60000)) : null;
-  const wpis={id:uid('w'), date:SES.date, day:SES.day, week:SES.week, exercises:ex};
+  const wpis={id:uid('w'), date:SES.date, day:SES.day, week:SES.week,
+              tygPlanu: SES.tygPlanu != null ? SES.tygPlanu : tydzienPlanu(SES.date),
+              exercises:ex};
   if(SES.rozgrzewka) wpis.rozgrzewka=true;
   /* iOS potrafi ubić aplikację w tle. Gdy wrócisz do niej rano i klikniesz
      „Zakończ", surowa różnica czasów daje kilkanaście godzin i rujnuje
