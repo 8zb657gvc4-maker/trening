@@ -1168,7 +1168,16 @@ const DOMYSLNY_PLAN = {
      s:[2,2,2,2], rr:[[8,8],[10,12],[8,8],[10,12]]}
   ]}
 };
-const DOMYSLNY_ORDER = ['A','B','C','D'];
+/* KOLEJNOŚĆ DNI. Litery zostają przy swoich treningach (A to zawsze nogi
+   z przysiadem, B zawsze push), ale rotacja idzie push → pull → nogi → nogi.
+   Powód jest prosty i nie jest metodyczny: Filip nie chce zaczynać tygodnia
+   od nóg, a plan, którego się nie lubi, jest gorszy od trochę mniej
+   optymalnego, który się robi.
+
+   Litery celowo NIE zostały przenumerowane. Historia trzyma „B" przy każdym
+   wykonanym treningu push — przestawienie liter zmieniłoby opis treningów
+   sprzed miesiąca i nikt by już nie wiedział, co naprawdę zrobił. */
+const DOMYSLNY_ORDER = ['B','D','A','C'];
 
 const DOMYSLNE_PHASES = [
   {n:'Reaktywacja',    rpe:6, skala:1,   d:'Tygodnie 1–2, raz na początku. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
@@ -1316,7 +1325,13 @@ function zastosujPlan(){
   REG    = p.reg    || DOMYSLNE_REG;
   RUNS   = p.runs   || DOMYSLNE_RUNS;
   PHASES = p.phases || DOMYSLNE_PHASES;
-  ORDER  = Object.keys(PLAN);
+  /* Kolejność bierzemy z planu, ale tylko dla dni, które w tym planie są —
+     inaczej podmiana na wariant 3-dniowy zostawiłaby w rotacji literę,
+     dla której nie ma już treningu. Dni spoza listy dochodzą na koniec,
+     żeby żaden nie wypadł po cichu. */
+  const klucze = Object.keys(PLAN);
+  const chciana = (p.order || DOMYSLNY_ORDER).filter(k => klucze.includes(k));
+  ORDER  = chciana.concat(klucze.filter(k => !chciana.includes(k)));
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
@@ -1324,8 +1339,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '27';
-const WERSJA_DATA = '2026-08-09';
+const WERSJA = '30';
+const WERSJA_DATA = '2026-08-17';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -1577,12 +1592,13 @@ async function srvSync(){
    ============================================================ */
 function mergeDB(a, b){
   const out = JSON.parse(JSON.stringify(a));
-  const scal = (pole, klucz, lepszy) => {
+  const scal = (pole, klucz, lepszy, polacz) => {
     const mapa = new Map();
     (out[pole]||[]).forEach(x => mapa.set(klucz(x), x));
     (b[pole]||[]).forEach(x => {
       const k = klucz(x), stary = mapa.get(k);
       if(!stary) mapa.set(k, x);
+      else if(polacz) mapa.set(k, polacz(x, stary));
       else if(lepszy && lepszy(x, stary)) mapa.set(k, x);
       else if(!lepszy) mapa.set(k, x);
     });
@@ -1604,7 +1620,23 @@ function mergeDB(a, b){
          return setCount(nowy) > setCount(stary);
        });
   scal('runs',     r => r.id || (r.date+'|'+r.type));
-  scal('daily',    d => d.date);
+  /* Wpis dzienny ma DWA źródła: zegarek daje sen, HRV, tętno, Body Battery
+     i kroki, a Ty dajesz samopoczucie, zakwasy, upał, wagę i notatkę.
+     Do tej pory przy konflikcie wygrywał wpis wczytywany — CAŁY. Czyli plik
+     z Maca, w którym są same liczby z Garmina, kasował samopoczucie i zakwasy
+     wpisane rano w telefonie, a plik z telefonu kasował dane z zegarka.
+     Nikt tego nie zgłosił, bo brakujące pole nie wygląda na utratę danych,
+     tylko na „jeszcze tego nie wpisałem".
+
+     Teraz scalamy pole po polu: nowa wartość wchodzi tylko wtedy, gdy
+     naprawdę jest. Pusta nie kasuje wypełnionej. */
+  scal('daily',    d => d.date, null, (nowy, stary) => {
+    const wynik = Object.assign({}, stary);
+    Object.keys(nowy).forEach(k => {
+      if(nowy[k] !== null && nowy[k] !== undefined) wynik[k] = nowy[k];
+    });
+    return wynik;
+  });
   scal('measures', m => m.date);
   scal('pain',     p => p.id || (p.date+'|'+p.miejsce));
   /* przy pytaniach wygrywa wersja z odpowiedzią — po to je odsyłam */
@@ -1781,6 +1813,38 @@ function weekNo(dateStr){
   const d = new Date((dateStr||today())+'T00:00:00');
   return Math.max(1, Math.floor((d-s)/(7*864e5))+1);
 }
+/* TYDZIEŃ PLANU ≠ TYDZIEŃ KALENDARZA.
+
+   Filip wyjechał na tydzień do Chorwacji, nie wszedł na siłownię ani razu
+   i wrócił po trzech sesjach w całym życiu planu. Aplikacja przywitała go
+   „tygodniem 3, faza Budowa, cel RPE 8" i martwym ciągiem 3×5 jako głównym
+   bojem — bo martwy ciąg wchodzi od trzeciego tygodnia. Trzeci tydzień
+   kalendarza. Nie trzeci tydzień treningu.
+
+   Faza ma opisywać, ile pracy masz za sobą, a nie ile kartek zleciało
+   z kalendarza. Tydzień, w którym nic nie dźwigałeś, nie buduje żadnej
+   adaptacji, więc nie może przesuwać planu. Tydzień z jedną sesją buduje
+   połowę tego, co planowany, więc liczy się za pół.
+
+   Kalendarzowy `weekNo()` zostaje bez zmian — to jest metryczka historii
+   („T3" przy treningu z 17 sierpnia ma znaczyć trzeci tydzień kalendarza,
+   inaczej stare wpisy zmieniałyby opis wstecz). O fazie decyduje `tydzienPlanu()`. */
+function tydzienPlanu(ref){
+  ref = ref || today();
+  const kal = weekNo(ref);
+  let licz = 0;
+  for(let w = 1; w < kal; w++){
+    const od = przesun(DB.settings.start, (w - 1) * 7);
+    const doo = przesun(DB.settings.start, w * 7 - 1);
+    const n = (DB.workouts || []).filter(x => x.date >= od && x.date <= doo).length;
+    licz += n >= 2 ? 1 : n >= 1 ? 0.5 : 0;
+  }
+  return Math.min(kal, Math.floor(licz) + 1);
+}
+
+/* Ile tygodni kalendarza przepadło — do pokazania człowiekowi, nie do liczenia. */
+function przepadleTygodnie(ref){ return weekNo(ref) - tydzienPlanu(ref); }
+
 /* ============================================================
    FAZY — pierwszy blok sztywno, potem cykl bez końca
    Pierwsza wersja kończyła się na `w===6 ? 2 : 3`, więc od dziewiątego
@@ -1930,7 +1994,7 @@ function serieSlotu(slot, faza, tydzien){
 
 /* czy trening z danej daty wypadł w tygodniu deloadu */
 function zDeloadu(data){
-  const f = PHASES[phaseOf(weekNo(data))];
+  const f = PHASES[phaseOf(tydzienPlanu(data))];
   return !!(f && f.skala && f.skala < 1);
 }
 
@@ -2365,17 +2429,84 @@ function suggestLoad(name, slot, phase, tydzien){
     if(L.time)
       return {w:wTop0, r:mn, sets, tag:'down', przerwa,
         why:'Przerwa '+przerwa+' dni w tym ćwiczeniu. Wracasz do '+mn+' s zamiast gonić poprzedni wynik.'};
-    if(!wTop0)
-      return {w:0, r:Math.max(mn, Math.round(Math.min(...last.sets.map(s=>s.r||mn)) * pr.s)),
-        sets, tag:'down', przerwa,
-        why:'Przerwa '+przerwa+' dni. Masa własna, więc schodzisz powtórzeniami. '+pr.why};
+    if(!wTop0){
+      /* Przy masie własnej „schodzenie" liczyło się od NAJSŁABSZEJ serii i i tak
+         nie mogło zejść poniżej dolnej granicy zakresu. Filip zrobił dipy
+         9/7/5 przy celu 15 — aplikacja pisała „schodzisz powtórzeniami"
+         i stawiała cel 15. Czyli ten sam, którego nie domknął.
+
+         Jeśli zakres był domknięty, wracasz do jego dołu. Jeśli nie —
+         punktem wyjścia jest Twoja najlepsza seria, nie cel z tabelki. */
+      const rOst = last.sets.map(s => s.r || 0).filter(x => x > 0);
+      const najl = rOst.length ? Math.max(...rOst) : mn;
+      const cel = najl >= mn ? mn : Math.max(1, Math.round(najl * pr.s));
+      return {w:0, r:cel, sets, tag:'down', przerwa,
+        why:'Przerwa '+przerwa+' dni. Masa własna, więc schodzisz powtórzeniami. '+
+          (najl < mn
+            ? 'Ostatnio '+rOst.join('/')+' przy celu '+mn+' — zacznij od '+cel+
+              ' i buduj w górę, zamiast gonić liczbę, która i tak nie wychodziła. '
+            : '')+pr.why};
+    }
+    /* Zejście, które NAPRAWDĘ schodzi. Zaokrąglenie do 2,5 kg potrafiło zjeść
+       całą obniżkę: 20 kg minus pięć procent to 19, a 19 zaokrągla się z powrotem
+       do 20. Aplikacja pisała „Ostatnio 20 kg — startujesz od 20 kg". */
+    const wDol = (w0, sk) => {
+      let x = roundTo(w0 * sk, 2.5);
+      if(sk < 1 && x >= w0) x = w0 - 2.5;
+      return Math.max(0, x);
+    };
+
+    /* Bazą po przerwie nie może być ciężar, którego OSTATNIO nie udźwignąłeś.
+       Filip robił unoszenia bokiem 20 kg na 8/7/5 przy celu 15 i wyciskanie
+       60 kg na 7/6/6 przy RPE 10 w fazie, która przewiduje RPE 6. To były
+       sesje nieudane. Aplikacja i tak brała ten ciężar za punkt wyjścia
+       i odejmowała pięć procent — czyli po przerwie proponowała wrócić
+       praktycznie do obciążenia, które i tak było za duże.
+
+       Najpierw więc korekta za nieudaną sesję, dopiero potem za przerwę. */
+    /* „Nieudana" znaczy: nie domknąłeś zakresu, który obowiązywał WTEDY.
+       Porównywanie z dzisiejszym zakresem robiło z każdej zmiany fazy
+       porażkę — sesja zrobiona idealnie na 10 powtórzeń w reaktywacji
+       wyglądała na przegraną, gdy faza budowy kazała robić 12. */
+    const powtOst = naprawde.sets.map(s => s.r || 0).filter(x => x > 0);
+    const fazaWtedy = phaseOf(tydzienPlanu(naprawde.date));
+    const zakresWtedy = (LIB[name] && LIB[name].rr) || (slot.rr && slot.rr[fazaWtedy]) || [mn, mn];
+    const nieudana = powtOst.length > 0 && Math.max(...powtOst) < zakresWtedy[0];
+    const baza = nieudana ? wDol(wTop0, 0.92) : wTop0;
+
     const uc = UDZIAL_CIALA[name];
-    const w = (LIB[name] && LIB[name].bw && uc != null)
-      ? Math.max(0, roundTo((wTop0 + masaCiala()*uc) * pr.s - masaCiala()*uc, 2.5))
-      : Math.max(2.5, roundTo(wTop0 * pr.s, 2.5));
-    return {w, r:mn, sets, tag:'down', przerwa,
-      why:'Przerwa '+przerwa+' dni od ostatniego razu. Ostatnio '+fmtKg(wTop0)+
-        ' kg — startujesz od '+fmtKg(w)+' kg. '+pr.why};
+    /* Przy sztandze i hantlach nie schodzimy do zera — „0 kg" na unoszeniach
+       bokiem to nie jest lżejszy wariant, tylko brak ćwiczenia. Najlżejszy
+       sensowny ciężar to jeden krok. */
+    const podloga = (LIB[name] && LIB[name].bw) ? 0 : 2.5;
+    /* Dwie obniżki naraz — za nieudaną sesję i za przerwę — potrafiły zejść
+       o ćwierć ciężaru po dwóch tygodniach wolnego. To już nie jest ostrożność,
+       tylko cofanie się. Sufit: tyle, ile mówi tabela przerw, plus dziesięć
+       punktów procentowych zapasu. Resztę silnik dobierze w kolejnej sesji,
+       jeśli ciężar naprawdę był za duży. */
+    const maksSpadek = (1 - pr.s) + 0.10;
+    const dol = wTop0 * (1 - maksSpadek);
+    let w = (LIB[name] && LIB[name].bw && uc != null)
+      ? Math.max(0, roundTo((baza + masaCiala()*uc) * pr.s - masaCiala()*uc, 2.5))
+      : Math.max(podloga, wDol(baza, pr.s));
+    if(!(LIB[name] && LIB[name].bw) && w < dol) w = Math.ceil(dol / 2.5) * 2.5;
+    if(w > wTop0) w = wTop0;
+
+    /* Przy lekkich ciężarach jeden krok siłowni to bywa 20–50%, czyli więcej,
+       niż wolno zejść za przerwę. Wtedy uczciwa odpowiedź brzmi „zostaw",
+       a nie „startujesz od" tej samej liczby, którą miałeś. */
+    const bezZmiany = w >= wTop0;
+    const opisOstatnio = 'Ostatnio '+fmtKg(wTop0)+' kg'+
+      (nieudana ? ' × '+powtOst.join('/')+' przy celu '+zakresWtedy[0]+
+        ' — czyli zakres się nie domknął jeszcze przed przerwą' : '');
+    return {w, r:mn, sets, tag: bezZmiany ? 'hold' : 'down', przerwa,
+      why: bezZmiany
+        ? 'Przerwa '+przerwa+' dni od ostatniego razu. '+opisOstatnio+
+          '. Najbliższy mniejszy ciężar to '+fmtKg(Math.max(0, wTop0 - 2.5))+' kg, '+
+          'czyli o '+Math.round((2.5/wTop0)*100)+'% mniej — za dużo jak na taką przerwę. '+
+          'Zostaw '+fmtKg(wTop0)+' kg i zrób pierwszą serię ostrożnie.'
+        : 'Przerwa '+przerwa+' dni od ostatniego razu. '+opisOstatnio+
+          ' — startujesz od '+(w ? fmtKg(w)+' kg' : 'samej masy własnej')+'. '+pr.why};
   }
 
   const wTop = Math.max(...last.sets.map(s=>s.w||0));
@@ -2516,7 +2647,7 @@ function kolejneSesje(ile){
   for(let k = 1; k <= (ile || 3); k++){
     const day = ORDER[(i0 + k) % ORDER.length];
     const w = weekNo(przesun(today(), k * 2));
-    const f = phaseOf(w);
+    const f = phaseOf(tydzienPlanu(przesun(today(), k * 2)));
     let poz;
     try { poz = buildDay(day, f, w, true); } catch(e){ continue; }
     if(!poz.length) continue;
@@ -3361,7 +3492,7 @@ function suggestNext(naJutro){
   /* `naJutro` pozwala zaplanować sesję z wyprzedzeniem, zaraz po zakończeniu
      dzisiejszej — inaczej funkcja zawsze odpowiadałaby „dziś już trenowałeś". */
   const ref = przesun(today(), naJutro ? 1 : 0);
-  const w = weekNo(ref), p = phaseOf(w);
+  const w = weekNo(ref), p = phaseOf(tydzienPlanu(ref));
   const doneWeek = DB.workouts.filter(x=>inWeek(x.date,w));
   const doneDays = doneWeek.map(x=>x.day);
   const todayDone = DB.workouts.filter(x=>x.date===ref);
@@ -3387,34 +3518,80 @@ function suggestNext(naJutro){
   let clash = false;
   if(!cand.length){ cand = pool; clash = true; }
 
-  /* BŁĄD, który to naprawia: kolejność zależała wyłącznie od tego, kiedy
-     ostatnio robiłeś DANY DZIEŃ (A/B/C/D). Gdy dwa dni nie były jeszcze
-     robione, decydował alfabet — i po nogach z A wychodziły nogi z C,
-     mimo że góra ciała odpoczywała dłużej.
-
-     Teraz pierwszym kryterium jest PARTIA: nogi czy góra. Wygrywa ta,
-     która czekała dłużej. Przy podziale na cztery dni to jest cały sens
-     układu — nogi, góra, nogi, góra — a bez tego można zrobić dwa dni nóg
-     pod rząd z jednym dniem przerwy i zostawić plecy na tydzień. */
-  const lastDate = d => { const x=DB.workouts.filter(y=>y.day===d).slice(-1)[0]; return x?x.date:''; };
   const grpDate = g => {
     const x = DB.workouts.filter(y => PLAN[y.day] && PLAN[y.day].grp === g).slice(-1)[0];
     return x ? x.date : '';
   };
-  /* '' znaczy „nigdy" i ma pierwszeństwo przed każdą datą */
-  const starsze = (a, b) => (!a && !b) ? 0 : !a ? -1 : !b ? 1 : a.localeCompare(b);
-  cand = cand.slice().sort((a,b)=>{
-    const pg = starsze(grpDate(PLAN[a].grp), grpDate(PLAN[b].grp));
-    if(pg !== 0) return pg;
-    const pd = starsze(lastDate(a), lastDate(b));
-    if(pd !== 0) return pd;
-    return ORDER.indexOf(a)-ORDER.indexOf(b);
-  });
-  const day = cand[0];
+
+  /* KOLEJNOŚĆ JEST ODPOWIEDZIĄ DOMYŚLNĄ, nie wynikiem rankingu.
+
+     Poprzednia wersja wybierała dzień po tym, która partia odpoczywała
+     najdłużej. W teorii to ładne, w praktyce znaczyło tyle, że po każdej
+     dłuższej przerwie wypadały nogi — bo nogi zawsze czekały najdłużej.
+     Filip wracał z wakacji i dostawał martwy ciąg na powitanie.
+
+     Teraz rotacja idzie po kolei (push → pull → nogi → nogi), a aplikacja
+     schodzi z niej TYLKO z konkretnego powodu: dzień jest już zrobiony
+     w tym tygodniu, wczoraj szła ta sama partia, albo ta partia ma mocne
+     zakwasy. Za każdym razem musi to napisać. */
+  const wKolejce = (od) => {
+    const i = Math.max(0, ORDER.indexOf(od));
+    return ORDER.map((_, k) => ORDER[(i + k) % ORDER.length]);
+  };
+  const ostatni = DB.workouts.filter(x => PLAN[x.day]).slice(-1)[0];
+  /* Tydzień przerwy kończy rotację. Wracasz od początku cyklu, czyli od push
+     — a nie od tego, co akurat wypadałoby, gdybyś nie wyjeżdżał. Filip wrócił
+     z Chorwacji i dostał nogi, bo ostatnim treningiem przed wyjazdem był pull.
+     Po dziewięciu dniach „kolejka" nic już nie znaczy. */
+  const przerwaDni = ostatni
+    ? Math.round((new Date(ref+'T00:00:00') - new Date(ostatni.date+'T00:00:00'))/864e5)
+    : null;
+  const odNowa = przerwaDni != null && przerwaDni >= 7;
+  const nastepnyPoKolei = (!ostatni || odNowa)
+    ? ORDER[0]
+    : (ORDER[(ORDER.indexOf(ostatni.day) + 1) % ORDER.length] || ORDER[0]);
+  const kolejka = wKolejce(nastepnyPoKolei);
+
+  const zakw = (DB.daily.find(x => x.date === ref) || {}).zakwasy || {};
+  const bolace = g => (g === 'nogi' ? (zakw.nogi || 0) : (zakw.gora || 0)) >= 2;
+
+  /* „Świeży" liczymy w dniach, nie w tygodniu planu. Granica tygodnia biegnie
+     od daty startu, więc bywa w środę — i wtedy trening zrobiony cztery dni
+     temu potrafił wyglądać na „z innego tygodnia", a aplikacja proponowała go
+     drugi raz, mając w rotacji dzień, którego nie było od dwóch tygodni. */
+  const dniOd = d => {
+    const x = DB.workouts.filter(y => y.day === d).slice(-1)[0];
+    return x ? Math.round((new Date(ref+'T00:00:00') - new Date(x.date+'T00:00:00'))/864e5) : 999;
+  };
+  const swiezy = d => dniOd(d) <= 6;
+  const jestZaleglosc = kolejka.some(x => !swiezy(x));
+  const wolny = d => !(swiezy(d) && jestZaleglosc) &&
+                     !yest.includes(PLAN[d].grp) && !bolace(PLAN[d].grp);
+
+  const pominiete = [];
+  let day = null;
+  for(const d of kolejka){
+    if(swiezy(d) && jestZaleglosc){ pominiete.push([d, 'robiłeś go '+dniOd(d)+' dni temu']); continue; }
+    if(yest.includes(PLAN[d].grp)){ pominiete.push([d, 'wczoraj szła ta sama partia']); continue; }
+    /* przed zakwasami ustępujemy tylko wtedy, gdy jest dokąd */
+    if(bolace(PLAN[d].grp) && kolejka.some(x => x !== d && wolny(x))){
+      pominiete.push([d, 'mocne zakwasy w tej partii']); continue;
+    }
+    day = d; break;
+  }
+  if(!day){ day = kolejka[0]; clash = true; }
+  cand = kolejka;
 
   const why = [];
+  if(odNowa && day === ORDER[0])
+    why.push('Przerwa '+przerwaDni+' dni — rotacja startuje od początku, czyli od '+
+      ORDER[0]+' ('+((PLAN[ORDER[0]]||{}).name||'')+'). Nie wracasz w środek cyklu.');
+  why.push(day === nastepnyPoKolei
+    ? 'Po kolei wypada '+day+' — '+((PLAN[day]||{}).name||'')+'.'
+    : 'Po kolei wypadał '+nastepnyPoKolei+', ale '+
+      pominiete.map(([d,p]) => d+' — '+p).join('; ')+'. Dlatego dziś '+day+'.');
   why.push(missing.length
-    ? 'W tym tygodniu zrobiłeś '+doneWeek.length+' z 4 treningów. Brakuje: '+missing.join(', ')+'.'
+    ? 'W tym tygodniu zrobiłeś '+doneWeek.length+' z '+ORDER.length+' treningów. Brakuje: '+missing.join(', ')+'.'
     : 'Plan tygodnia wykonany w całości. To trening z kolejnej rotacji.');
   if(yest.length && !clash) why.push('Wczoraj trenowałeś '+yest.join(' i ')+' — dziś inna partia, żeby dać jej 48 h.');
   {
@@ -3426,8 +3603,11 @@ function suggestNext(naJutro){
     else {
       const dni = Math.round((new Date(ref) - new Date(ost)) / 864e5);
       const dniD = ostD ? Math.round((new Date(ref) - new Date(ostD)) / 864e5) : null;
+      /* To zdanie kończyło się kiedyś na „dlatego dziś ta pierwsza" — a od kiedy
+         o wyborze dnia decyduje kolejność, a nie ranking odpoczynku, było to
+         po prostu nieprawdą. Zostaje sama informacja. */
       why.push('Partia „'+mojaGrp+'" odpoczywa '+dni+' '+(dni===1?'dzień':'dni')+
-        (dniD != null ? ', „'+druga+'" '+dniD+' — dlatego dziś ta pierwsza.' : '.'));
+        (dniD != null ? ', „'+druga+'" '+dniD+'.' : '.'));
     }
   }
   if(clash) why.push('Uwaga: wczoraj też była ta sama partia. Jeśli czujesz zakwasy, przełóż to na jutro.');
@@ -3562,9 +3742,12 @@ function bezpiecznie(nazwa, f){
 }
 
 function renderSub(){
-  const w=weekNo(), p=phaseOf(w);
+  const w=weekNo(), p=phaseOf(tydzienPlanu());
   const bad = document.getElementById('hBadge'); if(bad) bad.textContent='T'+w;
-  const sub = document.getElementById('hSub');   if(sub) sub.textContent=PHASES[p].n+' · '+dayName(today());
+  const sub = document.getElementById('hSub');
+  if(sub) sub.textContent = PHASES[p].n +
+    (przepadleTygodnie() > 0 ? ' · tydzień '+tydzienPlanu()+' planu' : '') +
+    ' · ' + dayName(today());
   if(SUB==='hub')  bezpiecznie('renderHub', renderHub);
   if(SUB==='pick') bezpiecznie('renderPick', renderPick);
   if(SUB==='sug')  bezpiecznie('renderSuggest', renderSuggest);
@@ -3605,9 +3788,20 @@ function renderWeekStrip(){
 }
 
 function renderHub(){
-  const w=weekNo(), p=phaseOf(w);
+  const w=weekNo(), p=phaseOf(tydzienPlanu());
   renderWeekStrip();
-  document.getElementById('phaseTip').innerHTML='<b>'+PHASES[p].n+'</b> — '+PHASES[p].d;
+  /* Różnica między kalendarzem a planem MUSI być widoczna. Cicha korekta
+     jest gorsza od błędu: człowiek widzi „tydzień 3", plan robi „tydzień 2"
+     i nie ma jak się dowiedzieć, że to nie pomyłka. */
+  const tp = tydzienPlanu(), stracone = przepadleTygodnie();
+  document.getElementById('phaseTip').innerHTML='<b>'+PHASES[p].n+'</b> — '+PHASES[p].d+
+    (stracone > 0
+      ? '<div class="note" style="margin-top:6px">Kalendarz pokazuje tydzień '+w+
+        ', plan liczy <b>tydzień '+tp+'</b>. '+
+        (stracone===1?'Jeden tydzień':stracone+' tygodnie')+
+        ' bez treningu siłowego nie przesuwa fazy — nie było czego progresować. '+
+        'Wracasz tam, gdzie skończyłeś, a nie tam, gdzie byłbyś, gdybyś nie wyjeżdżał.</div>'
+      : '');
   const s=suggestNext();
   /* BŁĄD, przez który cały ekran główny był pusty: usunąłem z HTML dwa
      kafelki (zastąpił je kafelek „Dziś"), ale kod nadal do nich pisał.
@@ -3841,10 +4035,10 @@ function startSession(day, withSug){
   /* nie kasuj po cichu treningu, który jest w toku */
   if(SES && setCount(SES)>0 &&
      !confirm('Masz niezakończony trening '+SES.day+' z '+setCount(SES)+' seriami. Porzucić go i zacząć nowy?')) return;
-  const w=weekNo(), p=phaseOf(w);
+  const w=weekNo(), tp=tydzienPlanu(), p=phaseOf(tp);
   const gotowy = planNaDzis(day);
-  SES={date:today(), day:day, week:w, t0:Date.now(), note:'',
-    exercises: buildDay(day,p,w).map(it=>{
+  SES={date:today(), day:day, week:w, tygPlanu:tp, t0:Date.now(), note:'',
+    exercises: buildDay(day,p,tp).map(it=>{
       /* jeśli mam zatwierdzony plan na ten dzień, biorę z niego liczby —
          dzięki temu korekty trenera nie znikają przy starcie sesji */
       const z = gotowy && gotowy.cwiczenia.find(x=>x.slot===it.slot.id);
@@ -4099,7 +4293,7 @@ function swapEx(i){
   const k=(e.pool.indexOf(e.name)+1)%e.pool.length;
   e.name=e.pool[k]; e.sets=[]; e._open=true;
   const slot=slotById(e.slot);
-  if(slot) e.sug=suggestLoad(e.name, slot, phaseOf(SES.week), SES.week);
+  if(slot){ const tp = SES.tygPlanu || SES.week; e.sug=suggestLoad(e.name, slot, phaseOf(tp), tp); }
   saveSes(); renderSession(); toast('Zamieniono na: '+e.name);
 }
 /* BŁĄD zgłoszony w przeglądzie: każde przerysowanie sesji odtwarzało pola
@@ -4359,7 +4553,7 @@ function pokrycieSesji(w){
 
 function raportSesji(w){
   if(!w) return '';
-  const p = phaseOf(weekNo(w.date)), faza = PHASES[p] || {};
+  const p = phaseOf(w.tygPlanu || tydzienPlanu(w.date)), faza = PHASES[p] || {};
   const celRpe = sufitFazy(p);
   const rob = w.exercises.flatMap(e => e.sets.filter(x => !x.wu));
   const rpe = rob.filter(x => x.rpe != null).map(x => x.rpe);
@@ -4552,7 +4746,7 @@ function renderTrening(){
 
   let h = '<h2>'+w.day+' — '+esc(dayName2(w.day))+'</h2>';
   h += '<div class="tip"><b>'+plDate(w.date)+'</b> · tydzień '+weekNo(w.date)+
-       ' · '+esc((PHASES[phaseOf(weekNo(w.date))]||{}).n||'')+'</div>';
+       ' · '+esc((PHASES[phaseOf(w.tygPlanu || tydzienPlanu(w.date))]||{}).n||'')+'</div>';
 
   h += '<div class="mdkafle">'+
     '<div><b>'+setCount(w)+'</b><span>serii'+(wuN?' (+'+wuN+' rozgrz.)':'')+'</span></div>'+
@@ -4881,7 +5075,11 @@ function biegTygodnia(w){
 }
 
 function radaBiegowa(){
-  const w = weekNo(), p = phaseOf(w), f = PHASES[p] || {}, out = [];
+  /* Dwa różne „w" i pomylenie ich kosztowało jeden test: o FAZIE decyduje
+     tydzień planu, ale kilometry leżą w tygodniach KALENDARZA — bo tak są
+     zapisane biegi. Reguła 10% musi patrzeć na kalendarz, inaczej porównuje
+     ten tydzień ze średnią z tygodni, których nie było. */
+  const wKal = weekNo(), w = tydzienPlanu(), p = phaseOf(w), f = PHASES[p] || {}, out = [];
 
   if(f.skala && f.skala < 1)
     out.push(['down','Tydzień deloadu — zejdź z biegami tak samo jak z ciężarami: '+
@@ -4894,8 +5092,8 @@ function radaBiegowa(){
      decyzji. Zostają rzeczy, których harmonogram nie załatwia. */
 
   /* ostrożny przyrost kilometrów: reguła 10% liczona od średniej z 3 tygodni */
-  const teraz = kmWTygodniu(w);
-  const hist = [w-1,w-2,w-3].map(kmWTygodniu).filter(x=>x>0);
+  const teraz = kmWTygodniu(wKal);
+  const hist = [wKal-1,wKal-2,wKal-3].map(kmWTygodniu).filter(x=>x>0);
   if(hist.length >= 2 && teraz > 0){
     const sr = hist.reduce((a,b)=>a+b,0)/hist.length;
     if(teraz > sr*1.3)
@@ -4907,7 +5105,7 @@ function radaBiegowa(){
 }
 
 function renderRun(){
-  const w=weekNo(), r=biegTygodnia(w);
+  const w=tydzienPlanu(), r=biegTygodnia(w);
   const mine=DB.runs.filter(x=>inWeek(x.date,w) && czyBieg(x));
   let h='<div class="tip rn"><b>Tydzień '+w+'</b> — dwa biegi: jeden spokojny, jeden jakościowy. '+
     'Dni dobierają się same tak, żeby nie kolidowały z nogami na siłowni. '+
@@ -5818,7 +6016,7 @@ function raportDnia(){
 }
 
 function renderReport(){
-  const w=weekNo(), p=phaseOf(w);
+  const w=weekNo(), p=phaseOf(tydzienPlanu());
   const cur=DB.workouts.filter(x=>inWeek(x.date,w));
   const prev=DB.workouts.filter(x=>inWeek(x.date,w-1));
   const dCur=DB.daily.filter(x=>inWeek(x.date,w));
