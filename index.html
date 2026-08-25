@@ -502,41 +502,12 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <button class="btn" style="margin-top:13px" onclick="saveDaily()">Zapisz dzień</button>
   </div>
 
-  <h2>Suplementy</h2>
-  <div class="note" style="margin-bottom:9px">Odhaczasz, kiedy bierzesz.</div>
-  <div class="card" id="suplDzis"></div>
-  <div class="card" id="suplBox"></div>
   <h2>Ostatnie 10 dni</h2>
   <div class="card" id="dailyList"></div>
 
   <h2>Historia treningów</h2>
   <div class="note" style="margin-bottom:9px">Usunięty trening trafia do kosza w zakładce Dane i przez 30 dni da się go przywrócić.</div>
   <div class="card" id="histList"></div>
-
-  <h2>Obwody (cm)</h2>
-  <div class="note" style="margin-bottom:9px">Raz w miesiącu, rano na czczo, w tym samym miejscu.</div>
-  <div class="card">
-    <div class="fld" style="margin-bottom:11px"><label>Data</label><input type="date" id="mDate"></div>
-    <div class="dayin">
-      <div class="fld"><label>Klatka</label><input type="number" inputmode="decimal" step="0.5" id="mKlatka" placeholder="np. 98"></div>
-      <div class="fld"><label>Talia</label><input type="number" inputmode="decimal" step="0.5" id="mTalia" placeholder="np. 80"></div>
-      <div class="fld"><label>Ramię</label><input type="number" inputmode="decimal" step="0.5" id="mRamie" placeholder="np. 36"></div>
-      <div class="fld"><label>Udo</label><input type="number" inputmode="decimal" step="0.5" id="mUdo" placeholder="np. 56"></div>
-      <div class="fld"><label>Łydka</label><input type="number" inputmode="decimal" step="0.5" id="mLydka" placeholder="np. 37"></div>
-      <div class="fld"><label>Biodra</label><input type="number" inputmode="decimal" step="0.5" id="mBiodra" placeholder="np. 95"></div>
-    </div>
-    <button class="btn" style="margin-top:12px" onclick="saveMeasure()">Zapisz obwody</button>
-  </div>
-  <div class="card" id="measureList"></div>
-
-  <h2>Pytania do trenera</h2>
-  <div class="note" style="margin-bottom:9px">Odpowiedź wróci przy najbliższej synchronizacji.</div>
-  <div class="card">
-    <div class="fld"><label>Pytanie</label>
-      <input type="text" id="qText" placeholder="np. czy mogę zamienić martwy ciąg na hip thrust?"></div>
-    <button class="btn" style="margin-top:11px" onclick="addQuestion()">Zapisz pytanie</button>
-  </div>
-  <div class="card" id="qList"></div>
 
   <h2>Ból i kontuzje</h2>
   <div class="note" style="margin-bottom:9px">Notuj też drobne — wzorzec widać dopiero po kilku wpisach.</div>
@@ -633,17 +604,6 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
       <input type="number" inputmode="decimal" step="0.5" id="setGryf" placeholder="20">
       <div class="note" style="margin-top:4px">Olimpijski 20, damski 15, łamany 7,5–10.</div></div>
     <button class="btn ghost sm" style="margin-top:12px" onclick="saveSettings()">Zapisz ustawienia</button>
-  </div>
-  <h2>Tryb wyjazdowy</h2>
-  <div class="card">
-    <div class="note">Bez siłowni — zamienniki z masy własnej w te same partie.</div>
-    <div class="dayin" style="margin-top:11px">
-      <div class="fld"><label>Od</label><input type="date" id="wyjOd"></div>
-      <div class="fld"><label>Do</label><input type="date" id="wyjDo"></div>
-    </div>
-    <div id="wyjStan" style="margin-top:9px"></div>
-    <button class="btn ghost sm" style="margin-top:10px" onclick="zapiszWyjazd()">Zapisz</button>
-    <button class="btn ghost sm" style="margin-top:10px" onclick="wylaczWyjazd()">Wyłącz</button>
   </div>
   <h2>Statystyki</h2>
   <div class="card" id="stats"></div>
@@ -808,55 +768,6 @@ const DOMYSLNE_REG = {
                   o:'Poprzeczny brzucha i wielodzielne — trzymają kręgosłup, gdy coś próbuje go zgiąć. Plank, ab wheel, chód farmera. Nie widać ich, a bez nich przysiad się sypie.'}
 };
 
-/* ============================================================
-   BIBLIOTEKA ĆWICZEŃ
-   mus = udział w regionie (1,0 = ćwiczenie główne na ten region)
-   inc = ile dokładać po domknięciu zakresu
-   ============================================================ */
-const KALIS_LIB = {
-  'Pompki':                       {bw:true, rr:[12,25], mus:{klatka_srodek:1, triceps_bocz:.4, triceps_przysr:.3, bark_przod:.3, glebokie:.3},
-                                   cue:'Łokcie ~45° od tułowia, nie na boki. Ciało w jednej linii.'},
-  'Pompki nogi wyżej':            {bw:true, rr:[10,20], mus:{klatka_gora:1, bark_przod:.5, triceps_bocz:.3, triceps_przysr:.2},
-                                   cue:'Stopy na krześle albo schodach — im wyżej, tym bardziej góra klatki.'},
-  'Pompki szerokie':              {bw:true, rr:[12,20], mus:{klatka_srodek:1, klatka_dol:.3, bark_przod:.3}},
-  'Pompki diamentowe':            {bw:true, rr:[8,18],  mus:{triceps_bocz:1, triceps_przysr:.8, triceps_dluga:.3, klatka_srodek:.5},
-                                   cue:'Dłonie razem pod klatką. Najprostszy triceps bez sprzętu.'},
-  'Pompki w podporze przodem':    {bw:true, rr:[8,15],  mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.4},
-                                   cue:'Biodra wysoko, głowa między rękami — to zamiennik wyciskania nad głowę.'},
-  'Dipy na krzesłach':            {bw:true, rr:[10,20], mus:{triceps_bocz:1, triceps_dluga:.6, triceps_przysr:.6, klatka_dol:.4},
-                                   cue:'Dwa krzesła albo krawędź. Nie schodź niżej niż bark do łokcia.'},
-  'Wiosłowanie australijskie':    {bw:true, rr:[10,18], mus:{plecy_poziom:1, plecy_gora:.4, biceps_dluga:.3, biceps_krotka:.3, ramienny:.4, bark_tyl:.4},
-                                   cue:'Pod stołem, barierką albo drążkiem nisko. Im bardziej poziomo, tym trudniej.'},
-  'Wiosłowanie australijskie podchwytem': {bw:true, rr:[10,18], mus:{biceps_dluga:.8, biceps_krotka:.9, ramienny:.4, plecy_poziom:.7, plecy_pion:.3}},
-  'Podciąganie podchwytem':       {bw:true, rr:[5,12],  mus:{biceps_dluga:.8, biceps_krotka:.9, ramienny:.4, plecy_pion:.8, plecy_poziom:.3}},
-  'Zwis na drążku':               {bw:true, time:true, rr:[30,60], mus:{przedramie:1, plecy_pion:.2}},
-  'Przysiad bułgarski (masa własna)': {bw:true, rr:[10,20], mus:{czworoglowe:1, udo_proste:.3, posladki:.7, posladki_sr:.5, dwuglowe:.2},
-                                   cue:'Tylna noga na krześle. To najmocniejsze ćwiczenie nóg bez sprzętu.'},
-  'Przysiad jednonóż do ławki':   {bw:true, rr:[6,12],  mus:{czworoglowe:1, udo_proste:.3, posladki:.6, posladki_sr:.6},
-                                   cue:'Siadasz na jednej nodze na krzesło i wstajesz. Trzymaj się czegoś dla równowagi.'},
-  'Przysiad z wyskokiem':         {bw:true, rr:[8,15],  mus:{czworoglowe:1, udo_proste:.3, posladki:.5, lydki_stoj:.4},
-                                   cue:'Ląduj miękko. Nie rób tego przy zakwasach w czworogłowych.'},
-  'Przysiad w miejscu wolno':     {bw:true, rr:[15,30], mus:{czworoglowe:1, udo_proste:.3, posladki:.4},
-                                   cue:'Trzy sekundy w dół, sekunda w górę — czas pod napięciem zastępuje ciężar.'},
-  'Wykroki chodzone (masa własna)': {bw:true, rr:[12,24], mus:{czworoglowe:1, udo_proste:.3, posladki:.8, posladki_sr:.5, dwuglowe:.3}},
-  'Most biodrowy jednonóż':       {bw:true, rr:[12,20], mus:{posladki:1, posladki_sr:.5, dwuglowe:.6}},
-  'Nordic curl asystowany':       {bw:true, rr:[5,10],  mus:{dwuglowe_kol:1, dwuglowe:.4, posladki:.3},
-                                   cue:'Zahacz stopy o coś ciężkiego, opadaj wolno, wspomagaj się rękami. Najlepsze dwugłowe bez sprzętu.'},
-  'Unoszenie nóg leżąc':          {bw:true, rr:[12,20], mus:{brzuch:1, glebokie:.3}},
-  'Unoszenie bokiem — plecak':    {bw:true, rr:[12,20], mus:{bark_bok:1},
-                                   cue:'Plecak z butelkami wody. Litr to kilogram — łatwo dobrać.'},
-  'Odwrotne rozpiętki — plecak':  {bw:true, rr:[12,20], mus:{bark_tyl:1, plecy_gora:.5}},
-  'Wyciskanie plecakiem nad głowę': {bw:true, rr:[10,18], mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.4},
-                                   cue:'Plecak z butelkami. Żebra w dół, nie wyginaj lędźwi.'},
-  'Wchodzenie na podwyższenie':   {bw:true, rr:[10,20], mus:{czworoglowe:1, udo_proste:.3, posladki:.8, posladki_sr:.5, lydki_stoj:.2},
-                                   cue:'Krzesło albo murek do wysokości kolana. Wchodź bez odbicia tylną nogą.'},
-  'Pompki ręce wyżej':            {bw:true, rr:[12,25], mus:{klatka_dol:1, klatka_srodek:.5, triceps_bocz:.3, triceps_przysr:.2},
-                                   cue:'Dłonie na krześle albo parapecie. Im wyżej ręce, tym bardziej dolna część klatki.'},
-  'Francuskie z plecakiem':       {bw:true, rr:[10,18], mus:{triceps_dluga:1, triceps_bocz:.5, triceps_przysr:.4},
-                                   cue:'Leżysz, plecak trzymany oburącz, opuszczasz za głowę. Głowa długa tricepsa pracuje tylko przy ramieniu nad głową.'},
-  'Superman':                     {bw:true, rr:[12,20], mus:{prostowniki:1, posladki:.5, dwuglowe:.4},
-                                   cue:'Leżąc na brzuchu unosisz ręce i nogi. Bez szarpania, dwie sekundy u góry.'}
-};
 
 const DOMYSLNA_LIB = {
   /* --- klatka --- */
@@ -979,66 +890,8 @@ const DOMYSLNA_LIB = {
    s     = liczba serii w fazie (0 = pomijane)
    rr    = zakres powtórzeń [min,max] w fazie
    ============================================================ */
-/* ============================================================
-   TRYB WYJAZDOWY — trening bez siłowni
-   Włączasz, gdy nie masz sprzętu. Każdy slot dostaje zamiennik z masy
-   własnej, dobrany tak, żeby trafiał w ten sam region — to jest cała
-   sztuka, bo „pompki zamiast wszystkiego" po dwóch tygodniach zostawia
-   plecy i dwugłowe bez pracy.
 
-   Progresja idzie powtórzeniami i trudnością dźwigni, nie kilogramami,
-   więc zakresy są wyższe i sufit RPE nieco luźniejszy — przy masie własnej
-   trudniej trafić w upadek przez przypadek.
-   ============================================================ */
-/* Uwaga do puli poniżej: w trybie wyjazdowym większość slotów ma JEDNO
-   ćwiczenie, nie kilka. To wygląda ubogo, ale jest przemyślane — pomiar
-   pokazał, że przy rotacji dwóch opcji region dostawał połowę serii w co
-   drugim tygodniu, a niektóre (płaszczkowaty łydki, prostowniki) zera przez
-   kilka tygodni z rzędu. Bez sprzętu jest po prostu za mało zamienników,
-   żeby stać nas było na rotację. Urozmaicenie idzie przez trudność dźwigni. */
-const KALIS = {
-  A1: ['Przysiad bułgarski (masa własna)', 'Przysiad jednonóż do ławki'],
-  A2: ['Przysiad z wyskokiem', 'Przysiad w miejscu wolno'],
-  A3: ['Superman'],
-  C3: ['Most biodrowy jednonóż', 'Chód boczny z gumą'],
-  A4: ['Nordic curl asystowany'],
-  A5: ['Wspięcia na palce jednonóż'],
-  A6: ['Unoszenie nóg leżąc'],
-  /* Superman siedzi w A3 (prostowniki), skośne w C6, chwyt w C7 —
-     każdy region tułowia ma jeden pewny slot zamiast rotacji, która gubiła
-     go co drugi tydzień. */
-  B1: ['Pompki'],
-  B2: ['Pompki w podporze przodem', 'Wyciskanie plecakiem nad głowę'],
-  B3: ['Wiosłowanie australijskie'],
-  B4: ['Pompki ręce wyżej'],
-  B5: ['Francuskie z plecakiem'],
-  B6: ['Unoszenie bokiem — plecak'],
-  C1: ['Wykroki chodzone (masa własna)', 'Wchodzenie na podwyższenie'],
-  /* stabilizacja głęboka przenosi się do slotu chwytu — plank zamiast zwisu */
-  C2: ['Przysiad jednonóż do ławki', 'Wykroki chodzone (masa własna)'],
 
-  C4: ['Przysiad w miejscu wolno', 'Wchodzenie na podwyższenie'],
-  C5: ['Wspięcia siedząc z obciążeniem'],
-  C6: ['Deska bokiem'],
-  C7: ['Zwis na drążku'],
-  D1: ['Podciąganie', 'Wiosłowanie australijskie'],
-  D2: ['Wiosłowanie australijskie'],
-  D3: ['Pompki nogi wyżej'],
-  D4: ['Odwrotne rozpiętki — plecak'],
-  D5: ['Podciąganie podchwytem', 'Wiosłowanie australijskie podchwytem'],
-  D6: ['Podciąganie', 'Wiosłowanie australijskie']
-};
-
-/* Zakresy powtórzeń przy masie własnej — wyższe, bo obciążenie jest stałe. */
-const KALIS_RR = [[12,15],[10,15],[12,15],[8,12]];
-
-function trybWyjazdowy(){
-  const w = (DB.settings || {}).wyjazd;
-  if(!w) return false;
-  if(w === true) return true;
-  if(!w.od && !w.do) return false;   /* pusty zakres to nie wyjazd */
-  return (!w.od || today() >= w.od) && (!w.do || today() <= w.do);
-}
 
 const DOMYSLNY_PLAN = {
   A: { name:'Nogi — przysiad', grp:'nogi', slots:[
@@ -1168,6 +1021,59 @@ const DOMYSLNY_PLAN = {
      s:[2,2,2,2], rr:[[8,8],[10,12],[8,8],[10,12]]}
   ]}
 };
+
+/* ============================================================
+   ĆWICZENIA Z MASY WŁASNEJ
+   Tryb wyjazdowy poszedł, ale te ćwiczenia zostają — korzystają z nich
+   obwody na czas i zastępstwa, gdy maszyna jest zajęta albo odznaczona
+   w „pomijanym sprzęcie". Zniknięcie ich razem z trybem wyjazdowym
+   wywaliłoby obwody, bo pompki i przysiad wolny mieszkały właśnie tutaj.
+   ============================================================ */
+const LIB_MASA_WLASNA = {
+  'Pompki':                       {bw:true, rr:[12,25], mus:{klatka_srodek:1, triceps_bocz:.4, triceps_przysr:.3, bark_przod:.3, glebokie:.3},
+                                   cue:'Łokcie ~45° od tułowia, nie na boki. Ciało w jednej linii.'},
+  'Pompki nogi wyżej':            {bw:true, rr:[10,20], mus:{klatka_gora:1, bark_przod:.5, triceps_bocz:.3, triceps_przysr:.2},
+                                   cue:'Stopy na krześle albo schodach — im wyżej, tym bardziej góra klatki.'},
+  'Pompki szerokie':              {bw:true, rr:[12,20], mus:{klatka_srodek:1, klatka_dol:.3, bark_przod:.3}},
+  'Pompki diamentowe':            {bw:true, rr:[8,18],  mus:{triceps_bocz:1, triceps_przysr:.8, triceps_dluga:.3, klatka_srodek:.5},
+                                   cue:'Dłonie razem pod klatką. Najprostszy triceps bez sprzętu.'},
+  'Pompki w podporze przodem':    {bw:true, rr:[8,15],  mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.4},
+                                   cue:'Biodra wysoko, głowa między rękami — to zamiennik wyciskania nad głowę.'},
+  'Dipy na krzesłach':            {bw:true, rr:[10,20], mus:{triceps_bocz:1, triceps_dluga:.6, triceps_przysr:.6, klatka_dol:.4},
+                                   cue:'Dwa krzesła albo krawędź. Nie schodź niżej niż bark do łokcia.'},
+  'Wiosłowanie australijskie':    {bw:true, rr:[10,18], mus:{plecy_poziom:1, plecy_gora:.4, biceps_dluga:.3, biceps_krotka:.3, ramienny:.4, bark_tyl:.4},
+                                   cue:'Pod stołem, barierką albo drążkiem nisko. Im bardziej poziomo, tym trudniej.'},
+  'Wiosłowanie australijskie podchwytem': {bw:true, rr:[10,18], mus:{biceps_dluga:.8, biceps_krotka:.9, ramienny:.4, plecy_poziom:.7, plecy_pion:.3}},
+  'Podciąganie podchwytem':       {bw:true, rr:[5,12],  mus:{biceps_dluga:.8, biceps_krotka:.9, ramienny:.4, plecy_pion:.8, plecy_poziom:.3}},
+  'Zwis na drążku':               {bw:true, time:true, rr:[30,60], mus:{przedramie:1, plecy_pion:.2}},
+  'Przysiad bułgarski (masa własna)': {bw:true, rr:[10,20], mus:{czworoglowe:1, udo_proste:.3, posladki:.7, posladki_sr:.5, dwuglowe:.2},
+                                   cue:'Tylna noga na krześle. To najmocniejsze ćwiczenie nóg bez sprzętu.'},
+  'Przysiad jednonóż do ławki':   {bw:true, rr:[6,12],  mus:{czworoglowe:1, udo_proste:.3, posladki:.6, posladki_sr:.6},
+                                   cue:'Siadasz na jednej nodze na krzesło i wstajesz. Trzymaj się czegoś dla równowagi.'},
+  'Przysiad z wyskokiem':         {bw:true, rr:[8,15],  mus:{czworoglowe:1, udo_proste:.3, posladki:.5, lydki_stoj:.4},
+                                   cue:'Ląduj miękko. Nie rób tego przy zakwasach w czworogłowych.'},
+  'Przysiad w miejscu wolno':     {bw:true, rr:[15,30], mus:{czworoglowe:1, udo_proste:.3, posladki:.4},
+                                   cue:'Trzy sekundy w dół, sekunda w górę — czas pod napięciem zastępuje ciężar.'},
+  'Wykroki chodzone (masa własna)': {bw:true, rr:[12,24], mus:{czworoglowe:1, udo_proste:.3, posladki:.8, posladki_sr:.5, dwuglowe:.3}},
+  'Most biodrowy jednonóż':       {bw:true, rr:[12,20], mus:{posladki:1, posladki_sr:.5, dwuglowe:.6}},
+  'Nordic curl asystowany':       {bw:true, rr:[5,10],  mus:{dwuglowe_kol:1, dwuglowe:.4, posladki:.3},
+                                   cue:'Zahacz stopy o coś ciężkiego, opadaj wolno, wspomagaj się rękami. Najlepsze dwugłowe bez sprzętu.'},
+  'Unoszenie nóg leżąc':          {bw:true, rr:[12,20], mus:{brzuch:1, glebokie:.3}},
+  'Unoszenie bokiem — plecak':    {bw:true, rr:[12,20], mus:{bark_bok:1},
+                                   cue:'Plecak z butelkami wody. Litr to kilogram — łatwo dobrać.'},
+  'Odwrotne rozpiętki — plecak':  {bw:true, rr:[12,20], mus:{bark_tyl:1, plecy_gora:.5}},
+  'Wyciskanie plecakiem nad głowę': {bw:true, rr:[10,18], mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.4},
+                                   cue:'Plecak z butelkami. Żebra w dół, nie wyginaj lędźwi.'},
+  'Wchodzenie na podwyższenie':   {bw:true, rr:[10,20], mus:{czworoglowe:1, udo_proste:.3, posladki:.8, posladki_sr:.5, lydki_stoj:.2},
+                                   cue:'Krzesło albo murek do wysokości kolana. Wchodź bez odbicia tylną nogą.'},
+  'Pompki ręce wyżej':            {bw:true, rr:[12,25], mus:{klatka_dol:1, klatka_srodek:.5, triceps_bocz:.3, triceps_przysr:.2},
+                                   cue:'Dłonie na krześle albo parapecie. Im wyżej ręce, tym bardziej dolna część klatki.'},
+  'Francuskie z plecakiem':       {bw:true, rr:[10,18], mus:{triceps_dluga:1, triceps_bocz:.5, triceps_przysr:.4},
+                                   cue:'Leżysz, plecak trzymany oburącz, opuszczasz za głowę. Głowa długa tricepsa pracuje tylko przy ramieniu nad głową.'},
+  'Superman':                     {bw:true, rr:[12,20], mus:{prostowniki:1, posladki:.5, dwuglowe:.4},
+                                   cue:'Leżąc na brzuchu unosisz ręce i nogi. Bez szarpania, dwie sekundy u góry.'}
+};
+
 /* KOLEJNOŚĆ DNI. Litery zostają przy swoich treningach (A to zawsze nogi
    z przysiadem, B zawsze push), ale rotacja idzie push → pull → nogi → nogi.
    Powód jest prosty i nie jest metodyczny: Filip nie chce zaczynać tygodnia
@@ -1356,7 +1262,7 @@ function walidujPlan(p){
 function zastosujPlan(){
   const p = (DB && DB.plan && !walidujPlan(DB.plan).length) ? DB.plan : {};
   PLAN   = p.plan   || DOMYSLNY_PLAN;
-  LIB    = Object.assign({}, p.lib || DOMYSLNA_LIB, KALIS_LIB);
+  LIB    = Object.assign({}, p.lib || DOMYSLNA_LIB, LIB_MASA_WLASNA);
   REG    = p.reg    || DOMYSLNE_REG;
   RUNS   = p.runs   || DOMYSLNE_RUNS;
   PHASES = p.phases || DOMYSLNE_PHASES;
@@ -1374,8 +1280,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '32';
-const WERSJA_DATA = '2026-08-17';
+const WERSJA = '34';
+const WERSJA_DATA = '2026-08-25';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -2244,7 +2150,6 @@ function regionySlotu(slot){
 function zastepstwoDlaSlotu(slot, zajete){
   const cele = regionySlotu(slot);
   if(!cele.length) return null;
-  const wyjazd = trybWyjazdowy();
   /* Zastępstwo musi mierzyć się TĄ SAMĄ jednostką co slot. Bez tego chwyt
      na czas („Utrzymanie sztangi") trafiał w slot powtórzeniowy i dostawał
      „3×8" — osiem powtórzeń trzymania sztangi nic nie znaczy. Jednostkę
@@ -2257,7 +2162,6 @@ function zastepstwoDlaSlotu(slot, zajete){
        „ciąg pionowy dodatkowy" wychodził jako drugie podciąganie po pierwszym. */
     .filter(([n]) => !(zajete || []).includes(n))
     .filter(([n,L]) => cele.some(r => (L.mus[r] || 0) >= 0.5))
-    .filter(([n,L]) => !wyjazd || L.bw)
     .filter(([n,L]) => !!L.time === !!slotCzasowy || !!L.rr)
     .map(([n,L]) => {
       let sc = cele.reduce((a,r) => a + (L.mus[r] || 0), 0);
@@ -2705,7 +2609,7 @@ function kolejneSesje(ile){
 }
 
 function renderKolejne(){
-  const l = kolejneSesje(trybWyjazdowy() ? 3 : 2);
+  const l = kolejneSesje(2);
   if(!l.length) return '';
   /* Samo „Dalej w kolejce: D → A" czytało się jak plan na jutro i kłóciło się
      z kafelkiem „Plan na dzień C" tuż obok. Kolejka zaczyna się PO zaplanowanej
@@ -3323,33 +3227,12 @@ function planDoPokazania(){
   return (n && n.cwiczenia && n.data >= today()) ? zastosujGotowosc(n) : null;
 }
 
-/* Podmiana slotu na wersję bez sprzętu. Slot zachowuje swój identyfikator
-   i etykietę, więc historia i rotacja działają dalej — zmienia się tylko
-   pula ćwiczeń i zakresy powtórzeń. Główny bój przestaje być „fixed",
-   bo przy masie własnej nie ma jednego ćwiczenia, które mierzy progresję. */
-function wyjazdowySlot(slot){
-  if(!trybWyjazdowy()) return slot;
-  const pula = KALIS[slot.id];
-  if(!pula || !pula.length) return slot;
-  const dost = pula.filter(n => LIB[n]);
-  if(!dost.length) return slot;
-  /* Seria z masą własną na kilkanaście powtórzeń niesie mniejszy bodziec niż
-     seria ze sztangą blisko granicy — przy tej samej liczbie serii tydzień
-     bez sprzętu byłby po prostu lżejszy. Dokładamy jedną serię do slotu,
-     co mniej więcej wyrównuje bodziec bez wydłużania sesji o połowę. */
-  return Object.assign({}, slot, {
-    fixed: null, pool: dost, wyjazd: true,
-    s: slot.s.map(x => x > 0 ? x + 1 : 0),
-    rr: KALIS_RR,
-    t: KALIS_RR.map(r => '3×' + (r[0]===r[1] ? r[0] : r[0]+'-'+r[1]))
-  });
-}
 
 function buildDay(day, phase, tydzien, bezGotowosci){
   const zajete = [];
   const wypadly = [];
   const lista = PLAN[day].slots.filter(s=>s.s[phase]>0).map(s0=>{
-    const slot = wyjazdowySlot(s0);
+    const slot = s0;
     const v = pickVariant(slot, zajete);
     if(!v){ wypadly.push(slot.lab); return null; }
     zajete.push(v.name);
@@ -3608,15 +3491,30 @@ function suggestNext(naJutro){
     const x = DB.workouts.filter(y => y.day === d).slice(-1)[0];
     return x ? Math.round((new Date(ref+'T00:00:00') - new Date(x.date+'T00:00:00'))/864e5) : 999;
   };
-  const swiezy = d => dniOd(d) <= 6;
-  const jestZaleglosc = kolejka.some(x => !swiezy(x));
-  const wolny = d => !(swiezy(d) && jestZaleglosc) &&
+  /* Próg to PEŁNA ROTACJA, nie „kilka dni". Przy czterech dniach i czterech
+     treningach w tygodniu każdy dzień wraca mniej więcej co siedem dni, więc
+     „świeży przez sześć dni" znaczyło tyle, co świeży przez cały cykl —
+     i aplikacja pomijała dzień, który był dokładnie na czas. Tak wypadł pull
+     zrobiony sześć dni wcześniej, opisany jako „robiłeś go niedawno".
+
+     Teraz jest prosto: dzień ustępuje tylko wtedy, gdy sam NIE jest zaległy,
+     a inny w rotacji już jest. */
+  const ZALEGLY_PO = 7;
+  const zalegly = d => dniOd(d) >= ZALEGLY_PO;
+  const jestZaleglosc = kolejka.some(zalegly);
+  const wolny = d => !(!zalegly(d) && jestZaleglosc) &&
                      !yest.includes(PLAN[d].grp) && !bolace(PLAN[d].grp);
 
   const pominiete = [];
   let day = null;
   for(const d of kolejka){
-    if(swiezy(d) && jestZaleglosc){ pominiete.push([d, 'robiłeś go '+dniOd(d)+' dni temu']); continue; }
+    if(!zalegly(d) && jestZaleglosc){
+      const najstarszy = kolejka.filter(zalegly)
+        .sort((a,b) => dniOd(b) - dniOd(a))[0];
+      pominiete.push([d, 'robiłeś go '+dniOd(d)+' dni temu, a '+najstarszy+' czeka '+
+        (dniOd(najstarszy) >= 999 ? 'od początku planu' : dniOd(najstarszy)+' dni')]);
+      continue;
+    }
     if(yest.includes(PLAN[d].grp)){ pominiete.push([d, 'wczoraj szła ta sama partia']); continue; }
     /* przed zakwasami ustępujemy tylko wtedy, gdy jest dokąd */
     if(bolace(PLAN[d].grp) && kolejka.some(x => x !== d && wolny(x))){
@@ -3679,9 +3577,6 @@ function suggestNext(naJutro){
         'i to nie jest regres. Zejdź o jeden stopień RPE.'
       : 'Nogi mają już swoje. Nie interpretuj słabszego przysiadu jako cofnięcia.')]);
 
-  if(trybWyjazdowy()) notes.push(['', 'Tryb wyjazdowy — ćwiczenia z masy własnej. '+
-    'Progresja idzie powtórzeniami i trudnością dźwigni, nie kilogramami. '+
-    'Dwa-trzy tygodnie bez sprzętu nie cofną Cię, jeśli utrzymasz częstotliwość.']);
 
   const d0 = DB.daily.find(x=>x.date===ref) || DB.daily.find(x=>x.date===przesun(ref,-1));
   if(d0){
@@ -3774,6 +3669,20 @@ function goHome(){
    przestało się rysować. Bez komunikatu, bez śladu, po cichu.
    Teraz każdy widok jest opakowany osobno, a awaria jest WIDOCZNA:
    na ekranie pojawia się ramka z nazwą funkcji i treścią błędu. */
+/* Wariant zwracający HTML. `bezpiecznie` istnieje dla funkcji, które same
+   piszą do DOM-u; tu potrzebny jest kawałek tekstu wstawiany w środek innego
+   ekranu, więc wyjątek nie może wywalić całej zakładki, ale nie może też
+   podmienić jej w całości na komunikat o błędzie. */
+function bezpieczneHtml(nazwa, f){
+  try { return f(); }
+  catch(e){
+    console.error(nazwa, e);
+    return '<div class="tip bad"><b>Nie udało się złożyć tego fragmentu</b>'+
+      '<div class="hm" style="margin-top:4px">'+esc(nazwa+': '+(e && e.message || e))+'</div>'+
+      '<div class="note" style="margin-top:6px">Dane są całe — to błąd wyświetlania.</div></div>';
+  }
+}
+
 function bezpiecznie(nazwa, f){
   try { f(); }
   catch(e){
@@ -3959,8 +3868,6 @@ function renderHub(){
         'Wejdź w Dane → Synchronizuj teraz.</div>' : '';
 
   document.getElementById('coachBox').innerHTML =
-    (trybWyjazdowy() ? '<div class="tip warn"><b>Tryb wyjazdowy</b> — plan z masy własnej, '+
-      'bez sprzętu. Wyłączysz w Dzienniku → Tryb wyjazdowy.</div>' : '') +
     /* Kolejność jest teraz według pilności, nie według historii dopisywania:
        najpierw to, co robisz teraz, potem to, czego aplikacja od Ciebie chce,
        potem kontekst, na końcu sprawy techniczne. */
@@ -4598,8 +4505,12 @@ function pokrycieSesji(w){
       : '<div class="tip ok">Wszystkie 28 partii w normie w ostatnich 14 dniach.</div>');
 }
 
-function raportSesji(w){
+/* `opcje.bezMapy` pomija mapę partii i rozbicie mięsień po mięśniu.
+   Na zakładce Raport te same dwa bloki stoją niżej dla całego tygodnia,
+   a pokazane dwa razy na jednym ekranie znaczą tyle, co ściana do przewinięcia. */
+function raportSesji(w, opcje){
   if(!w) return '';
+  const bezMapy = !!(opcje && opcje.bezMapy);
   const p = phaseOf(w.tygPlanu || tydzienPlanu(w.date)), faza = PHASES[p] || {};
   const celRpe = sufitFazy(p);
   const rob = w.exercises.flatMap(e => e.sets.filter(x => !x.wu));
@@ -4693,7 +4604,7 @@ function raportSesji(w){
   h += pokrycieSesji(w);
 
   /* --- pokrycie i regeneracja --- */
-  h += renderCoverage();
+  if(!bezMapy) h += renderCoverage();
 
   if(dz.sleep != null || dz.hrv != null){
     const b = [];
@@ -5241,156 +5152,16 @@ function delRun(id){
   DB.runs=DB.runs.filter(x=>x.id!==id); save(); zsynchronizuj(); renderRun();
 }
 
-/* ============================================================
-   DZIENNIK
-   ============================================================ */
-/* Pełna historia treningów — i jedyne miejsce w aplikacji, gdzie da się
-   trening usunąć. Świadomie schowane głębiej niż ekran główny. */
-/* UWAGA na nazwę: `renderHist` bez przyrostka renderuje wykres pojedynczego
-   ćwiczenia (ekran 'hist'). Ta funkcja to co innego — lista treningów
-   w Dzienniku. Przez chwilę obie nazywały się tak samo i ta późniejsza
-   nadpisywała tamtą, przez co przycisk „wykres" prowadził donikąd. */
-function renderHistTreningow(){
-  const el = document.getElementById('histList');
-  if(!el) return;
-  const rec = DB.workouts.slice().reverse();
-  el.innerHTML = rec.length ? rec.map(x=>{
-    const wuN = wuCount(x);
-    return '<div class="hist"><div style="min-width:0;cursor:pointer" onclick="openTrening(\''+x.id+'\')">'+
-      '<div class="hd">'+x.day+' — '+esc(dayName2(x.day))+
-        (x.flag?' <span class="prtag" style="background:var(--warn);color:#2a1a05">!</span>':'')+'</div>'+
-      '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii'+
-        (wuN?' (+'+wuN+' rozgrz.)':'')+' · '+Math.round(vol(x)).toLocaleString('pl')+' kg'+
-        (x.dur?' · '+x.dur+' min':'')+'</div></div>'+
-      '<div class="pill">T'+weekNo(x.date)+'</div>'+
-      '<button class="sx" onclick="delWorkout(\''+x.id+'\')">×</button></div>';
-  }).join('') : '<div class="empty">Brak zapisanych treningów.</div>';
-}
 
 /* ============================================================
-   SUPLEMENTY
-   Dawki są STAŁE, nie liczone pod trening. Kreatyna działa w modelu
-   wysycenia: mięśnie napełniają się przez 3-4 tygodnie przy stałej dawce
-   i tak zostają. Branie więcej po ciężkiej sesji, a mniej po lekkiej,
-   daje ten sam efekt co dawka stała — tyle że trudniej o regularność,
-   która jest tu jedyną rzeczą, która się liczy.
-   Dlatego aplikacja nie „wylicza dawki z treningu" — pilnuje ciągłości.
+   DZIEŃ — dane z zegarka i świadomy odpoczynek
+   Po sprzątaniu z 25 sierpnia zostały tu tylko rzeczy, które Filip
+   naprawdę wypełnia. Suplementy, obwody i pytania do trenera poszły
+   w całości: pierwsze dwa nie były uzupełniane ani razu, a pytania
+   i tak trafiały do mnie w rozmowie.
    ============================================================ */
-const SUPLEMENTY = [
-  {k:'kreatyna', n:'Kreatyna (monohydrat)', cel:5, jedn:'g', codziennie:true,
-   opis:'5 g dziennie, każdego dnia — też bez treningu. Pora nie ma znaczenia. '+
-        'Model wysycenia: liczy się ciągłość przez tygodnie, nie pojedynczy dzień.'},
-  {k:'magnez', n:'Magnez', cel:200, jedn:'mg', codziennie:true,
-   opis:'200–400 mg elementarnego, wieczorem. Cytrynian albo glicynian — tlenek jest '+
-        'najtańszy i najsłabiej przyswajalny. Za dużo naraz kończy się biegunką.'},
-  {k:'witd', n:'Witamina D', cel:2000, jedn:'IU', codziennie:false,
-   opis:'Październik–marzec, bo w Polsce zimą słońce nie wystarcza. Latem tylko jeśli '+
-        'badanie pokaże niedobór. Z posiłkiem zawierającym tłuszcz.'}
-];
-
-function statSupl(k, dni){
-  const okno = DB.daily.filter(x => x.date >= daysAgo(dni));
-  const wziete = okno.filter(x => x[k] != null && x[k] > 0);
-  return {
-    dni: wziete.length,
-    zDni: okno.length,
-    srednia: wziete.length ? wziete.reduce((a,x)=>a+x[k],0)/wziete.length : null
-  };
-}
-
-/* Odhaczanie jednym dotknięciem, niezależnie od wpisu dziennego.
-   Wcześniej suplementy siedziały w tym samym formularzu co dane z Garmina —
-   a te wpisuje się rano, zanim się cokolwiek weźmie. Pola, które trzeba
-   wypełnić w złym momencie dnia, po prostu zostają puste. */
-function wzialem(k){
-  const dzis = today();
-  let d = DB.daily.find(x => x.date === dzis);
-  if(!d){ d = {date: dzis}; DB.daily.push(d); DB.daily.sort((a,b)=>a.date.localeCompare(b.date)); }
-  const s = SUPLEMENTY.find(x => x.k === k);
-  d[k] = d[k] ? null : s.cel;          // ponowne dotknięcie cofa
-  save(); zsynchronizuj(); renderSupl();
-  sygnal(12);
-}
-
-function renderSuplDzis(){
-  const el = document.getElementById('suplDzis');
-  if(!el) return;
-  const d = DB.daily.find(x => x.date === today()) || {};
-  const zima = [10,11,12,1,2,3].includes(new Date(today()+'T00:00:00').getMonth()+1);
-  el.innerHTML = '<div class="hd" style="margin-bottom:8px">Dziś</div><div class="rpe">'+
-    SUPLEMENTY.filter(s => s.codziennie || zima).map(s => {
-      const wziete = d[s.k] != null && d[s.k] > 0;
-      return '<button class="rpeb'+(wziete?' on':'')+'" onclick="wzialem(\''+s.k+'\')">'+
-        '<b>'+(wziete?'✓':'+')+'</b><span>'+esc(s.n.split(' ')[0])+'</span></button>';
-    }).join('') + '</div>'+
-    '<div class="note" style="margin-top:7px">Dotknij, gdy weźmiesz. Ponowne dotknięcie cofa. '+
-    'Dawki są stałe — dotknięcie zapisuje docelową.</div>';
-}
-
-function renderSupl(){
-  renderSuplDzis();
-  const el = document.getElementById('suplBox');
-  if(!el) return;
-  const zima = [10,11,12,1,2,3].includes(new Date(today()+'T00:00:00').getMonth()+1);
-
-  el.innerHTML = SUPLEMENTY.map(s => {
-    const st = statSupl(s.k, 14);
-    const sezon = s.codziennie || zima;
-    let stan = '', klasa = '';
-    if(!st.zDni){ stan = 'brak danych'; }
-    else if(!sezon){ stan = 'poza sezonem'; }
-    else if(st.dni === 0){ stan = 'nie brałeś'; klasa = 'warn'; }
-    else {
-      const proc = Math.round(st.dni / st.zDni * 100);
-      stan = st.dni+'/'+st.zDni+' dni ('+proc+'%) · średnio '+fmtKg(st.srednia)+' '+s.jedn;
-      klasa = proc >= 80 ? 'ok' : 'warn';
-    }
-    return '<div style="padding:10px 0;border-bottom:1px solid var(--line)">'+
-      '<div class="hd">'+esc(s.n)+
-        ' <span class="pill">'+s.cel+' '+s.jedn+(s.codziennie?' / dzień':' / dzień, sezonowo')+'</span></div>'+
-      '<div class="hm '+klasa+'" style="margin:3px 0 4px">'+esc(stan)+'</div>'+
-      '<div class="note">'+esc(s.opis)+'</div></div>';
-  }).join('') +
-  '<div class="note" style="margin-top:11px">Dawki są stałe i nie zależą od tego, jak ciężki '+
-  'był trening — przy kreatynie liczy się wyłącznie regularność. Przy magnezie i witaminie D '+
-  'badanie krwi powie więcej niż szacowanie. To informacje, nie zalecenie lekarskie.</div>'+
-  '<div class="note" style="margin-top:7px"><b>Ważniejsze od suplementów:</b> sen (adaptacja zachodzi '+
-  'we śnie, nie na siłowni) i białko — przy Twojej masie celuj w 110–155 g dziennie. '+
-  'Żadna dawka kreatyny nie nadrobi pięciu godzin snu.</div>';
-}
-
-/* Dzień odpoczynku zaznaczany wprost, a nie wnioskowany z braku treningu.
-   Różnica jest realna: „nie poszedłem, bo odpoczywam" to inna informacja
-   niż „nie poszedłem, bo się nie złożyło" — pierwsze podnosi gotowość
-   na jutro, drugie nie. */
-function ustawOdpoczynek(powod){
-  const d = document.getElementById('dDate').value || today();
-  DB.odpoczynek = DB.odpoczynek || [];
-  const i = DB.odpoczynek.findIndex(x => x.date === d);
-  if(i >= 0 && (!powod || DB.odpoczynek[i].powod === powod)) DB.odpoczynek.splice(i, 1);
-  else if(i >= 0) DB.odpoczynek[i].powod = powod;
-  else DB.odpoczynek.push({date: d, powod, kiedy: new Date().toISOString()});
-  save(); zsynchronizuj(); renderDaily();
-  sygnal(12);
-}
-
-function renderRest(){
-  const el = document.getElementById('dRestBtns');
-  if(!el) return;
-  const d = document.getElementById('dDate').value || today();
-  const jest = (DB.odpoczynek || []).find(x => x.date === d);
-  el.innerHTML = Object.entries(POWODY).map(([k, v]) =>
-    '<button class="rpeb'+(jest && jest.powod === k ? ' on' : '')+'" onclick="ustawOdpoczynek(\''+k+'\')">'+
-    '<span style="font-size:11px">'+esc(v.n)+'</span></button>').join('') +
-    (jest ? '<div class="note" style="width:100%;margin-top:6px">Dzień zaznaczony jako odpoczynek — '+
-      esc((POWODY[jest.powod]||{n:jest.powod}).n.toLowerCase())+
-      '. Dotknij ponownie, żeby odznaczyć. Jutrzejsza gotowość dostanie za to plus.</div>'
-      : '<div class="note" style="width:100%;margin-top:6px">Świadomy odpoczynek liczy się na plus jutro.</div>');
-}
-
 function renderDaily(){
   renderHistTreningow();
-  renderSupl();
   const el=document.getElementById('dDate');
   if(!el.value) el.value=today();
   const ex=DB.daily.find(d=>d.date===el.value);
@@ -5414,11 +5185,10 @@ function renderDaily(){
       '<div class="hm">'+(bits.join(' · ')||'—')+(d.note?' · '+esc(d.note):'')+'</div></div>'+
       '<button class="sx" onclick="delDaily(\''+d.date+'\')">×</button></div>';
   }).join('') : '<div class="empty">Brak wpisów.<br>Przepisz dziś dane z Garmina.</div>';
-  renderMeasures();
-  renderQuestions();
   renderPain();
   renderFoto();
 }
+
 function saveDaily(){
   const date=document.getElementById('dDate').value;
   if(!date){ toast('Wybierz datę'); return; }
@@ -5435,9 +5205,75 @@ function saveDaily(){
   DB.daily.sort((a,b)=>a.date.localeCompare(b.date));
   save(); zsynchronizuj(); renderDaily(); toast('Zapisano '+plDate(date));
 }
+
 function delDaily(d){
   if(!confirm('Usunąć wpis z '+plDate(d)+'?')) return;
   DB.daily=DB.daily.filter(x=>x.date!==d); save(); zsynchronizuj(); renderDaily();
+}
+
+function renderRest(){
+  const el = document.getElementById('dRestBtns');
+  if(!el) return;
+  const d = document.getElementById('dDate').value || today();
+  const jest = (DB.odpoczynek || []).find(x => x.date === d);
+  el.innerHTML = Object.entries(POWODY).map(([k, v]) =>
+    '<button class="rpeb'+(jest && jest.powod === k ? ' on' : '')+'" onclick="ustawOdpoczynek(\''+k+'\')">'+
+    '<span style="font-size:11px">'+esc(v.n)+'</span></button>').join('') +
+    (jest ? '<div class="note" style="width:100%;margin-top:6px">Dzień zaznaczony jako odpoczynek — '+
+      esc((POWODY[jest.powod]||{n:jest.powod}).n.toLowerCase())+
+      '. Dotknij ponownie, żeby odznaczyć. Jutrzejsza gotowość dostanie za to plus.</div>'
+      : '<div class="note" style="width:100%;margin-top:6px">Świadomy odpoczynek liczy się na plus jutro.</div>');
+}
+
+function ustawOdpoczynek(powod){
+  const d = document.getElementById('dDate').value || today();
+  DB.odpoczynek = DB.odpoczynek || [];
+  const i = DB.odpoczynek.findIndex(x => x.date === d);
+  if(i >= 0 && (!powod || DB.odpoczynek[i].powod === powod)) DB.odpoczynek.splice(i, 1);
+  else if(i >= 0) DB.odpoczynek[i].powod = powod;
+  else DB.odpoczynek.push({date: d, powod, kiedy: new Date().toISOString()});
+  save(); zsynchronizuj(); renderDaily();
+  sygnal(12);
+}
+
+/* ============================================================
+   DZIENNIK
+   ============================================================ */
+/* Pełna historia treningów — i jedyne miejsce w aplikacji, gdzie da się
+   trening usunąć. Świadomie schowane głębiej niż ekran główny. */
+/* UWAGA na nazwę: `renderHist` bez przyrostka renderuje wykres pojedynczego
+   ćwiczenia (ekran 'hist'). Ta funkcja to co innego — lista treningów
+   w Dzienniku. Przez chwilę obie nazywały się tak samo i ta późniejsza
+   nadpisywała tamtą, przez co przycisk „wykres" prowadził donikąd. */
+/* Historia rośnie bez końca, a zaglądasz do niej rzadko. Domyślnie pięć
+   ostatnich sesji, reszta pod przyciskiem — zamiast ekranu, przez który
+   przewija się kciukiem przez trzy miesiące treningów. */
+let HIST_ROZW = false;
+function przelaczHistorie(){ HIST_ROZW = !HIST_ROZW; renderHistTreningow(); }
+
+function renderHistTreningow(){
+  const el = document.getElementById('histList');
+  if(!el) return;
+  const wszystkie = DB.workouts.slice().reverse();
+  const ILE = 5;
+  const rec = HIST_ROZW ? wszystkie : wszystkie.slice(0, ILE);
+  el.innerHTML = rec.length ? rec.map(x=>{
+    const wuN = wuCount(x);
+    return '<div class="hist"><div style="min-width:0;cursor:pointer" onclick="openTrening(\''+x.id+'\')">'+
+      '<div class="hd">'+x.day+' — '+esc(dayName2(x.day))+
+        (x.flag?' <span class="prtag" style="background:var(--warn);color:#2a1a05">!</span>':'')+'</div>'+
+      '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii'+
+        (wuN?' (+'+wuN+' rozgrz.)':'')+' · '+Math.round(vol(x)).toLocaleString('pl')+' kg'+
+        (x.dur?' · '+x.dur+' min':'')+'</div></div>'+
+      '<div class="pill">T'+weekNo(x.date)+'</div>'+
+      '<button class="sx" onclick="delWorkout(\''+x.id+'\')">×</button></div>';
+  }).join('') : '<div class="empty">Brak zapisanych treningów.</div>';
+
+  if(wszystkie.length > ILE)
+    el.innerHTML += '<button class="btn ghost sm" style="margin-top:10px;width:100%" '+
+      'onclick="przelaczHistorie()">'+
+      (HIST_ROZW ? 'Zwiń do pięciu ostatnich'
+                 : 'Pokaż wszystkie ('+wszystkie.length+')')+'</button>';
 }
 
 /* ============================================================
@@ -5446,40 +5282,6 @@ function delDaily(d){
 const OBW=[['mKlatka','klatka','Klatka'],['mTalia','talia','Talia'],
   ['mRamie','ramie','Ramię'],['mUdo','udo','Udo'],
   ['mLydka','lydka','Łydka'],['mBiodra','biodra','Biodra']];
-function saveMeasure(){
-  const date=document.getElementById('mDate').value;
-  if(!date){ toast('Wybierz datę'); return; }
-  const rec={date};
-  OBW.forEach(([id,k])=>{ rec[k]=num(id); });
-  if(OBW.every(([,k])=>rec[k]==null)){ toast('Wpisz choć jeden obwód'); return; }
-  DB.measures=DB.measures.filter(m=>m.date!==date);
-  DB.measures.push(rec);
-  DB.measures.sort((a,b)=>a.date.localeCompare(b.date));
-  save(); zsynchronizuj(); renderMeasures(); toast('Zapisano obwody');
-}
-function delMeasure(d){
-  if(!confirm('Usunąć obwody z '+plDate(d)+'?')) return;
-  DB.measures=DB.measures.filter(m=>m.date!==d); save(); zsynchronizuj(); renderMeasures();
-}
-function renderMeasures(){
-  const el=document.getElementById('mDate');
-  if(el && !el.value) el.value=today();
-  const lista=DB.measures.slice().reverse();
-  const box=document.getElementById('measureList');
-  if(!box) return;
-  if(!lista.length){ box.innerHTML='<div class="empty">Brak pomiarów.</div>'; return; }
-  const pierwszy=DB.measures[0];
-  box.innerHTML=lista.map(m=>{
-    const bits=OBW.filter(([,k])=>m[k]!=null).map(([,k,n])=>{
-      const d0=pierwszy[k];
-      const zm=(d0!=null && m.date!==pierwszy.date) ? Math.round((m[k]-d0)*10)/10 : null;
-      return n+' '+fmtKg(m[k])+(zm ? ' <span class="'+(zm>0?'up':'down')+'">('+(zm>0?'+':'')+fmtKg(zm)+')</span>' : '');
-    });
-    return '<div class="hist"><div style="min-width:0"><div class="hd">'+plDate(m.date)+'</div>'+
-      '<div class="hm">'+bits.join(' · ')+'</div></div>'+
-      '<button class="sx" onclick="delMeasure(\''+m.date+'\')">×</button></div>';
-  }).join('');
-}
 
 /* ============================================================
    PYTANIA DO TRENERA
@@ -5487,31 +5289,6 @@ function renderMeasures(){
    w polu `answer` przy najbliższym wczytaniu. Scalanie jest tak
    ustawione, że wersja z odpowiedzią wygrywa nad wersją bez.
    ============================================================ */
-function addQuestion(){
-  const el=document.getElementById('qText');
-  const t=(el.value||'').trim();
-  if(!t){ toast('Wpisz pytanie'); return; }
-  DB.questions.push({id:uid('q'), date:today(), text:t, answer:null});
-  el.value=''; save(); zsynchronizuj(); renderQuestions(); toast('Pytanie zapisane');
-}
-function delQuestion(id){
-  if(!confirm('Usunąć pytanie?')) return;
-  DB.questions=DB.questions.filter(q=>q.id!==id); save(); zsynchronizuj(); renderQuestions();
-}
-function renderQuestions(){
-  const box=document.getElementById('qList');
-  if(!box) return;
-  const lista=DB.questions.slice().reverse();
-  if(!lista.length){ box.innerHTML='<div class="empty">Brak pytań.</div>'; return; }
-  box.innerHTML=lista.map(q=>
-    '<div class="qitem'+(q.answer?' odp':'')+'">'+
-      '<div class="qhdr"><span class="qd">'+plDate(q.date)+'</span>'+
-      '<span class="qs">'+(q.answer?'odpowiedziane':'czeka')+'</span>'+
-      '<button class="sx" onclick="delQuestion(\''+q.id+'\')">×</button></div>'+
-      '<div class="qt">'+esc(q.text)+'</div>'+
-      (q.answer?'<div class="qa">'+esc(q.answer)+'</div>':'')+
-    '</div>').join('');
-}
 
 /* ============================================================
    LOG BÓLU
@@ -6081,6 +5858,25 @@ function renderReport(){
 
   h += raportDnia();
 
+  /* NAJŚWIEŻSZY RAPORT SESJI — na górze zakładki, gdzie go szukasz.
+
+     Do tej pory zakładka Raport zaczynała się od pola `DB.raport`, czyli
+     od mojego tekstu wysłanego kiedyś na serwer. Aplikacja pisze własny
+     raport po każdym treningu, ale pokazywała go RAZ, zaraz po zakończeniu
+     sesji — potem trzeba go było szukać w historii. Efekt: przez trzy tygodnie
+     w zakładce „Raport" wisiał mój raport z 5 sierpnia i wyglądał jak
+     najnowsza rzecz, jaką aplikacja ma do powiedzenia. */
+  const ostSesja = DB.workouts.length ? DB.workouts[DB.workouts.length - 1] : null;
+  if(ostSesja){
+    const ile = Math.round((new Date(today()+'T00:00:00') -
+                            new Date(ostSesja.date+'T00:00:00')) / 864e5);
+    const kiedy = ile <= 0 ? 'dzisiaj' : ile === 1 ? 'wczoraj' : ile + ' dni temu';
+    h += '<h2>Ostatni trening</h2>' +
+      '<div class="tip"><b>' + esc(ostSesja.day) + ' — ' + esc(dayName2(ostSesja.day)) + '</b>' +
+      ' · ' + esc(plDate(ostSesja.date)) + ' · ' + kiedy + '</div>' +
+      '<div class="card">' + bezpieczneHtml('raportSesji', () => raportSesji(ostSesja, {bezMapy: true})) + '</div>';
+  }
+
   if(DB.raport){
     /* Raport potrafi mieć cztery tysiące znaków. Cały naraz to ściana, przez
        którą przewija się do końca i nie czyta nic — a najważniejsze zdania
@@ -6235,14 +6031,6 @@ function renderData(){
     '<div class="kv"><span class="k">Dni</span><span class="v">'+ORDER.join(', ')+'</span></div>'+
     '<div class="kv"><span class="k">Ćwiczeń w bibliotece</span><span class="v">'+Object.keys(LIB).length+'</span></div>'+
     '<div class="kv"><span class="k">Regionów</span><span class="v">'+Object.keys(REG).length+'</span></div>';
-  const wy = DB.settings.wyjazd || {};
-  document.getElementById('wyjOd').value = wy.od || '';
-  document.getElementById('wyjDo').value = wy.do || '';
-  document.getElementById('wyjStan').innerHTML = trybWyjazdowy()
-    ? '<div class="tip warn"><b>Tryb wyjazdowy aktywny</b> — plan idzie z masy własnej.</div>'
-    : (wy.od ? '<div class="note">Zaplanowany od '+plDate(wy.od)+
-        (wy.do?' do '+plDate(wy.do):'')+'.</div>'
-             : '<div class="note">Wyłączony.</div>');
   document.getElementById('setStart').value=DB.settings.start;
   document.getElementById('setGryf').value = DB.settings.gryf || '';
   document.getElementById('setRest').value=DB.settings.rest;
@@ -6264,24 +6052,6 @@ function renderData(){
     '<label class="skrow"><span>'+esc(n)+'</span>'+
     '<input type="checkbox" '+(isSkipped(n)?'checked':'')+' onchange="toggleSkip(\''+esc(n).replace(/'/g,"\\'")+'\');renderData()"></label>'
   ).join('');
-}
-function zapiszWyjazd(){
-  const od = document.getElementById('wyjOd').value;
-  const doo = document.getElementById('wyjDo').value;
-  if(!od && !doo){ toast('Podaj chociaż jedną datę'); return; }
-  if(od && doo && doo < od){ toast('Data „do" jest przed „od"'); return; }
-  DB.settings.wyjazd = {od: od || null, do: doo || null};
-  /* Plan ułożony pod siłownię przestaje pasować — liczymy od nowa,
-     ale planu, który przejrzałem, nie ruszamy bez pytania. */
-  if(!(DB.nastepny && DB.nastepny.sprawdzony)) DB.nastepny = planNastepnego();
-  save(); zsynchronizuj(); renderSub();
-  toast(trybWyjazdowy() ? 'Tryb wyjazdowy włączony' : 'Zapisane — włączy się ' + plDate(od));
-}
-function wylaczWyjazd(){
-  DB.settings.wyjazd = null;
-  if(!(DB.nastepny && DB.nastepny.sprawdzony)) DB.nastepny = planNastepnego();
-  save(); zsynchronizuj(); renderSub();
-  toast('Wróciliśmy na siłownię');
 }
 
 function saveSettings(){
