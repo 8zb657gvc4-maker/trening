@@ -230,6 +230,41 @@ h2:first-child{margin-top:0}
   border:1px solid var(--line);color:var(--txt);font-size:19px;font-weight:800}
 .stp.pusty .val{color:var(--dim)}
 
+
+/* ============================================================
+   KARTA DNIA — jedyna rzecz, po którą naprawdę otwierasz aplikację
+
+   Do tej pory „zacznij trening" było jednym z kilkunastu elementów
+   na ekranie. Teraz jest kaflem na pół ekranu, z sylwetką w tle
+   i jednym przyciskiem.
+
+   Tłem jest TWOJA mapa mięśni pokolorowana świeżością, nie zdjęcie
+   z internetu. Powody są trzy: zdjęcie waży kilobajty w pliku, który
+   ma działać bez zasięgu; pokazuje cudze ciało w aplikacji o Twoim;
+   i po dwudziestym razie jest tapetą. Sylwetka waży tyle co nic
+   i niesie informację — czerwone boli, zielone gotowe.
+   ============================================================ */
+.dzien{border-radius:20px;overflow:hidden;margin-bottom:10px;
+  border:1px solid var(--dzien-a);background:var(--card)}
+.dzien .gora{position:relative;height:168px;
+  background:linear-gradient(135deg,var(--dzien-t),transparent 68%)}
+.dzien .sylw{position:absolute;right:6px;top:-4px;height:176px;opacity:.92}
+.dzien .tresc{position:absolute;left:15px;top:14px;right:112px}
+.dzien .nazwa{font-size:25px;font-weight:800;letter-spacing:-1px;margin-top:3px;
+  line-height:1.1}
+.dzien .liczby{display:flex;gap:13px;margin-top:13px}
+.dzien .liczby b{display:block;font-size:19px;font-weight:800;line-height:1;
+  font-variant-numeric:tabular-nums}
+.dzien .liczby span{display:block;font-size:8.5px;color:var(--dim);
+  letter-spacing:.5px;margin-top:3px}
+.dzien .dol{padding:12px 13px 13px}
+.dzien .start{width:100%;background:var(--dzien-a);color:#05130a;border:0;
+  border-radius:14px;padding:15px;font-size:14px;font-weight:800;letter-spacing:.3px}
+
+/* Pasek tygodnia w segmentach — jeden na każdy dzień planu. */
+.segtyg{display:flex;gap:4px;margin-top:8px}
+.segtyg i{flex:1;height:6px;border-radius:3px;background:var(--line);display:block}
+
 /* Cztery liczby w rzędzie — nagłówek tygodnia. Wcześniej te same dane szły
    jako sześć wierszy „etykieta : wartość", czyli sześć linijek do przeczytania
    zamiast jednego spojrzenia. */
@@ -1387,7 +1422,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '49';
+const WERSJA = '50';
 const WERSJA_DATA = '2026-08-27';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2953,6 +2988,67 @@ function odradzamDzis(){
   return {pkt: g.pkt, powody: g.powody.map(x => x[1])};
 }
 
+
+/* Kolor akcentu zależy od tego, co dziś robisz. To nie jest ozdoba:
+   trzy palety znaczą trzy rodzaje pracy i po tygodniu rozpoznajesz dzień
+   po kolorze, zanim przeczytasz literę. */
+const BARWY_DNI = {
+  'góra-push': {a:'#3ddc84', t:'rgba(61,220,132,.13)'},
+  'góra-pull': {a:'#7c5cff', t:'rgba(124,92,255,.15)'},
+  'nogi':      {a:'#ff8a3d', t:'rgba(255,138,61,.15)'}
+};
+function barwaDnia(d){
+  const P = PLAN[d] || {};
+  if(P.grp === 'nogi') return BARWY_DNI['nogi'];
+  /* push i pull rozróżniamy po nazwie dnia, bo grupa jest wspólna */
+  return /pull/i.test(P.name || '') ? BARWY_DNI['góra-pull'] : BARWY_DNI['góra-push'];
+}
+
+/* Mała sylwetka do karty dnia — te same kolory świeżości co duża mapa,
+   ale bez podpisów i bez tyłu. Ma być tłem, nie diagramem. */
+function sylwetkaMini(){
+  const sw = swiezoscRegionow();
+  const f = (klucze) => {
+    const kolejnosc = ['swieze','schodzi','prawie','gotowe','nigdy'];
+    const stan = klucze.map(k => stopienSwiezosci(sw[k] == null ? 999 : sw[k]))
+      .sort((a,b) => kolejnosc.indexOf(a) - kolejnosc.indexOf(b))[0];
+    return {swieze:'#e5484d', schodzi:'#ff8a3d', prawie:'#ffc53d',
+            gotowe:'#3ddc84', nigdy:'#1c2836'}[stan];
+  };
+  return '<svg viewBox="0 0 130 200" class="sylw">'+
+    '<g stroke="#070b12" stroke-width="1.1">'+
+    '<ellipse cx="65" cy="20" rx="10" ry="12" fill="#22303f"/>'+
+    '<path d="M59 32 q6 4 12 0 l1 6 q-7 4 -14 0 z" fill="#22303f"/>'+
+    '<path d="M45 40 q20 -6 40 0 l-4 8 q-16 -5 -32 0 z" fill="'+f(['bark_przod'])+'"/>'+
+    '<path d="M45 41 q-14 3 -16 17 q-1 9 3 12 q6 -13 14 -19 z" fill="'+f(['bark_bok'])+'"/>'+
+    '<path d="M85 41 q14 3 16 17 q1 9 -3 12 q-6 -13 -14 -19 z" fill="'+f(['bark_bok'])+'"/>'+
+    '<path d="M46 50 q19 -5 38 0 q4 9 -1 14 q-18 6 -36 0 q-5 -5 -1 -14 z" '+
+      'fill="'+f(['klatka_gora','klatka_srodek','klatka_dol'])+'"/>'+
+    '<path d="M50 66 q15 5 30 0 q1 16 -3 24 q-12 5 -24 0 q-4 -8 -3 -24 z" '+
+      'fill="'+f(['brzuch','skosne','glebokie'])+'"/>'+
+    '<path d="M32 62 q-5 3 -5 12 q0 10 3 14 q5 -3 6 -12 q1 -9 -4 -14 z" '+
+      'fill="'+f(['biceps_dluga','biceps_krotka','ramienny'])+'"/>'+
+    '<path d="M98 62 q5 3 5 12 q0 10 -3 14 q-5 -3 -6 -12 q-1 -9 4 -14 z" '+
+      'fill="'+f(['triceps_dluga','triceps_bocz','triceps_przysr'])+'"/>'+
+    '<path d="M48 96 q8 4 14 0 q3 22 1 44 q-7 4 -13 0 q-4 -22 -2 -44 z" '+
+      'fill="'+f(['czworoglowe','udo_proste'])+'"/>'+
+    '<path d="M82 96 q-8 4 -14 0 q-3 22 -1 44 q7 4 13 0 q4 -22 2 -44 z" '+
+      'fill="'+f(['dwuglowe','dwuglowe_kol'])+'"/>'+
+    '<path d="M50 146 q-1 15 3 28 q5 3 8 0 q3 -14 1 -28 q-6 3 -12 0 z" '+
+      'fill="'+f(['lydki_stoj'])+'"/>'+
+    '<path d="M80 146 q1 15 -3 28 q-5 3 -8 0 q-3 -14 -1 -28 q6 3 12 0 z" '+
+      'fill="'+f(['lydki_sied'])+'"/>'+
+    '</g></svg>';
+}
+
+/* Ile z zaplanowanych dni tygodnia masz za sobą — segmenty zamiast liczby. */
+function pasekTygodnia(){
+  const w = weekNo();
+  const zrobione = new Set(DB.workouts.filter(x => inWeek(x.date, w)).map(x => x.day));
+  return '<div class="segtyg">'+ ORDER.map(d =>
+    '<i'+(zrobione.has(d) ? ' style="background:'+barwaDnia(d).a+'"' : '')+'></i>').join('') +'</div>';
+}
+
 function renderDzis(){
   const zrobiony = DB.workouts.find(w => w.date === today());
   const gp = planDoPokazania();
@@ -2989,20 +3085,43 @@ function renderDzis(){
       '<button class="btn ghost" style="flex:1" onclick="openSuggest()">Idę mimo to</button>'+
       '</div></div>';
 
+  /* KARTA DNIA. Trzy liczby zamiast zdania, bo o 18:00 pod szatnią czyta się
+     cyfry, nie prozę. Serie liczone z faktycznej fazy, czas z serii — trzy
+     minuty na serię plus osiem na rozgrzewkę to mój realny średni czas
+     z dotychczasowych sesji, nie liczba z sufitu. */
+  const b = barwaDnia(dzien);
   const ile = gp ? gp.cwiczenia.length : 0;
-  const stan = !maOdp ? '' : g.pkt>=85 ? ' ok' : g.pkt>=55 ? ' warn' : ' bad';
-  return '<div class="tip'+stan+'">'+
-    '<b style="font-size:16px">'+dzien+' — '+esc(dayName2(dzien))+'</b>'+
-    (gp ? '<span class="autor '+(gp.sprawdzony?'trener':'apka')+'" style="float:right">'+
-          (gp.sprawdzony?'TRENER':'APLIKACJA')+'</span>' : '')+
-    '<div class="hm" style="margin-top:4px">'+
-      (ile ? ile+' ćwiczeń' : 'plan policzy się przy starcie')+
-      (g.nieznana ? ' · <b>gotowość nieznana — wpisz dane niżej</b>'
-                  : ' · gotowość '+g.pkt+'/100')+
-      (gp && gp.zalegly ? ' · czeka od '+gp.zalegly+' dni' : '')+'</div>'+
-    '<div style="display:flex;gap:8px;margin-top:11px">'+
-    '<button class="btn" style="flex:2" onclick="openSuggest()">Zacznij trening</button>'+
-    '<button class="btn ghost" style="flex:1" onclick="openPick()">Inny dzień</button>'+
+  const serie = gp ? gp.cwiczenia.reduce((a, e) => a + ((e.sug && e.sug.sets) || 0), 0) : 0;
+  const minuty = serie ? Math.round((serie * 3 + 8) / 5) * 5 : 0;
+  const kropka = !maOdp ? 'var(--dim)'
+    : g.pkt >= 85 ? 'var(--acc)' : g.pkt >= 55 ? '#ffc53d' : '#e5484d';
+
+  return '<div class="dzien" style="--dzien-a:'+b.a+';--dzien-t:'+b.t+'">'+
+    '<div class="gora">'+ sylwetkaMini() +
+      '<div class="tresc">'+
+        '<div class="hm" style="letter-spacing:1.4px;font-size:9.5px">'+
+          'DZIEŃ '+dzien+
+          (gp && gp.zalegly ? ' · CZEKA '+gp.zalegly+' DNI' : '')+'</div>'+
+        '<div class="nazwa" style="color:'+b.a+'">'+esc(dayName2(dzien))+'</div>'+
+        '<div class="liczby">'+
+          '<div><b>'+(ile || '—')+'</b><span>ĆWICZEŃ</span></div>'+
+          '<div><b>'+(serie || '—')+'</b><span>SERII</span></div>'+
+          '<div><b>'+(minuty ? minuty : '—')+'</b><span>MINUT</span></div>'+
+        '</div>'+
+        pasekTygodnia()+
+      '</div>'+
+    '</div>'+
+    '<div class="dol">'+
+      '<div class="hm" style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+
+        '<i style="width:7px;height:7px;border-radius:50%;background:'+kropka+';flex:none"></i>'+
+        (g.nieznana ? '<b>Gotowość nieznana — wpisz dane poranne</b>'
+                    : 'Gotowość '+g.pkt+'/100')+
+        (gp ? '<span class="autor '+(gp.sprawdzony?'trener':'apka')+'" '+
+              'style="margin-left:auto">'+(gp.sprawdzony?'TRENER':'APLIKACJA')+'</span>' : '')+
+      '</div>'+
+      '<button class="start" onclick="openSuggest()">ROZPOCZNIJ TRENING</button>'+
+      '<button class="btn ghost sm" style="width:100%;margin-top:7px" '+
+        'onclick="openPick()">Wolę dziś inny dzień</button>'+
     '</div></div>';
 }
 
