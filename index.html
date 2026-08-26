@@ -149,6 +149,13 @@ h2:first-child{margin-top:0}
 
 .btn{background:var(--acc);color:#04101f;font-weight:750;padding:13px;
   border-radius:11px;width:100%;font-size:15px}
+
+/* Pole tekstowe OBOK przycisku. Bez tego przycisk zabierał całą szerokość
+   (ma `width:100%`), a pole kurczyło się do paska kilku pikseli — dało się
+   w nie pisać, ale nie dało się zobaczyć, co się napisało. */
+.wiersz{display:flex;gap:7px;align-items:stretch}
+.wiersz input{flex:1 1 auto;min-width:0}
+.wiersz .btn{width:auto;flex:0 0 auto;padding-left:18px;padding-right:18px;white-space:nowrap}
 .btn:active{background:var(--acc2)}
 .btn.ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
 .btn.ok{background:var(--ok);color:#04211a}
@@ -1289,7 +1296,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '37';
+const WERSJA = '38';
 const WERSJA_DATA = '2026-08-25';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -5606,8 +5613,8 @@ function renderBialko(){
     (aiDostepne()
       ? '<div class="fld" style="margin-top:10px" onclick="event.stopPropagation()">'+
           '<label>Albo opisz, co zjadłeś</label>'+
-          '<div style="display:flex;gap:7px">'+
-            '<input type="text" id="jedzenieIn" placeholder="np. 200 g ryżu i pierś z kurczaka" style="flex:1">'+
+          '<div class="wiersz">'+
+            '<input type="text" id="jedzenieIn" placeholder="np. 200 g ryżu i pierś z kurczaka">'+
             '<button class="btn sm" onclick="policzJedzenie()">Policz</button>'+
           '</div>'+
           '<button class="btn ghost sm" style="margin-top:7px;width:100%" '+
@@ -5619,8 +5626,8 @@ function renderBialko(){
       : '')+
     '<div class="fld" style="margin-top:10px" onclick="event.stopPropagation()">'+
       '<label>Albo wpisz gramy</label>'+
-      '<div style="display:flex;gap:7px">'+
-        '<input type="number" inputmode="decimal" id="bialkoIn" placeholder="np. 28" style="flex:1">'+
+      '<div class="wiersz">'+
+        '<input type="number" inputmode="decimal" id="bialkoIn" placeholder="np. 28">'+
         '<button class="btn sm" onclick="dodajBialko(document.getElementById(\'bialkoIn\').value);'+
           'document.getElementById(\'bialkoIn\').value=\'\'">Dodaj</button>'+
       '</div></div>'+
