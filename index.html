@@ -150,6 +150,37 @@ h2:first-child{margin-top:0}
 .btn{background:var(--acc);color:#04101f;font-weight:750;padding:13px;
   border-radius:11px;width:100%;font-size:15px}
 
+
+/* ============================================================
+   KAFELKI — ekran główny na liczbach, nie na akapitach
+
+   Aplikacja obrosła w prozę: każdy kafelek tłumaczył sam siebie zdaniem albo
+   dwoma, bo każdy z osobna wydawał się uzasadniony. Razem dało to ścianę,
+   przez którą trzeba przewinąć do rzeczy, po którą się otworzyło telefon.
+
+   Zasada nowego układu: na wierzchu LICZBA i kolor, wyjaśnienie pod dotknięciem.
+   Nie usuwam wyjaśnień — one były potrzebne i nadal są. Przenoszę je o jedno
+   dotknięcie dalej.
+   ============================================================ */
+.krata{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px}
+.kafel2{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:12px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.kafel2 .etyk{font-size:10px;color:var(--dim);letter-spacing:.6px;margin-top:2px}
+.pierscien{width:78px;height:78px;display:block;margin:0 auto}
+
+.liczby{display:flex;gap:16px;margin-top:9px;flex-wrap:wrap}
+.liczby>div{min-width:46px}
+.liczby b{display:block;font-size:20px;font-weight:800;line-height:1.1}
+.liczby span{font-size:9px;color:var(--dim);letter-spacing:.4px}
+
+.slupki{display:flex;gap:4px;align-items:flex-end;height:44px}
+.slupki i{flex:1;border-radius:3px;display:block}
+
+.nast{display:flex;gap:7px;margin-top:9px}
+.nast>div{flex:1;background:var(--card2);border-radius:10px;padding:9px;text-align:center}
+.nast b{display:block;font-size:17px;font-weight:800}
+.nast span{font-size:9px;color:var(--dim)}
+
 /* Pole tekstowe OBOK przycisku. Bez tego przycisk zabierał całą szerokość
    (ma `width:100%`), a pole kurczyło się do paska kilku pikseli — dało się
    w nie pisać, ale nie dało się zobaczyć, co się napisało. */
@@ -1296,7 +1327,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '38';
+const WERSJA = '40';
 const WERSJA_DATA = '2026-08-25';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2939,9 +2970,14 @@ function renderPrzeloz(){
 function renderBraki(){
   const b = brakiDnia();
   if(!b.length) return '';
-  return '<div class="tip warn"><b>Brakuje danych z dziś: '+esc(b.join(', '))+'</b>'+
-    '<div class="note" style="margin-top:4px">Uzupełnij, zanim poprosisz mnie o raport. '+
-    'Inaczej ocenię dzień na niepełnych liczbach, a Ty dopiszesz je po fakcie.</div></div>';
+  /* Było na to zdanie tłumaczące, po co uzupełniać. Zdanie było prawdziwe
+     i po dwudziestu wyświetleniach zupełnie niewidoczne — a zajmowało dwa
+     wiersze na ekranie, który ma powiedzieć, co robić teraz. Zostaje sama
+     lista braków i przycisk, który prowadzi tam, gdzie się je wpisuje. */
+  return '<div class="tip warn" onclick="go(\'daily\')" style="cursor:pointer;'+
+    '-webkit-tap-highlight-color:transparent">'+
+    '<b>Brakuje z dziś: '+esc(b.join(', '))+'</b>'+
+    '<span style="float:right;opacity:.6">›</span></div>';
 }
 
 let PORANNE_ROZW = false;
@@ -3757,6 +3793,98 @@ function renderWeekStrip(){
   document.getElementById('weekStrip').innerHTML=h;
 }
 
+
+/* ---- KAFELKI EKRANU GŁÓWNEGO ------------------------------------------ */
+function pierscien(wart, maks, kolor, dol){
+  const proc = maks > 0 ? Math.max(0, Math.min(1, wart / maks)) : 0;
+  const obw = 2 * Math.PI * 40;
+  return '<svg viewBox="0 0 100 100" class="pierscien">'+
+    '<circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" stroke-width="9"/>'+
+    '<circle cx="50" cy="50" r="40" fill="none" stroke="'+kolor+'" stroke-width="9" '+
+      'stroke-dasharray="'+(proc*obw).toFixed(1)+' '+obw.toFixed(1)+'" '+
+      'stroke-linecap="round" transform="rotate(-90 50 50)"/>'+
+    '<text x="50" y="48" text-anchor="middle" font-size="25" font-weight="800" '+
+      'fill="var(--txt)">'+esc(String(wart))+'</text>'+
+    '<text x="50" y="63" text-anchor="middle" font-size="10" fill="var(--dim)">'+esc(dol)+'</text>'+
+    '</svg>';
+}
+
+function kafelGotowosc(){
+  const g = gotowosc();
+  const dzien = (DB.nastepny && DB.nastepny.data === today() && DB.nastepny.dzien) || null;
+  const pkt = g.nieznana ? null : (dzien ? gotowoscDnia(dzien, g) : g.pkt);
+  const kolor = pkt == null ? 'var(--dim)' : pkt >= 85 ? 'var(--ok)' : pkt >= 55 ? 'var(--warn)' : 'var(--bad)';
+  return '<div class="kafel2" onclick="przelaczPoranne()">'+
+    (pkt == null
+      ? '<div style="height:78px;display:flex;align-items:center;justify-content:center;'+
+        'font-size:13px;color:var(--dim);padding:0 6px">wpisz dane<br>z rana</div>'
+      : pierscien(pkt, 100, kolor, '/100'))+
+    '<div class="etyk">GOTOWOŚĆ</div></div>';
+}
+
+function kafelBialka(){
+  const c = celBialka(), dzis = bialkoDnia();
+  const kolor = dzis >= c.min ? 'var(--ok)' : dzis >= c.min*0.6 ? 'var(--warn)' : 'var(--acc)';
+  return '<div class="kafel2" onclick="przelaczBialko()">'+
+    pierscien(dzis, c.min, kolor, '/'+c.min+' g')+
+    '<div class="etyk">BIAŁKO</div></div>';
+}
+
+/* Pokrycie jako słupki: jeden słupek na region, wysokość to stosunek do normy.
+   Czerwony znaczy pod normą. Liczby są w Raporcie — tutaj chodzi o to, żeby
+   jednym spojrzeniem wiedzieć, czy coś stoi. */
+function kafelPokrycia(){
+  const cov = regionSets(14);
+  const klucze = Object.keys(REG);
+  const braki = [];
+  const slupki = klucze.map(k => {
+    const R = REG[k], v = cov[k] || 0;
+    const cel = R.min || R.max || 1;
+    const h = Math.max(6, Math.min(100, Math.round(v / cel * 70)));
+    let kolor = 'var(--ok)';
+    if(R.min && v < R.min){ kolor = 'var(--bad)'; braki.push(R.n); }
+    else if(R.max && v > R.max) kolor = '#b98cff';
+    return '<i style="height:'+h+'%;background:'+kolor+'"></i>';
+  }).join('');
+
+  return '<div class="tip" onclick="go(\'report\')" style="cursor:pointer;'+
+    '-webkit-tap-highlight-color:transparent">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+      '<div class="etyk" style="margin:0">POKRYCIE · 14 DNI</div>'+
+      '<div style="font-size:11px;font-weight:700;color:'+(braki.length?'var(--bad)':'var(--ok)')+'">'+
+        (braki.length ? braki.length+' pod normą' : 'wszystko w normie')+'</div>'+
+    '</div>'+
+    '<div class="slupki">'+slupki+'</div>'+
+    (braki.length ? '<div class="hm" style="margin-top:7px">'+esc(braki.slice(0,3).join(' · '))+
+      (braki.length>3 ? ' · +'+(braki.length-3) : '')+'</div>' : '')+
+    '</div>';
+}
+
+/* Iskierka głównego boju — jedna linia zamiast akapitu o progresji. */
+function kafelBoju(){
+  const boje = ORDER.map(d => (PLAN[d].slots || []).filter(x => x.fixed).map(x => x.fixed)).flat();
+  let naj = null;
+  boje.forEach(n => {
+    const h = historia(n);
+    if(h.length >= 2 && (!naj || h.length > naj.h.length)) naj = {n, h};
+  });
+  if(!naj) return '';
+  const pkt = naj.h.slice().reverse().map(x => ({v: e1rm(bestSet(x.sets, naj.n), naj.n), d: x.date}));
+  const od = pkt[0].v, doo = pkt[pkt.length-1].v;
+  const zm = od > 0 ? Math.round((doo/od - 1) * 100) : 0;
+  return '<div class="tip" onclick="openHist(\''+esc(naj.n)+'\')" style="cursor:pointer;'+
+    '-webkit-tap-highlight-color:transparent">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+      '<div class="etyk" style="margin:0">'+esc(naj.n.toUpperCase())+' · 1RM</div>'+
+      '<div style="font-size:12px;font-weight:700;color:'+(zm>=0?'var(--ok)':'var(--bad)')+'">'+
+        (zm>=0?'+':'')+zm+'%</div>'+
+    '</div>'+
+    sparkline(pkt, '#5eb0ff')+
+    '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim)">'+
+      '<span>'+fmtKg(od)+' kg</span><span>'+fmtKg(doo)+' kg</span></div>'+
+    '</div>';
+}
+
 function renderHub(){
   const w=weekNo(), p=phaseOf(tydzienPlanu());
   renderWeekStrip();
@@ -3887,8 +4015,18 @@ function renderHub(){
     /* Kolejność jest teraz według pilności, nie według historii dopisywania:
        najpierw to, co robisz teraz, potem to, czego aplikacja od Ciebie chce,
        potem kontekst, na końcu sprawy techniczne. */
-    renderZapis() + renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume + renderDzis() + renderPoranne() + renderBraki() + coach +
-    planBox + renderBialko() + renderKolejne() + odpBox + czekaBox + renderPrzeloz() + syncBox;
+    /* Najpierw to, co robisz teraz. Potem dwa pierścienie — gotowość i białko,
+       jedno spojrzenie zamiast dwóch akapitów. Potem plan, potem obraz tygodnia.
+       Proza (poranne pytania, braki danych, uwagi) siedzi pod dotknięciem
+       kafelków albo niżej, gdzie nie zasłania rzeczy pilnych. */
+    renderZapis() + renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume +
+    renderDzis() +
+    '<div class="krata">' + kafelGotowosc() + kafelBialka() + '</div>' +
+    planBox + bezpieczneHtml('kafelPokrycia', kafelPokrycia) +
+    bezpieczneHtml('kafelBoju', kafelBoju) +
+    renderKolejne() +
+    (PORANNE_ROZW ? renderPoranne() : '') + (BIALKO_ROZW ? renderBialko() : '') +
+    renderBraki() + coach + odpBox + czekaBox + renderPrzeloz() + syncBox;
 }
 
 /* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
@@ -5381,10 +5519,24 @@ async function aiJedzenie(opis, zdjecieBase64){
    Model NIE liczy korekty. Dostaje gotowy wynik z `korektaWSesji` i ma
    powiedzieć to po ludzku. Gdy nie odpowie, zostaje zdanie z silnika. */
 const AI_TRENER = 'Jesteś trenerem siłowym. Dostajesz FAKTY z trwającego treningu ' +
-  'i gotową decyzję silnika aplikacji. Twoim zadaniem jest powiedzieć to jednym, ' +
-  'najwyżej dwoma zdaniami po polsku, tak jak trener na sali. ' +
-  'NIE zmieniaj liczb, nie podawaj innych ciężarów niż te w decyzji, nie dodawaj ' +
-  'zaleceń medycznych. Bez emotikon. Bez zwrotów typu "pamiętaj, żeby".';
+  'i gotową decyzję silnika aplikacji. Powiedz to jednym, najwyżej dwoma zdaniami ' +
+  'po polsku, tak jak trener na sali.\n' +
+  'ZASADY BEZWZGLĘDNE:\n' +
+  '1. Wolno Ci wymienić WYŁĄCZNIE ćwiczenia z pola "zmiany". Żadnego innego ' +
+  'ćwiczenia nie wolno Ci nazwać ani powiedzieć, co z nim zrobić.\n' +
+  '2. Ćwiczenie z pola "nie_ruszamy" jest już zrobione i jego liczby są zamknięte. ' +
+  'Możesz je wspomnieć jako FAKT z przeszłości, ale NIE WOLNO Ci mówić, ile ' +
+  'powtórzeń albo kilogramów w nim zrobić.\n' +
+  '3. Nie zmieniaj żadnej liczby i nie dodawaj własnych.\n' +
+  'Bez emotikon. Bez zwrotów typu "pamiętaj, żeby".';
+
+/* Komentarz kosztuje zapytanie do modelu, a `renderSession` odpala się po każdej
+   serii i po każdym dotknięciu pola. Pierwszego dnia dało to TRZYDZIEŚCI zapytań
+   w jednej sesji, wszystkie o to samo — widać to było dopiero w logu, bo na
+   ekranie zmieniało się tylko sformułowanie. Pytamy raz na daną korektę. */
+function podpisKorekty(k){
+  return k.kierunek + '|' + k.cwiczenia.map(z => z.slot + ':' + z.na).join(',');
+}
 
 /* Przycisk „sprawdź połączenie" — jedno tanie zapytanie, żeby dało się
    odróżnić zły token od braku sekretu i od padniętego dostawcy. */
@@ -5410,18 +5562,61 @@ async function testAI(){
 async function aiKomentarzSesji(){
   const k = korektaWSesji(SES);
   if(!k || !aiDostepne()) return null;
+
+  const podpis = podpisKorekty(k);
+  if(SES.aiPodpis === podpis) return SES.aiKomentarz || null;
+  SES.aiPodpis = podpis;        /* blokujemy OD RAZU — dwa przerysowania w tej
+                                   samej chwili inaczej wyślą dwa pytania */
+  SES.aiKomentarz = null;
+
+  const zrobione = SES.exercises
+    .filter(e => (e.sets || []).filter(x => !x.wu).length > 0)
+    .map(e => e.name);
   const fakty = {
     dzien: SES.day, faza: (PHASES[phaseOf(SES.tygPlanu || tydzienPlanu(SES.date))] || {}).n,
     powod: k.powod, kierunek: k.kierunek,
-    zmiany: k.cwiczenia.map(z => z.name + ' ' + z.z + ' → ' + z.na + ' kg')
+    zmiany: k.cwiczenia.map(z => z.name + ' ' + z.z + ' → ' + z.na + ' kg'),
+    nie_ruszamy: zrobione
   };
   try {
     const odp = await aiZapytaj(
       [{role: 'system', content: AI_TRENER},
        {role: 'user', content: JSON.stringify(fakty)}], {max_tokens: 160, temperature: 0.4});
-    aiZapisz({co: 'sesja', pytanie: k.powod, odpowiedz: (odp.tresc || '').slice(0, 250)});
-    return (odp.tresc || '').trim() || null;
-  } catch(e){ return null; }
+    const zdanie = (odp.tresc || '').trim();
+
+    /* FILTR. Instrukcja to prośba, nie gwarancja — model i tak pisał
+       „idź na 8 powtórzeń w przysiadzie", choć silnik głównego boju nie rusza.
+       Jeśli odpowiedź każe cokolwiek ZROBIĆ z ćwiczeniem spoza decyzji,
+       wyrzucamy ją i zostaje zdanie z silnika. Lepiej suchy fakt niż ładne
+       polecenie, którego nikt nie policzył. */
+    /* Szukamy RDZENIA, nie całej nazwy. Model pisze „w przysiadzie ze sztangą",
+       a ćwiczenie nazywa się „Przysiad ze sztangą" — proste porównanie tekstów
+       przepuszczało dokładnie ten przypadek, dla którego filtr powstał.
+       Polska odmiana zjada końcówki, więc bierzemy pierwsze sześć liter
+       pierwszego słowa. */
+    const rdzen = (n) => n.toLowerCase().split(/[ ,/]/)[0].slice(0, 6);
+    const wolno = k.cwiczenia.map(z => rdzen(z.name));
+    const rozkaz = /(idź|idz|zrób|zrob|wykonaj|celuj|podnieś|podnies|zwiększ|zwieksz|zmniejsz|dołóż|doloz|zejdź|zejdz|ustaw|dobij)/i;
+    const podejrzane = zrobione.filter(n =>
+      wolno.indexOf(rdzen(n)) < 0 &&
+      zdanie.toLowerCase().indexOf(rdzen(n)) >= 0 &&
+      rozkaz.test(zdanie));
+
+    aiZapisz({co: 'sesja', pytanie: k.powod, odpowiedz: zdanie.slice(0, 250),
+              odrzucone: podejrzane.length ? podejrzane : undefined});
+    if(podejrzane.length) return null;
+
+    SES.aiKomentarz = zdanie || null;
+    try { saveSes(); } catch(e){ /* zapis to wygoda, nie warunek */ }
+    return SES.aiKomentarz;
+  } catch(e){
+    /* Odblokowujemy podpis TYLKO wtedy, gdy nie udało się zapytać —
+       inaczej jeden błąd sieci zamykałby komentarz do końca sesji.
+       Ale nie wolno tego robić po nieudanym zapisie, bo wtedy każde
+       przerysowanie pytałoby model od nowa. */
+    SES.aiPodpis = null;
+    return null;
+  }
 }
 
 /* ============================================================
@@ -5618,8 +5813,12 @@ function renderBialko(){
             '<button class="btn sm" onclick="policzJedzenie()">Policz</button>'+
           '</div>'+
           '<button class="btn ghost sm" style="margin-top:7px;width:100%" '+
-            'onclick="document.getElementById(\'jedzenieFoto\').click()">Albo zrób zdjęcie talerza</button>'+
-          '<input type="file" id="jedzenieFoto" accept="image/*" capture="environment" '+
+            'onclick="document.getElementById(\'jedzenieFoto\').click()">Albo ze zdjęcia talerza</button>'+
+          /* BEZ `capture`. Na iPhonie ten atrybut znaczy „tylko aparat, teraz"
+             i wycina galerię — a posiłek zwykle fotografuje się przy stole,
+             a wpisuje pół godziny później. Bez niego iOS pokazuje normalny
+             wybór: zrób zdjęcie / wybierz z biblioteki / plik. */
+          '<input type="file" id="jedzenieFoto" accept="image/*" '+
             'style="display:none" onchange="policzJedzenieZdjecie(event)">'+
           '<div id="jedzenieWynik"></div>'+
         '</div>'
@@ -5662,6 +5861,10 @@ function renderDaily(){
   });
   const list=DB.daily.slice(-10).reverse();
   document.getElementById('dailyList').innerHTML = list.length ? list.map(d=>{
+    /* Wpis z samym samopoczuciem i zakwasami wyświetlał się jako „—", bo lista
+       pokazywała wyłącznie liczby z zegarka. Wyglądało to na pusty dzień do
+       skasowania — a to były odpowiedzi z porannych pytań, na których liczy
+       się gotowość. */
     const bits=[];
     if(d.sleep!=null) bits.push(d.sleep+' h snu');
     if(d.rhr!=null) bits.push('RHR '+d.rhr);
@@ -5671,6 +5874,15 @@ function renderDaily(){
       : Math.round(d.steps/1000)+'k kroków');
     if(d.bb!=null) bits.push('BB '+d.bb);
     if(d.weight!=null) bits.push(d.weight+' kg');
+    if(d.bialko) bits.push(d.bialko+' g białka');
+    if(d.samopoczucie!=null) bits.push('samopoczucie '+d.samopoczucie+'/5');
+    {
+      const z = d.zakwasy || {};
+      const opis = [z.nogi ? 'nogi '+z.nogi : '', z.gora ? 'góra '+z.gora : ''].filter(Boolean);
+      if(opis.length) bits.push('zakwasy: '+opis.join(', '));
+    }
+    if(d.upal) bits.push('upał '+d.upal);
+    if((DB.odpoczynek||[]).some(x => x.date === d.date)) bits.push('dzień wolny');
     return '<div class="hist"><div><div class="hd">'+plDate(d.date)+'</div>'+
       '<div class="hm">'+(bits.join(' · ')||'—')+(d.note?' · '+esc(d.note):'')+'</div></div>'+
       '<button class="sx" onclick="delDaily(\''+d.date+'\')">×</button></div>';
