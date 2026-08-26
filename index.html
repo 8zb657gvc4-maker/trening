@@ -10,10 +10,20 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>">
 <style>
+/* PALETA.
+   Tło zeszło głębiej, karty są półprzezroczyste z rozmyciem, a akcent
+   z niebieskiego zrobił się zielony. Zielony nie jest tu dekoracją: w tej
+   aplikacji od początku znaczy „w normie / zrobione", więc gdy jest też
+   kolorem przycisków, kolor przestaje kłócić się sam ze sobą.
+
+   Niebieski został jako `--info` przy rzeczach neutralnych, żeby wykresy
+   nie zlewały się z sygnałem „dobrze". */
 :root{
-  --bg:#0f1520; --card:#18202e; --card2:#1f2938; --line:#2a3648;
-  --txt:#e8edf5; --dim:#8b9bb4; --acc:#4a9eff; --acc2:#2d7de0;
-  --ok:#3ecf8e; --warn:#ffb340; --bad:#ff6b6b; --run:#b98cff;
+  --bg:#070b12; --card:rgba(19,28,40,.62); --card2:#131c28; --line:#1c2836;
+  --txt:#e6edf7; --dim:#5d6b80;
+  --acc:#3ddc84; --acc2:#2fb56b;
+  --ok:#3ddc84; --warn:#ffc53d; --bad:#e5484d; --run:#7c5cff;
+  --info:#4a9eff;
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
 *{box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -70,7 +80,7 @@ header{flex:0 0 auto;z-index:50;background:var(--bg);
 .hrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .htitle{font-size:17px;font-weight:700;letter-spacing:-.3px}
 .hsub{font-size:12px;color:var(--dim);margin-top:2px}
-.badge{background:var(--acc);color:#04101f;font-size:11px;font-weight:800;
+.badge{background:var(--acc);color:#04140a;font-size:11px;font-weight:800;
   padding:4px 9px;border-radius:20px;letter-spacing:.3px;flex-shrink:0}
 .back{background:var(--card2);border:1px solid var(--line);border-radius:9px;
   padding:7px 11px;font-size:13px;font-weight:650;flex-shrink:0}
@@ -80,20 +90,20 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:
 .view{display:none}.view.on{display:block}
 .sub{display:none}.sub.on{display:block}
 
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:14px;margin-bottom:11px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:14px;margin-bottom:10px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);
   margin:20px 0 9px;font-weight:700}
 h2:first-child{margin-top:0}
 
 /* --- HUB: trzy duze wejscia --- */
 .hub{background:var(--card);border:1px solid var(--line);border-radius:16px;
-  padding:17px;margin-bottom:11px;display:flex;align-items:center;gap:15px;
+  padding:11px 13px;margin-bottom:9px;display:flex;align-items:center;gap:11px;
   width:100%;text-align:left;transition:.12s}
 .hub:active{transform:scale(.98);border-color:var(--acc)}
-.hub .ic{width:46px;height:46px;border-radius:13px;flex-shrink:0;
+.hub .ic{width:34px;height:34px;border-radius:10px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;background:var(--card2)}
-.hub .ic svg{width:24px;height:24px;stroke:var(--acc);fill:none;stroke-width:2;
+.hub .ic svg{width:19px;height:19px;stroke:var(--acc);fill:none;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round}
 .hub.run .ic svg{stroke:var(--run)}
 .hub.sug .ic svg{stroke:var(--ok)}
@@ -159,7 +169,7 @@ h2:first-child{margin-top:0}
 .step input{border-radius:0;text-align:center;padding:11px 2px;height:44px;
   border-left:none;border-right:none;font-variant-numeric:tabular-nums}
 
-.btn{background:var(--acc);color:#04101f;font-weight:750;padding:13px;
+.btn{background:var(--acc);color:#04140a;font-weight:800;padding:13px;
   border-radius:11px;width:100%;font-size:15px}
 
 
@@ -202,7 +212,7 @@ h2:first-child{margin-top:0}
   border-radius:12px;padding:4px;margin:10px 0 14px}
 .segm button{flex:1;background:transparent;color:var(--dim);border:0;padding:9px 4px;
   border-radius:9px;font-size:12px;font-weight:700;letter-spacing:.2px}
-.segm button.on{background:var(--acc);color:#04101f}
+.segm button.on{background:var(--acc);color:#04140a}
 
 /* Cztery liczby w rzędzie — nagłówek tygodnia. Wcześniej te same dane szły
    jako sześć wierszy „etykieta : wartość", czyli sześć linijek do przeczytania
@@ -248,13 +258,18 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 /* --- TIMER --- */
 .tbar{flex:0 0 auto;position:relative;align-self:center;
   width:calc(100% - 24px);max-width:616px;margin:0 auto 9px;
-  background:var(--acc);color:#04101f;border-radius:13px;padding:11px 14px;
+  background:var(--acc);color:#04140a;border-radius:15px;padding:13px 15px;
   display:none;align-items:center;gap:12px;
   box-shadow:0 6px 24px rgba(0,0,0,.5)}
 .tbar.on{display:flex}
 .tbar.done{background:var(--ok)}
-.tv{font-size:25px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px;line-height:1}
-.tlab{font-size:10px;font-weight:800;opacity:.7;letter-spacing:.6px}
+/* Timer był paskiem z liczbą wielkości nagłówka. Przy tętnie 130 i wzroku
+   na sztandze liczy się to, co widać kątem oka — więc cyfry urosły, a etykieta
+   mówi, przy którym ćwiczeniu i do ilu liczymy. */
+.tv{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;
+  letter-spacing:-1.5px;line-height:1}
+.tlab{font-size:10px;font-weight:800;opacity:.72;letter-spacing:.6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tbtn{background:rgba(0,0,0,.18);padding:9px 12px;border-radius:9px;
   font-weight:800;font-size:13px;flex-shrink:0}
 .tprog{position:absolute;left:0;bottom:0;height:3px;background:rgba(0,0,0,.28);
@@ -271,7 +286,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .preset{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
 .preset button{background:var(--card2);border:1px solid var(--line);border-radius:11px;
   padding:14px 4px;font-weight:750;font-size:15px}
-.preset button.on{background:var(--acc);color:#04101f;border-color:var(--acc)}
+.preset button.on{background:var(--acc);color:#04140a;border-color:var(--acc)}
 
 .kv{display:flex;justify-content:space-between;padding:9px 0;
   border-bottom:1px solid var(--line);font-size:14px;gap:12px}
@@ -296,6 +311,17 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 
 .hist{display:flex;justify-content:space-between;align-items:center;
   padding:12px 0;border-bottom:1px solid var(--line);gap:10px}
+
+/* Wariant zwarty — Dziennik i „Ostatnie treningi". Dziesięć wpisów po dwa
+   wiersze każdy z odstępem 12 px to półtora ekranu na listę, po której
+   przewija się do rzeczy niżej. Ta sama treść w jednej linii mieści się
+   w jednej trzeciej. */
+.hist.zw{padding:7px 0;gap:8px}
+.hist.zw .hd{font-size:13px;display:inline}
+.hist.zw .hm{font-size:11px;margin-top:2px;line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist.zw .pill{padding:3px 7px;font-size:10px}
+.hist.zw .sx{width:30px;height:30px;font-size:16px}
 .hist:last-child{border-bottom:none}
 .hd{font-size:14px;font-weight:650}
 .hm{font-size:11.5px;color:var(--dim);margin-top:3px;line-height:1.4}
@@ -429,6 +455,11 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .lgnd i.low{background:var(--bad)}
 .lgnd i.over{background:var(--run)}
 .lgnd i.none{background:var(--line)}
+.lgnd i.swieze{background:#e5484d}
+.lgnd i.schodzi{background:#ff8a3d}
+.lgnd i.prawie{background:#ffc53d}
+.lgnd i.gotowe{background:var(--ok)}
+.lgnd i.nigdy{background:var(--line)}
 
 .skrow{display:flex;justify-content:space-between;align-items:center;gap:10px;
   padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
@@ -588,36 +619,6 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   <h2>Historia treningów</h2>
   <div class="note" style="margin-bottom:9px">Usunięty trening trafia do kosza w zakładce Dane i przez 30 dni da się go przywrócić.</div>
   <div class="card" id="histList"></div>
-
-  <h2>Ból i kontuzje</h2>
-  <div class="note" style="margin-bottom:9px">Notuj też drobne — wzorzec widać dopiero po kilku wpisach.</div>
-  <div class="card">
-    <div class="fld" style="margin-bottom:11px"><label>Data</label><input type="date" id="pDate"></div>
-    <div class="dayin">
-      <div class="fld"><label>Miejsce</label>
-        <input type="text" id="pMiejsce" list="miejscaBolu" placeholder="np. prawy bark">
-        <datalist id="miejscaBolu">
-          <option value="prawy bark"><option value="lewy bark">
-          <option value="prawe kolano"><option value="lewe kolano">
-          <option value="dolny odcinek pleców"><option value="nadgarstek">
-          <option value="łokieć"><option value="biodro">
-          <option value="ścięgno Achillesa"><option value="goleń">
-        </datalist></div>
-      <div class="fld"><label>Nasilenie 1–10</label>
-        <input type="number" inputmode="numeric" min="1" max="10" id="pSila" placeholder="4"></div>
-    </div>
-    <div class="fld" style="margin-top:10px"><label>Kiedy</label>
-      <select id="pKiedy">
-        <option value="w trakcie">W trakcie treningu</option>
-        <option value="po">Po treningu</option>
-        <option value="ciągle">Ciągle, także w spoczynku</option>
-        <option value="rano">Rano po przebudzeniu</option>
-      </select></div>
-    <div class="fld" style="margin-top:10px"><label>Przy czym</label>
-      <input type="text" id="pNote" placeholder="np. przy przysiadzie, dolna faza"></div>
-    <button class="btn" style="margin-top:12px" onclick="addPain()">Zapisz</button>
-  </div>
-  <div class="card" id="painList"></div>
 
   <h2>Zdjęcia sylwetki</h2>
   <div class="note" style="margin-bottom:9px">To samo światło, pora i poza.</div>
@@ -1372,7 +1373,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '44';
+const WERSJA = '47';
 const WERSJA_DATA = '2026-08-26';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3603,30 +3604,58 @@ function suggestNext(naJutro){
   const wolny = d => !(!zalegly(d) && jestZaleglosc) &&
                      !yest.includes(PLAN[d].grp) && !bolace(PLAN[d].grp);
 
+  /* WARUNKI MAJĄ HIERARCHIĘ, a wcześniej jej nie miały.
+
+     Gdy wszystkie dni odpadły, poprzednia wersja brała po prostu pierwszy
+     z kolejki — czyli dokładnie ten, który przed chwilą odrzuciła. Filip
+     zrobił nogi w środę, w czwartek został sam dzień C i aplikacja wystawiła
+     mu nogi drugi dzień z rzędu, dopisując „uwaga, wczoraj też była ta sama
+     partia". Uwaga zamiast decyzji.
+
+     Teraz odpuszczamy warunki po kolei, od najmniej istotnego. Czterdzieści
+     osiem godzin na partię odpuszczamy JAKO OSTATNIE, bo to jedyny z tych
+     warunków, który dotyczy regeneracji, a nie porządku w planie. */
+  const PASY = [
+    {zalegle: true,  zakwasy: true,  doba: true},   /* wszystko */
+    {zalegle: false, zakwasy: true,  doba: true},   /* wolno wziąć świeży dzień */
+    {zalegle: false, zakwasy: false, doba: true},   /* wolno mimo zakwasów */
+    {zalegle: false, zakwasy: false, doba: false}   /* ostatecznie: mimo 48 h */
+  ];
   const pominiete = [];
-  let day = null;
-  for(const d of kolejka){
-    if(!zalegly(d) && jestZaleglosc){
-      const najstarszy = kolejka.filter(zalegly)
-        .sort((a,b) => dniOd(b) - dniOd(a))[0];
-      pominiete.push([d, 'robiłeś go '+dniOd(d)+' dni temu, a '+najstarszy+' czeka '+
-        (dniOd(najstarszy) >= 999 ? 'od początku planu' : dniOd(najstarszy)+' dni')]);
-      continue;
+  let day = null, luzniej = 0;
+
+  for(let nr = 0; nr < PASY.length && !day; nr++){
+    const pas = PASY[nr];
+    pominiete.length = 0;
+    for(const d of kolejka){
+      if(pas.zalegle && !zalegly(d) && jestZaleglosc){
+        const najstarszy = kolejka.filter(zalegly).sort((a,b) => dniOd(b) - dniOd(a))[0];
+        pominiete.push([d, 'robiłeś go '+dniOd(d)+' dni temu, a '+najstarszy+' czeka '+
+          (dniOd(najstarszy) >= 999 ? 'od początku planu' : dniOd(najstarszy)+' dni')]);
+        continue;
+      }
+      if(pas.doba && yest.includes(PLAN[d].grp)){
+        pominiete.push([d, 'wczoraj szła ta sama partia']); continue;
+      }
+      if(pas.zakwasy && bolace(PLAN[d].grp) && kolejka.some(x => x !== d && wolny(x))){
+        pominiete.push([d, 'mocne zakwasy w tej partii']); continue;
+      }
+      day = d; luzniej = nr; break;
     }
-    if(yest.includes(PLAN[d].grp)){ pominiete.push([d, 'wczoraj szła ta sama partia']); continue; }
-    /* przed zakwasami ustępujemy tylko wtedy, gdy jest dokąd */
-    if(bolace(PLAN[d].grp) && kolejka.some(x => x !== d && wolny(x))){
-      pominiete.push([d, 'mocne zakwasy w tej partii']); continue;
-    }
-    day = d; break;
   }
-  if(!day){ day = kolejka[0]; clash = true; }
+  if(!day){ day = kolejka[0]; luzniej = PASY.length - 1; }
+  clash = luzniej >= PASY.length - 1;   /* dzień po dniu ta sama partia */
   cand = kolejka;
 
   const why = [];
   if(odNowa && day === ORDER[0])
     why.push('Przerwa '+przerwaDni+' dni — rotacja startuje od początku, czyli od '+
       ORDER[0]+' ('+((PLAN[ORDER[0]]||{}).name||'')+'). Nie wracasz w środek cyklu.');
+  if(luzniej === 1)
+    why.push(day + ' był ' + dniOd(day) + ' dni temu, ale to jedyny dzień, ' +
+      'który nie kłóci się z regeneracją — reszta albo była wczoraj, albo boli.');
+  if(luzniej === 2)
+    why.push('Wszystkie partie mają zakwasy. Biorę tę, która ich ma najmniej.');
   why.push(day === nastepnyPoKolei
     ? 'Po kolei wypada '+day+' — '+((PLAN[day]||{}).name||'')+'.'
     : 'Po kolei wypadał '+nastepnyPoKolei+', ale '+
@@ -3928,7 +3957,7 @@ function kafelBoju(){
       '<div style="font-size:12px;font-weight:700;color:'+(zm>=0?'var(--ok)':'var(--bad)')+'">'+
         (zm>=0?'+':'')+zm+'%</div>'+
     '</div>'+
-    sparkline(pkt, '#5eb0ff')+
+    sparkline(pkt, 'var(--info)')+
     '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim)">'+
       '<span>'+fmtKg(od)+' kg</span><span>'+fmtKg(doo)+' kg</span></div>'+
     '</div>';
@@ -3980,13 +4009,12 @@ function renderHub(){
   const rec=DB.workouts.slice(-6).reverse();
   document.getElementById('recent').innerHTML = rec.length ? rec.map(x=>{
     const wuN=wuCount(x);
-    return '<div class="hist" style="cursor:pointer" onclick="openTrening(\''+x.id+'\')">'+
+    return '<div class="hist zw" style="cursor:pointer" onclick="openTrening(\''+x.id+'\')">'+
       '<div style="min-width:0">'+
-      '<div class="hd">'+x.day+' — '+esc(dayName2(x.day))+
+      '<div class="hd">'+x.day+' · '+esc(dayName2(x.day))+
         (x.flag?' <span class="prtag" style="background:var(--warn);color:#2a1a05">!</span>':'')+'</div>'+
-      '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii'+
-        (wuN?' (+'+wuN+' rozgrz.)':'')+' · '+Math.round(vol(x)).toLocaleString('pl')+' kg'+
-        (x.dur?' · '+x.dur+' min':'')+'</div></div>'+
+      '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii · '+
+        Math.round(vol(x)/1000*10)/10+'t'+(x.dur?' · '+x.dur+"'":'')+'</div></div>'+
       '<div class="pill">T'+weekNo(x.date)+'</div></div>';
   }).join('')
     : '<div class="empty">Nic tu jeszcze nie ma.<br>Zacznij od „Proponowany trening".</div>';
@@ -4709,7 +4737,7 @@ function addSet(i, rozgrzewka){
   saveSes();
   renderSession();
   /* po rozgrzewkowej przerwa jest krótsza — nie ma po czym odpoczywać 3 minut */
-  startTimer(rozgrzewka ? Math.min(60, DB.settings.rest) : przerwaDla(e.name));
+  startTimer(rozgrzewka ? Math.min(60, DB.settings.rest) : przerwaDla(e.name), e.name);
   sygnal(35);
 }
 /* wpisuje całą rampę rozgrzewkową jednym tapnięciem */
@@ -5127,7 +5155,7 @@ function renderHist(){
        (L.time?'Najdłuższa seria':'Szacowany 1RM')+
        (zm==null ? '<span class="hm">masa własna — patrz na powtórzenia</span>'
                  : '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+zm+'%</span>')+'</div>'+
-       sparkline(punkty,'#4a9eff')+
+       sparkline(punkty,'var(--info)')+
        '<div class="cfoot"><span>'+plDate(punkty[0].d)+'</span>'+
        '<span>'+plDate(punkty[punkty.length-1].d)+'</span></div></div>';
   }
@@ -5154,7 +5182,7 @@ function wrocBtn(){
    więc nie gubi się, gdy telefon uśpi kartę.
    ============================================================ */
 const PRESETS=[60,90,120,180];
-let TICK=null, T_END=0, T_LEN=90, AC=null, WL=null;
+let TICK=null, T_END=0, T_LEN=90, T_CW='', AC=null, WL=null;
 
 /* Jedno miejsce zamiast dziesięciu rozsypanych wywołań. Na Androidzie
    zawibruje, na iPhonie po prostu nic nie zrobi — ale wizualna odpowiedź
@@ -5185,8 +5213,9 @@ function przerwaDla(nazwa){
   return Math.min(DB.settings.rest || 90, 120);
 }
 
-function startTimer(sec){
+function startTimer(sec, cwiczenie){
   T_LEN=sec||DB.settings.rest||90; T_END=Date.now()+T_LEN*1000;
+  if(cwiczenie != null) T_CW = cwiczenie;
   try{ localStorage.setItem(TIMKEY, JSON.stringify({end:T_END, len:T_LEN})); }catch(e){}
   const bar=document.getElementById('tbar'); bar.classList.add('on'); bar.classList.remove('done');
   document.getElementById('tLab').textContent='PRZERWA · '+fmtTime(T_LEN);
@@ -6158,11 +6187,10 @@ function renderDaily(){
     }
     if(d.upal) bits.push('upał '+d.upal);
     if((DB.odpoczynek||[]).some(x => x.date === d.date)) bits.push('dzień wolny');
-    return '<div class="hist"><div><div class="hd">'+plDate(d.date)+'</div>'+
+    return '<div class="hist zw"><div style="min-width:0"><div class="hd">'+plDate(d.date)+'</div>'+
       '<div class="hm">'+(bits.join(' · ')||'—')+(d.note?' · '+esc(d.note):'')+'</div></div>'+
       '<button class="sx" onclick="delDaily(\''+d.date+'\')">×</button></div>';
   }).join('') : '<div class="empty">Brak wpisów.<br>Przepisz dziś dane z Garmina.</div>';
-  renderPain();
   renderFoto();
 }
 
@@ -6236,7 +6264,7 @@ function renderHistTreningow(){
   const rec = HIST_ROZW ? wszystkie : wszystkie.slice(0, ILE);
   el.innerHTML = rec.length ? rec.map(x=>{
     const wuN = wuCount(x);
-    return '<div class="hist"><div style="min-width:0;cursor:pointer" onclick="openTrening(\''+x.id+'\')">'+
+    return '<div class="hist zw"><div style="min-width:0;cursor:pointer" onclick="openTrening(\''+x.id+'\')">'+
       '<div class="hd">'+x.day+' — '+esc(dayName2(x.day))+
         (x.flag?' <span class="prtag" style="background:var(--warn);color:#2a1a05">!</span>':'')+'</div>'+
       '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii'+
@@ -6266,60 +6294,6 @@ const OBW=[['mKlatka','klatka','Klatka'],['mTalia','talia','Talia'],
    w polu `answer` przy najbliższym wczytaniu. Scalanie jest tak
    ustawione, że wersja z odpowiedzią wygrywa nad wersją bez.
    ============================================================ */
-
-/* ============================================================
-   LOG BÓLU
-   ============================================================ */
-function addPain(){
-  const date=document.getElementById('pDate').value || today();
-  const m=(document.getElementById('pMiejsce').value||'').trim();
-  if(!m){ toast('Podaj miejsce'); return; }
-  const sila=Math.min(10, Math.max(1, parseInt(document.getElementById('pSila').value)||1));
-  DB.pain.push({id:uid('p'), date, miejsce:m.toLowerCase(), sila,
-    kiedy:document.getElementById('pKiedy').value,
-    note:(document.getElementById('pNote').value||'').trim()||null});
-  DB.pain.sort((a,b)=>a.date.localeCompare(b.date));
-  document.getElementById('pMiejsce').value='';
-  document.getElementById('pSila').value='';
-  document.getElementById('pNote').value='';
-  save(); zsynchronizuj(); renderPain();
-  const ile=DB.pain.filter(p=>p.miejsce===m.toLowerCase() && p.date>=daysAgo(30)).length;
-  toast(ile>=3 ? 'Trzeci raz w tym miejscu w miesiącu' : 'Zapisano');
-}
-function delPain(id){
-  if(!confirm('Usunąć wpis?')) return;
-  DB.pain=DB.pain.filter(p=>p.id!==id); save(); renderPain();
-}
-/* miejsca, które wracają — to je warto pokazać, nie pojedyncze ukłucia */
-function boleceMiejsca(dni){
-  const od=daysAgo(dni||30), grp={};
-  DB.pain.filter(p=>p.date>=od).forEach(p=>{
-    (grp[p.miejsce]=grp[p.miejsce]||[]).push(p);
-  });
-  return Object.entries(grp).map(([m,l])=>({
-    miejsce:m, ile:l.length, max:Math.max(...l.map(x=>x.sila)),
-    ostatni:l[l.length-1].date
-  })).filter(x=>x.ile>=2).sort((a,b)=>b.ile-a.ile);
-}
-function renderPain(){
-  const el=document.getElementById('pDate');
-  if(el && !el.value) el.value=today();
-  const box=document.getElementById('painList');
-  if(!box) return;
-  const lista=DB.pain.slice().reverse().slice(0,12);
-  if(!lista.length){ box.innerHTML='<div class="empty">Brak wpisów. Dobrze.</div>'; return; }
-  const powt=boleceMiejsca(30);
-  let h='';
-  if(powt.length) h+='<div class="tip warn" style="margin-bottom:10px"><b>Wraca w tym samym miejscu:</b> '+
-    esc(powt.map(x=>x.miejsce+' ('+x.ile+'×, max '+x.max+'/10)').join(', '))+
-    '. Jeśli któreś utrzymuje się ponad tydzień albo rośnie — fizjoterapeuta, nie internet.</div>';
-  h+=lista.map(p=>
-    '<div class="hist"><div style="min-width:0">'+
-      '<div class="hd">'+esc(p.miejsce)+' <span class="pill '+(p.sila>=7?'hot':'')+'">'+p.sila+'/10</span></div>'+
-      '<div class="hm">'+plDate(p.date)+' · '+esc(p.kiedy)+(p.note?' · '+esc(p.note):'')+'</div></div>'+
-      '<button class="sx" onclick="delPain(\''+p.id+'\')">×</button></div>').join('');
-  box.innerHTML=h;
-}
 
 /* ============================================================
    ZDJĘCIA SYLWETKI
@@ -6390,6 +6364,52 @@ function bestIn(list,name){
    czerwony = poniżej minimum, zielony = w normie, fioletowy = nadmiar.
    Szary = nietknięte w oknie 14 dni.
    ============================================================ */
+
+/* ============================================================
+   ŚWIEŻOŚĆ PARTII — druga skala tej samej sylwetki
+
+   Mapa pokrycia odpowiada na pytanie „ile pracy dostała ta partia przez
+   dwa tygodnie". To dobre pytanie, ale nie jest to pytanie, które zadaje się
+   w drzwiach siłowni. Tam pytanie brzmi: „co jest jeszcze obolałe".
+
+   Świeżość liczymy w dniach od ostatniego BODŹCA, nie od ostatniego dnia
+   treningowego — bo pół serii wiosłowania w dniu push też liczy się dla
+   pleców. Bierzemy więc każde ćwiczenie, w którym region dostał co najmniej
+   pół serii, i patrzymy, kiedy to było.
+   ============================================================ */
+function swiezoscRegionow(){
+  const wynik = {};
+  Object.keys(REG).forEach(k => { wynik[k] = 999; });
+
+  (DB.workouts || []).forEach(w => {
+    const dni = Math.round((new Date(today()+'T00:00:00') -
+                            new Date(w.date+'T00:00:00')) / 864e5);
+    if(dni < 0) return;
+    (w.exercises || []).forEach(e => {
+      const L = LIB[e.name]; if(!L || !L.mus) return;
+      const serie = (e.sets || []).filter(x => !x.wu).length;
+      if(!serie) return;
+      Object.entries(L.mus).forEach(([r, udzial]) => {
+        if(!REG[r]) return;
+        if(serie * udzial < 0.5) return;      /* muśnięcie to nie bodziec */
+        if(dni < wynik[r]) wynik[r] = dni;
+      });
+    });
+  });
+  return wynik;
+}
+
+/* Cztery stopnie, bo tyle realnie znaczy coś przy planowaniu:
+   dziś/wczoraj boli, dwa dni schodzi, trzy–cztery prawie gotowe,
+   powyżej pięciu partia stoi i czeka. */
+function stopienSwiezosci(dni){
+  if(dni <= 1) return 'swieze';
+  if(dni <= 2) return 'schodzi';
+  if(dni <= 4) return 'prawie';
+  if(dni >= 999) return 'nigdy';
+  return 'gotowe';
+}
+
 function regStatus(k, cov){
   const R=REG[k]; if(!R) return 'none';
   const c=cov[k]||0;
@@ -6408,23 +6428,46 @@ function groupStatus(keys, cov){
   if(st.includes('over')) return 'over';
   return 'ok';
 }
-function bodyMap(cov){
-  const F=k=>'class="m '+(Array.isArray(k)?groupStatus(k,cov):regStatus(k,cov))+'"';
+function bodyMap(cov, tryb){
+  /* `tryb` = 'objetosc' (domyślnie) albo 'swiezosc'. Ta sama sylwetka,
+     inne pytanie — więc i inna skala kolorów. */
+  const sw = tryb === 'swiezosc' ? swiezoscRegionow() : null;
+  const stanRegionu = k => sw ? stopienSwiezosci(sw[k]) : regStatus(k, cov);
+  const stanGrupy = keys => {
+    if(!sw) return groupStatus(keys, cov);
+    /* dla kształtu obejmującego kilka regionów bierzemy NAJŚWIEŻSZY,
+       bo to on decyduje, czy partia jest jeszcze obolała */
+    const kolejnosc = ['swieze','schodzi','prawie','gotowe','nigdy'];
+    return keys.map(k => stopienSwiezosci(sw[k]))
+      .sort((a,b) => kolejnosc.indexOf(a) - kolejnosc.indexOf(b))[0];
+  };
+  const F=k=>'class="m '+(Array.isArray(k)?stanGrupy(k):stanRegionu(k))+'"';
   const T=k=>{
     const keys=Array.isArray(k)?k:[k];
     const n=keys.map(x=>REG[x].n).join(' + ');
+    if(sw){
+      const d = Math.min(...keys.map(x => sw[x]));
+      return '<title>'+esc(n+': '+(d >= 999 ? 'nietknięte'
+        : d === 0 ? 'dzisiaj' : d === 1 ? 'wczoraj' : d+' dni temu'))+'</title>';
+    }
     const c=keys.reduce((a,x)=>a+(cov[x]||0),0);
     return '<title>'+esc(n+': '+fmtKg(c)+' serii')+'</title>';
   };
   const sh=(k,body)=>'<g '+F(k)+'>'+T(k)+body+'</g>';
 
   return '<svg viewBox="0 0 340 272" class="bmap" xmlns="http://www.w3.org/2000/svg">'+
-  '<style>.m path,.m rect,.m ellipse{stroke:#0f1520;stroke-width:1.2}'+
-  '.none path,.none rect,.none ellipse{fill:#2a3648}'+
-  '.low path,.low rect,.low ellipse{fill:#ff6b6b}'+
-  '.ok path,.ok rect,.ok ellipse{fill:#3ecf8e}'+
-  '.over path,.over rect,.over ellipse{fill:#b98cff}'+
-  '.hd{fill:#2a3648;stroke:#0f1520;stroke-width:1.2}'+
+  '<style>.m path,.m rect,.m ellipse{stroke:#070b12;stroke-width:1.2}'+
+  '.none path,.none rect,.none ellipse{fill:#1c2836}'+
+  '.low path,.low rect,.low ellipse{fill:#e5484d}'+
+  '.ok path,.ok rect,.ok ellipse{fill:#3ddc84}'+
+  '.over path,.over rect,.over ellipse{fill:#7c5cff}'+
+  /* skala świeżości */
+  '.swieze path,.swieze rect,.swieze ellipse{fill:#e5484d}'+
+  '.schodzi path,.schodzi rect,.schodzi ellipse{fill:#ff8a3d}'+
+  '.prawie path,.prawie rect,.prawie ellipse{fill:#ffc53d}'+
+  '.gotowe path,.gotowe rect,.gotowe ellipse{fill:#3ddc84}'+
+  '.nigdy path,.nigdy rect,.nigdy ellipse{fill:#1c2836}'+
+  '.hd{fill:#1c2836;stroke:#070b12;stroke-width:1.2}'+
   '.lb{fill:#8b9bb4;font-size:9px;font-weight:700;text-anchor:middle;letter-spacing:.6px}</style>'+
 
   /* ---------- PRZÓD ---------- */
@@ -6573,6 +6616,11 @@ function rozbicieGrup(cov){
   }).join('');
 }
 
+/* Którą skalę pokazuje sylwetka. Domyślnie świeżość — bo do niej sięga się
+   przed treningiem, a do objętości raz w tygodniu przy przeglądzie. */
+let MAPA_TRYB = 'swiezosc';
+function przelaczMape(t){ MAPA_TRYB = t; odswiezWidok(); }
+
 function renderCoverage(){
   const cov=regionSets(14);
   const low=[], over=[], none=[];
@@ -6583,14 +6631,39 @@ function renderCoverage(){
     else if(s==='over') over.push(REG[k].n+' ('+fmtKg(cov[k])+'/'+REG[k].max+')');
   });
 
-  let out='<h2>Mapa partii (14 dni)</h2>';
-  out+='<div class="card" style="padding:10px 8px 4px">'+bodyMap(cov)+
+  const swiezo = MAPA_TRYB === 'swiezosc';
+  let out='<h2>'+(swiezo ? 'Co jest jeszcze obolałe' : 'Mapa partii (14 dni)')+'</h2>'+
+    '<div class="segm">'+
+      '<button class="'+(swiezo?'on':'')+'" onclick="przelaczMape(\'swiezosc\')">Świeżość</button>'+
+      '<button class="'+(swiezo?'':'on')+'" onclick="przelaczMape(\'objetosc\')">Objętość</button>'+
+    '</div>';
+  out+='<div class="card" style="padding:10px 8px 4px">'+bodyMap(cov, MAPA_TRYB)+
     '<div class="lgnd">'+
-      '<span><i class="ok"></i>w normie</span>'+
-      '<span><i class="low"></i>za mało</span>'+
-      '<span><i class="over"></i>za dużo</span>'+
-      '<span><i class="none"></i>nietknięte</span>'+
+      (swiezo
+        ? '<span><i class="swieze"></i>dziś / wczoraj</span>'+
+          '<span><i class="schodzi"></i>2 dni</span>'+
+          '<span><i class="prawie"></i>3–4 dni</span>'+
+          '<span><i class="gotowe"></i>gotowe</span>'+
+          '<span><i class="nigdy"></i>nietknięte</span>'
+        : '<span><i class="ok"></i>w normie</span>'+
+          '<span><i class="low"></i>za mało</span>'+
+          '<span><i class="over"></i>za dużo</span>'+
+          '<span><i class="none"></i>nietknięte</span>')+
     '</div></div>';
+
+  if(swiezo){
+    /* W trybie świeżości zamiast listy braków — co jest gotowe do pracy.
+       To jest odpowiedź na pytanie, z którym się tu wchodzi. */
+    const sw = swiezoscRegionow();
+    const gotowe = Object.keys(REG).filter(k => sw[k] >= 3 && sw[k] < 999)
+      .sort((a,b) => sw[b] - sw[a]).slice(0, 5).map(k => REG[k].n + ' ('+sw[k]+' dni)');
+    const bolace = Object.keys(REG).filter(k => sw[k] <= 1)
+      .map(k => REG[k].n);
+    if(bolace.length) out+='<div class="tip warn"><b>Po wczorajszym:</b> '+
+      esc(bolace.slice(0,6).join(', '))+(bolace.length>6?' i '+(bolace.length-6)+' więcej':'')+'</div>';
+    if(gotowe.length) out+='<div class="tip ok"><b>Gotowe do pracy:</b> '+esc(gotowe.join(', '))+'</div>';
+    return out;
+  }
 
   if(none.length) out+='<div class="tip bad"><b>Zero serii w 14 dni:</b> '+esc(none.join(', '))+'</div>';
   if(low.length)  out+='<div class="tip warn"><b>Poniżej minimum:</b> '+esc(low.join(', '))+
@@ -6621,7 +6694,7 @@ function renderTrendy(){
     bloki+='<div class="card"><div class="chdr">'+esc(name)+
       (zm==null ? '<span class="hm">masa własna</span>'
                 : '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+zm+'%</span>')+'</div>'+
-      sparkline(pkt,'#4a9eff')+
+      sparkline(pkt,'var(--info)')+
       '<div class="cfoot"><span>'+fmtKg(pkt[0].v)+' kg</span>'+
       '<span>'+fmtKg(pkt[pkt.length-1].v)+' kg · szacowany 1RM</span></div></div>';
   });
