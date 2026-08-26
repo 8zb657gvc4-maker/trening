@@ -117,6 +117,18 @@ h2:first-child{margin-top:0}
 .exh{padding:13px 14px;display:flex;justify-content:space-between;
   align-items:flex-start;gap:10px;width:100%;background:none;text-align:left}
 .exn{font-weight:650;font-size:15px;line-height:1.25}
+
+/* Karta ćwiczenia mówiła dwoma zdaniami: „Cel: 3×8 RPE8 · Propozycja: 3 × 8
+   @ 50 kg" i „Ostatnio: 50×8 · 50×8 · 50×6". Przy sześciu ćwiczeniach to
+   dwanaście linijek prozy na ekranie, po którym przewija się kciukiem
+   w trakcie serii. Te same dane wchodzą teraz jako liczby. */
+.excyfry{display:flex;gap:14px;margin-top:5px;align-items:baseline}
+.excyfry .duza{font-size:17px;font-weight:800;line-height:1}
+.excyfry .mala{font-size:10px;color:var(--dim);letter-spacing:.3px}
+.exost{font-size:11px;color:var(--dim);margin-top:4px;font-family:ui-monospace,monospace}
+
+.postep{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:8px}
+.postep>i{display:block;height:100%;background:var(--ok);border-radius:2px}
 .extg{font-size:11.5px;color:var(--acc);margin-top:4px;font-weight:600}
 .exl{font-size:11.5px;color:var(--dim);margin-top:3px}
 .exc{flex-shrink:0;font-size:12px;color:var(--dim);text-align:right;padding-top:2px}
@@ -642,6 +654,10 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <div class="fld" style="margin-top:11px"><label>Waga gryfu (kg)</label>
       <input type="number" inputmode="decimal" step="0.5" id="setGryf" placeholder="20">
       <div class="note" style="margin-top:4px">Olimpijski 20, damski 15, łamany 7,5–10.</div></div>
+    <div class="fld" style="margin-top:11px"><label>Wzrost (cm)</label>
+      <input type="number" inputmode="numeric" id="setWzrost" placeholder="np. 178">
+      <div class="note" style="margin-top:4px">Bez wzrostu kalorie liczą się przybliżeniem
+        z masy ciała — różnica bywa rzędu 150 kcal.</div></div>
     <button class="btn ghost sm" style="margin-top:12px" onclick="saveSettings()">Zapisz ustawienia</button>
   </div>
   <h2>Model językowy</h2>
@@ -1327,8 +1343,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '40';
-const WERSJA_DATA = '2026-08-25';
+const WERSJA = '42';
+const WERSJA_DATA = '2026-08-26';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
@@ -3822,6 +3838,9 @@ function kafelGotowosc(){
     '<div class="etyk">GOTOWOŚĆ</div></div>';
 }
 
+/* Na kafelku zostaje BIAŁKO, nie kalorie. Kalorie da się nadrobić czymkolwiek,
+   białko nie — i to ono decyduje, czy praca z siłowni się przekłada. Komplet
+   makro jest o jedno dotknięcie dalej. */
 function kafelBialka(){
   const c = celBialka(), dzis = bialkoDnia();
   const kolor = dzis >= c.min ? 'var(--ok)' : dzis >= c.min*0.6 ? 'var(--warn)' : 'var(--acc)';
@@ -4353,8 +4372,15 @@ function renderKorekta(){
 function renderSession(){
   renderRozgrzewka();
   bezpiecznie('renderKorekta', renderKorekta);
-  document.getElementById('sesStat').textContent =
-    setCount(SES)+' serii · '+Math.round(vol(SES)).toLocaleString('pl')+' kg'+sesCzas();
+  /* Ile z zaplanowanych serii już zrobione — jedna liczba i pasek zamiast
+     domyślania się z listy, ile jeszcze zostało. */
+  const planowane = SES.exercises.reduce((a,e) => a + ((e.sug && e.sug.sets) || 3), 0);
+  const zrobioneSerie = setCount(SES);
+  document.getElementById('sesStat').innerHTML =
+    '<b style="color:var(--txt);font-size:13px">'+zrobioneSerie+' / '+planowane+'</b> serii · '+
+    Math.round(vol(SES)).toLocaleString('pl')+' kg'+esc(sesCzas())+
+    '<div class="postep"><i style="width:'+
+      Math.min(100, planowane ? Math.round(zrobioneSerie/planowane*100) : 0)+'%"></i></div>';
   const nEl=document.getElementById('sesNote');
   if(nEl && nEl.value!==(SES.note||'')) nEl.value=SES.note||'';
   const fEl=document.getElementById('flagBtn');
@@ -4366,11 +4392,23 @@ function renderSession(){
   document.getElementById('exList').innerHTML = SES.exercises.map((e,i)=>{
     const L=LIB[e.name]||{};
     const last=lastFor(e.name);
-    const lastTxt = last ? 'Ostatnio: '+last.sets.map(fmtSet).join(' · ')
-                         : 'Pierwszy raz — dobierz ciężar ostrożnie';
-    const sugTxt = e.sug&&e.sug.w!=null
-      ? ' · Propozycja: '+e.sug.sets+' × '+e.sug.r+(e.sug.w?' @ '+fmtKg(e.sug.w)+' kg':'') : '';
     const unit = L.time?'sek':'powt';
+    /* trzy liczby: serie, powtórzenia, kilogramy — reszta idzie do środka karty */
+    const cyfry = e.sug
+      ? '<div class="excyfry">'+
+          '<div><span class="duza">'+((e.sug.sets)||3)+'</span><span class="mala">×</span>'+
+            '<span class="duza">'+(e.sug.r||'')+'</span>'+
+            '<div class="mala">'+(L.time?'SEKUND':'POWT')+'</div></div>'+
+          (e.sug.w != null
+            ? '<div><span class="duza">'+(e.sug.w ? fmtKg(e.sug.w) : '—')+'</span>'+
+              '<div class="mala">'+(e.sug.w ? 'KG' : 'MASA WŁASNA')+'</div></div>'
+            : '<div><span class="duza" style="color:var(--warn)">?</span>'+
+              '<div class="mala">DOBIERZ</div></div>')+
+        '</div>'
+      : '<div class="extg">Cel: '+esc(e.target||'')+'</div>';
+    const ostatnio = last
+      ? '<div class="exost">'+esc(last.sets.map(fmtSet).join('  '))+'</div>'
+      : '<div class="exost" style="color:var(--warn)">pierwszy raz</div>';
 
     /* Czy w tej sesji bije rekord. Bez filtra daty — bieżąca sesja i tak
        nie jest jeszcze w DB.workouts, a filtr po dacie gubiłby wcześniejszy
@@ -4393,8 +4431,7 @@ function renderSession(){
         '<div style="min-width:0"><div class="slab">'+esc(e.lab||'')+
           (bije?'<span class="prtag">REKORD</span>':'')+'</div>'+
         '<div class="exn">'+esc(e.name)+'</div>'+
-        '<div class="extg">Cel: '+esc(e.target)+esc(sugTxt)+'</div>'+
-        '<div class="exl">'+esc(lastTxt)+'</div></div>'+
+        cyfry + ostatnio + '</div>'+
         '<div class="exc">'+(robocze(e.sets).length
             ? '<b style="color:var(--ok)">'+robocze(e.sets).length+'</b> serii'+
               (e.sets.some(s=>s.wu)?'<br><span style="font-size:10px">+'+
@@ -5483,13 +5520,15 @@ async function aiZapytaj(wiadomosci, opcje){
    Model dostaje jedno zadanie i ma odpowiedzieć samym JSON-em. Nawet jeśli
    odpowie zdaniem dookoła, wyłuskujemy pierwszy nawias klamrowy — to tańsze
    niż walka o idealny format i odporniejsze na zmianę modelu. */
-const AI_JEDZENIE = 'Jesteś licznikiem białka. Dostajesz opis posiłku po polsku. ' +
-  'Odpowiadasz WYŁĄCZNIE obiektem JSON: {"opis":"krótki opis","bialko":liczba_gramów,' +
+const AI_JEDZENIE = 'Jesteś licznikiem makroskładników. Dostajesz opis posiłku po polsku. ' +
+  'Odpowiadasz WYŁĄCZNIE obiektem JSON: {"opis":"krótki opis","bialko":gramy,' +
+  '"wegle":gramy,"tluszcz":gramy,"kcal":kalorie,' +
   '"pewnosc":"wysoka|srednia|niska","uwaga":"tekst albo pusty"}. ' +
-  'Liczysz TYLKO białko, w gramach, jako liczbę całkowitą. ' +
-  'Gdy ilość nie jest podana, przyjmij typową porcję i ustaw pewnosc na "niska", ' +
-  'a w uwadze napisz, jaką porcję założyłeś. ' +
-  'Gdy opis nie jest jedzeniem, ustaw bialko na 0 i wyjaśnij to w uwadze.';
+  'Wszystkie liczby całkowite. Kalorie policz z makroskładników: 4 kcal na gram ' +
+  'białka i węglowodanów, 9 na gram tłuszczu. ' +
+  'Gdy ilość nie jest podana, przyjmij typową porcję, ustaw pewnosc na "niska" ' +
+  'i napisz w uwadze, jaką porcję założyłeś. ' +
+  'Gdy opis nie jest jedzeniem, wyzeruj wszystkie liczby i wyjaśnij to w uwadze.';
 
 function aiWyluskajJson(tekst){
   const t = String(tekst || '');
@@ -5512,6 +5551,14 @@ async function aiJedzenie(opis, zdjecieBase64){
             odpowiedz: (odp.tresc || '').slice(0, 200), bialko: wynik && wynik.bialko});
   if(!wynik || typeof wynik.bialko !== 'number')
     throw new Error('Model odpowiedział czymś, czego nie umiem odczytać. Wpisz gramy ręcznie.');
+
+  /* Model bywa nierówny w arytmetyce: potrafi podać makro i kalorie, które
+     się z nim nie zgadzają. Kalorie z makroskładników są policzalne, więc
+     nie ma powodu ufać jego wersji, gdy rozjeżdża się o więcej niż 15%. */
+  ['wegle','tluszcz'].forEach(k => { if(typeof wynik[k] !== 'number') wynik[k] = 0; });
+  const zMakro = wynik.bialko*4 + wynik.wegle*4 + wynik.tluszcz*9;
+  if(typeof wynik.kcal !== 'number' || !wynik.kcal ||
+     Math.abs(wynik.kcal - zMakro) > zMakro * 0.15) wynik.kcal = Math.round(zMakro);
   return wynik;
 }
 
@@ -5636,17 +5683,38 @@ async function aiKomentarzSesji(){
    treningu siłowym i lekkiej nadwyżce część pracy na siłowni się marnuje.
    ============================================================ */
 const BIALKO_G_NA_KG = [1.6, 2.2];
+const TLUSZCZ_G_NA_KG = [0.8, 1.1];
 
-/* Typowe porcje. Wartości zaokrąglone — to licznik, nie tabela żywieniowa. */
+/* Zapotrzebowanie liczymy wzorem Mifflina–St Jeora, gdy znamy wzrost, a bez
+   wzrostu mnożnikiem na kilogram. Różnica bywa rzędu 150 kcal i wolę, żeby
+   aplikacja mówiła wprost, którym sposobem liczy, niż udawała precyzję,
+   której nie ma. Wzrost wpisuje się raz w Danych. */
+function przemiana(){
+  const m = masaCiala();
+  const wzrost = (DB.settings || {}).wzrost;
+  const wiek = (DB.settings || {}).wiek || 21;
+  if(wzrost > 100){
+    const bmr = 10*m + 6.25*wzrost - 5*wiek + 5;      /* mężczyzna */
+    /* Mnożnik 1,45, nie 1,55. Cztery treningi w tygodniu to sporo, ale poza
+       siłownią jest siedzenie na wykładach — a zawyżony mnożnik daje nadwyżkę,
+       której nie widać na wadze dopóki nie jest za późno. Lepiej zaniżyć
+       i dołożyć, gdy waga stoi. */
+    return {kcal: Math.round(bmr * 1.45), sposob: 'Mifflin'};
+  }
+  return {kcal: Math.round(m * 35), sposob: 'przybliżenie z masy ciała'};
+}
+
+/* Typowe porcje. Wartości zaokrąglone — to licznik, nie tabela żywieniowa.
+   [białko, węglowodany, tłuszcz, kcal] */
 const BIALKOWE = [
-  {n:'Jajko',              g:6,  o:'jedno duże'},
-  {n:'Pierś z kurczaka',   g:31, o:'100 g po usmażeniu'},
-  {n:'Twaróg',             g:36, o:'200 g półtłustego'},
-  {n:'Skyr / jogurt grecki',g:17, o:'150 g'},
-  {n:'Odżywka białkowa',   g:24, o:'miarka 30 g'},
-  {n:'Mielone wołowe',     g:26, o:'100 g'},
-  {n:'Tuńczyk z puszki',   g:25, o:'jedna puszka odsączona'},
-  {n:'Ryż + warzywa',      g:5,  o:'porcja obiadowa — resztki z dania'}
+  {n:'Jajko',               b:6,  w:0,  t:5,  kcal:78,  o:'jedno duże'},
+  {n:'Pierś z kurczaka',    b:31, w:0,  t:4,  kcal:165, o:'100 g po usmażeniu'},
+  {n:'Twaróg',              b:36, w:7,  t:9,  kcal:250, o:'200 g półtłustego'},
+  {n:'Skyr / jogurt grecki',b:17, w:6,  t:1,  kcal:105, o:'150 g'},
+  {n:'Odżywka białkowa',    b:24, w:2,  t:2,  kcal:120, o:'miarka 30 g'},
+  {n:'Mielone wołowe',      b:26, w:0,  t:15, kcal:250, o:'100 g'},
+  {n:'Tuńczyk z puszki',    b:25, w:0,  t:1,  kcal:110, o:'puszka odsączona'},
+  {n:'Ryż (sucha miarka)',  b:7,  w:78, t:1,  kcal:360, o:'100 g przed ugotowaniem'}
 ];
 
 function celBialka(){
@@ -5656,26 +5724,71 @@ function celBialka(){
           masa: m};
 }
 
+/* Cele na dzień. Kalorie z nadwyżką 12% — odbudowa masy, nie rzeźba.
+   Tłuszcz ma dolną granicę, bo poniżej ~0,8 g/kg cierpią hormony i wchłanianie
+   witamin; węglowodany dostają resztę, bo to one napędzają trening siłowy. */
+function celeMakro(){
+  const m = masaCiala();
+  const p = przemiana();
+  /* Nadwyżka 10%. Przy odbudowie masy większa nie przyspiesza przyrostu
+     mięśni, tylko dokłada tłuszczu — tempo budowy ogranicza fizjologia,
+     nie talerz. */
+  const kcal = Math.round(p.kcal * 1.10);
+  const b = celBialka();
+  const t = {min: Math.round(m * TLUSZCZ_G_NA_KG[0]), max: Math.round(m * TLUSZCZ_G_NA_KG[1])};
+  /* Węglowodany liczymy od ŚRODKA zakresów białka i tłuszczu, nie od dolnych
+     granic. Od dolnych wychodziło 500 g węgli — arytmetycznie poprawnie,
+     praktycznie bez sensu, bo nikt nie je minimum białka i minimum tłuszczu
+     jednocześnie. */
+  const bSr = Math.round((b.min + b.max) / 2);
+  const tSr = Math.round((t.min + t.max) / 2);
+  const w = {min: Math.max(0, Math.round((kcal - bSr*4 - tSr*9) / 4))};
+  w.max = w.min;
+  return {kcal, b, t, w, masa: m, sposob: p.sposob};
+}
+
+const MAKRA = [
+  {k:'bialko',  n:'Białko',       skrot:'B', kcalG:4, kolor:'var(--acc)'},
+  {k:'wegle',   n:'Węglowodany',  skrot:'W', kcalG:4, kolor:'#b98cff'},
+  {k:'tluszcz', n:'Tłuszcze',     skrot:'T', kcalG:9, kolor:'var(--warn)'}
+];
+
 function bialkoDnia(data){
   const d = (DB.daily || []).find(x => x.date === (data || today()));
   return d && d.bialko != null ? d.bialko : 0;
 }
+function makroDnia(data){
+  const d = (DB.daily || []).find(x => x.date === (data || today())) || {};
+  return {bialko: d.bialko || 0, wegle: d.wegle || 0, tluszcz: d.tluszcz || 0,
+          kcal: d.kcal || 0};
+}
 
 /* Dodawanie jest przyrostowe, bo tak wygląda dzień: coś zjadłeś, dopisujesz.
-   Wartość ujemna cofa pomyłkę. Zero znaczy „wyzeruj dzień". */
-function dodajBialko(g){
-  g = liczba(g);
-  if(g == null || !isFinite(g)) return;
+   Wartości ujemne cofają pomyłkę. Kalorie, jeśli ich nie podano, liczymy
+   z makroskładników — 4/4/9 kcal na gram. */
+function dodajMakro(porcja){
+  const p = porcja || {};
+  const licz = (x) => { const v = liczba(x); return (v == null || !isFinite(v)) ? 0 : v; };
+  const b = licz(p.bialko), w = licz(p.wegle), t = licz(p.tluszcz);
+  let kcal = licz(p.kcal);
+  if(!kcal) kcal = b*4 + w*4 + t*9;
+  if(!b && !w && !t && !kcal) return;
+
   const dzis = today();
   let d = (DB.daily || []).find(x => x.date === dzis);
   if(!d){ d = {date: dzis}; DB.daily.push(d); DB.daily.sort((a,b)=>a.date.localeCompare(b.date)); }
-  d.bialko = Math.max(0, Math.round((d.bialko || 0) + g));
+  d.bialko  = Math.max(0, Math.round((d.bialko  || 0) + b));
+  d.wegle   = Math.max(0, Math.round((d.wegle   || 0) + w));
+  d.tluszcz = Math.max(0, Math.round((d.tluszcz || 0) + t));
+  d.kcal    = Math.max(0, Math.round((d.kcal    || 0) + kcal));
   save(); zsynchronizuj(); sygnal(12);
   odswiezWidok();
 }
+function dodajBialko(g){ dodajMakro({bialko: g}); }
+
 function wyzerujBialko(){
   const d = (DB.daily || []).find(x => x.date === today());
-  if(d) d.bialko = 0;
+  if(d){ d.bialko = 0; d.wegle = 0; d.tluszcz = 0; d.kcal = 0; }
   save(); zsynchronizuj(); odswiezWidok();
 }
 
@@ -5688,6 +5801,34 @@ function bialkoSrednia(dni){
   if(!wpisy.length) return null;
   return {srednia: Math.round(wpisy.reduce((a,x)=>a+x.bialko,0) / wpisy.length),
           dni: wpisy.length, zDni: dni || 7};
+}
+
+/* Pasek udziału kalorii: ile z białka, ile z węgli, ile z tłuszczu.
+   Jedno spojrzenie zamiast trzech liczb do porównania w głowie. */
+function pasekMakro(){
+  const m = makroDnia();
+  const czesci = MAKRA.map(x => ({...x, kcal: (m[x.k] || 0) * x.kcalG}));
+  const suma = czesci.reduce((a, x) => a + x.kcal, 0);
+  if(!suma) return '';
+  return '<div style="display:flex;height:10px;border-radius:5px;overflow:hidden;'+
+    'margin:10px 0 6px">'+
+    czesci.map(x => '<div style="width:'+(x.kcal/suma*100).toFixed(1)+'%;background:'+x.kolor+'"></div>').join('')+
+    '</div>'+
+    '<div style="display:flex;gap:12px;font-size:10px;color:var(--dim)">'+
+    czesci.map(x => '<span><i style="display:inline-block;width:7px;height:7px;border-radius:2px;'+
+      'background:'+x.kolor+';margin-right:4px"></i>'+x.n+' '+Math.round(x.kcal/suma*100)+'%</span>').join('')+
+    '</div>';
+}
+
+function slupekMakro(nazwa, teraz, cel, kolor, jedn){
+  const proc = cel > 0 ? Math.min(100, Math.round(teraz / cel * 100)) : 0;
+  return '<div style="margin-top:9px">'+
+    '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">'+
+      '<span style="color:var(--dim)">'+esc(nazwa)+'</span>'+
+      '<span><b>'+teraz+'</b><span style="color:var(--dim)"> / '+cel+' '+jedn+'</span></span>'+
+    '</div>'+
+    '<div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden">'+
+      '<div style="height:100%;width:'+proc+'%;background:'+kolor+'"></div></div></div>';
 }
 
 
@@ -5705,23 +5846,29 @@ function jedzenieBox(html){
 function pokazPropozycjeJedzenia(w){
   JEDZENIE_PROPOZYCJA = w;
   const pewnosc = {wysoka:'', srednia:' warn', niska:' warn'}[w.pewnosc] || '';
+  const kcal = w.kcal || (w.bialko*4 + (w.wegle||0)*4 + (w.tluszcz||0)*9);
   jedzenieBox('<div class="tip'+pewnosc+'" style="margin-top:9px">'+
-    '<b>'+esc(w.opis || 'Posiłek')+' — '+w.bialko+' g białka</b>'+
-    (w.pewnosc && w.pewnosc !== 'wysoka'
-      ? '<div class="hm" style="margin-top:3px">Szacunek '+esc(w.pewnosc)+'ej pewności'+
-        (w.uwaga ? ': '+esc(w.uwaga) : '')+'</div>'
-      : (w.uwaga ? '<div class="hm" style="margin-top:3px">'+esc(w.uwaga)+'</div>' : ''))+
-    '<div class="btn2" style="margin-top:9px">'+
-      '<button class="btn sm" onclick="zatwierdzJedzenie()">Dopisz '+w.bialko+' g</button>'+
-      '<button class="btn ghost sm" onclick="jedzenieBox(\'\')">Odrzuć</button>'+
+    '<b>'+esc(w.opis || 'Posiłek')+'</b>'+
+    '<div style="display:flex;gap:14px;margin-top:7px;flex-wrap:wrap">'+
+      '<div><b style="font-size:17px">'+kcal+'</b><span style="font-size:9px;color:var(--dim)"> kcal</span></div>'+
+      '<div><b style="font-size:17px">'+w.bialko+'</b><span style="font-size:9px;color:var(--dim)"> g B</span></div>'+
+      '<div><b style="font-size:17px">'+(w.wegle||0)+'</b><span style="font-size:9px;color:var(--dim)"> g W</span></div>'+
+      '<div><b style="font-size:17px">'+(w.tluszcz||0)+'</b><span style="font-size:9px;color:var(--dim)"> g T</span></div>'+
     '</div>'+
-    '<div class="note" style="margin-top:7px">Możesz poprawić liczbę w polu niżej — '+
-    'to szacunek modelu, nie pomiar.</div></div>');
+    (w.pewnosc && w.pewnosc !== 'wysoka'
+      ? '<div class="hm" style="margin-top:5px">Szacunek '+esc(w.pewnosc)+'ej pewności'+
+        (w.uwaga ? ': '+esc(w.uwaga) : '')+'</div>'
+      : (w.uwaga ? '<div class="hm" style="margin-top:5px">'+esc(w.uwaga)+'</div>' : ''))+
+    '<div class="btn2" style="margin-top:9px">'+
+      '<button class="btn sm" onclick="zatwierdzJedzenie()">Dopisz</button>'+
+      '<button class="btn ghost sm" onclick="jedzenieBox(\'\')">Odrzuć</button>'+
+    '</div></div>');
 }
 
 function zatwierdzJedzenie(){
   if(!JEDZENIE_PROPOZYCJA) return;
-  dodajBialko(JEDZENIE_PROPOZYCJA.bialko);
+  const w = JEDZENIE_PROPOZYCJA;
+  dodajMakro({bialko: w.bialko, wegle: w.wegle, tluszcz: w.tluszcz, kcal: w.kcal});
   JEDZENIE_PROPOZYCJA = null;
   const el = document.getElementById('jedzenieIn'); if(el) el.value = '';
   toast('Dopisane');
@@ -5747,11 +5894,10 @@ async function policzJedzenieZdjecie(ev){
   jedzenieBox('<div class="note" style="margin-top:9px">Przetwarzam zdjęcie…</div>');
   try {
     const maly = await zmniejszZdjecie(plik, 800);
-    const w = await aiJedzenie('Co jest na tym talerzu i ile ma białka?', maly);
+    const w = await aiJedzenie('Co jest na tym talerzu i ile ma makroskładników?', maly);
     /* Ze zdjęcia nie ma pewności nigdy — modele dobrze rozpoznają CO jest
        na talerzu, a słabo ILE tego jest, i to porcja odpowiada za większość
-       błędu. Darmowe modele są w tym jeszcze słabsze, więc etykieta „wysoka"
-       z ich strony nie ma pokrycia i schodzi o stopień. */
+       błędu. Etykieta „wysoka" ze zdjęcia nie ma pokrycia. */
     if(w.pewnosc === 'wysoka') w.pewnosc = 'srednia';
     pokazPropozycjeJedzenia(w);
   } catch(e){
@@ -5779,6 +5925,11 @@ function zmniejszZdjecie(plik, maxBok){
   });
 }
 
+function dodajPorcje(i){
+  const x = BIALKOWE[i];
+  if(x) dodajMakro({bialko: x.b, wegle: x.w, tluszcz: x.t, kcal: x.kcal});
+}
+
 let BIALKO_ROZW = false;
 function przelaczBialko(){ BIALKO_ROZW = !BIALKO_ROZW; odswiezWidok(); }
 
@@ -5799,11 +5950,23 @@ function renderBialko(){
     return h;
   }
 
-  h += '<div style="margin-top:9px">' +
-    BIALKOWE.map(x =>
+  const cm = celeMakro(), md = makroDnia();
+  h += '<div class="card" style="margin-top:10px;padding:11px" onclick="event.stopPropagation()">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline">'+
+        '<div class="etyk" style="margin:0">DZIŚ</div>'+
+        '<div><b style="font-size:19px">'+md.kcal+'</b>'+
+        '<span style="color:var(--dim);font-size:12px"> / '+cm.kcal+' kcal</span></div>'+
+      '</div>'+
+      pasekMakro()+
+      slupekMakro('Białko',      md.bialko,  cm.b.min, 'var(--acc)',  'g')+
+      slupekMakro('Węglowodany', md.wegle,   cm.w.min, '#b98cff',     'g')+
+      slupekMakro('Tłuszcze',    md.tluszcz, cm.t.min, 'var(--warn)', 'g')+
+    '</div>'+
+    '<div style="margin-top:9px">' +
+    BIALKOWE.map((x, i) =>
       '<button class="btn ghost sm" style="margin:3px 3px 0 0" '+
-      'onclick="event.stopPropagation();dodajBialko('+x.g+')">'+
-      esc(x.n)+' <b>+'+x.g+'</b></button>').join('') +
+      'onclick="event.stopPropagation();dodajPorcje('+i+')">'+
+      esc(x.n)+' <b>+'+x.b+'</b></button>').join('') +
     '</div>' +
     (aiDostepne()
       ? '<div class="fld" style="margin-top:10px" onclick="event.stopPropagation()">'+
@@ -5830,8 +5993,9 @@ function renderBialko(){
         '<button class="btn sm" onclick="dodajBialko(document.getElementById(\'bialkoIn\').value);'+
           'document.getElementById(\'bialkoIn\').value=\'\'">Dodaj</button>'+
       '</div></div>'+
-    '<div class="note" style="margin-top:9px">Cel '+c.min+'–'+c.max+' g przy '+fmtKg(c.masa)+' kg '+
-      '(1,6–2,2 g na kilogram). Powyżej górnej granicy badania przestają pokazywać zysk.'+
+    '<div class="note" style="margin-top:9px">Białko '+c.min+'–'+c.max+' g przy '+fmtKg(c.masa)+' kg '+
+      '(1,6–2,2 g/kg). Kalorie liczone przez '+esc(cm.sposob)+
+      (cm.sposob !== 'Mifflin' ? ' — wpisz wzrost w Danych, żeby było dokładniej' : '')+'.'+
       (dzis > 0 ? ' <a href="javascript:void(0)" onclick="event.stopPropagation();wyzerujBialko()">Wyzeruj dziś</a>' : '')+
       '</div>';
 
@@ -6768,6 +6932,7 @@ function renderData(){
       '<b>OPENROUTER_KEY</b> (płatne, mocniejsze modele).</div>';
   document.getElementById('setStart').value=DB.settings.start;
   document.getElementById('setGryf').value = DB.settings.gryf || '';
+  document.getElementById('setWzrost').value = DB.settings.wzrost || '';
   document.getElementById('setRest').value=DB.settings.rest;
   const tv=DB.workouts.reduce((a,x)=>a+vol(x),0);
   document.getElementById('stats').innerHTML=
@@ -6795,6 +6960,8 @@ function saveSettings(){
   if(r>0) DB.settings.rest=r;
   const gr = num('setGryf');
   DB.settings.gryf = (gr != null && gr > 0) ? gr : null;
+  const wz = num('setWzrost');
+  DB.settings.wzrost = (wz != null && wz > 100 && wz < 250) ? wz : null;
   save(); renderSub(); toast('Zapisano ustawienia');
 }
 async function exportData(){
