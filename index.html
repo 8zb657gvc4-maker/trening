@@ -458,6 +458,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <button class="btn ghost sm" onclick="openTimer()" style="margin-bottom:11px">
       Timer przerwy — ustaw czas</button>
     <div id="rozgrzewkaBox"></div>
+    <div id="korektaBox"></div>
     <div id="exList"></div>
     <button class="btn ghost sm" onclick="addCustom()" style="margin-bottom:11px">+ Inne ćwiczenie</button>
     <div class="fld" style="margin-bottom:11px">
@@ -604,6 +605,14 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
       <input type="number" inputmode="decimal" step="0.5" id="setGryf" placeholder="20">
       <div class="note" style="margin-top:4px">Olimpijski 20, damski 15, łamany 7,5–10.</div></div>
     <button class="btn ghost sm" style="margin-top:12px" onclick="saveSettings()">Zapisz ustawienia</button>
+  </div>
+  <h2>Model językowy</h2>
+  <div class="card">
+    <div id="aiStan"></div>
+    <button class="btn ghost sm" style="margin-top:10px" onclick="testAI()">Sprawdź połączenie</button>
+    <div id="aiTest"></div>
+    <div class="note" style="margin-top:10px">Model tylko opisuje i przelicza tekst.
+      Ciężary, objętość i wybór dnia liczy silnik aplikacji — to się nie zmienia.</div>
   </div>
   <h2>Statystyki</h2>
   <div class="card" id="stats"></div>
@@ -1280,7 +1289,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '34';
+const WERSJA = '37';
 const WERSJA_DATA = '2026-08-25';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3872,7 +3881,7 @@ function renderHub(){
        najpierw to, co robisz teraz, potem to, czego aplikacja od Ciebie chce,
        potem kontekst, na końcu sprawy techniczne. */
     renderZapis() + renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume + renderDzis() + renderPoranne() + renderBraki() + coach +
-    planBox + renderKolejne() + odpBox + czekaBox + renderPrzeloz() + syncBox;
+    planBox + renderBialko() + renderKolejne() + odpBox + czekaBox + renderPrzeloz() + syncBox;
 }
 
 /* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
@@ -4074,8 +4083,131 @@ function przelaczRozgrzewke(){
   sygnal(12);
 }
 
+
+/* ============================================================
+   KOREKTA W TRAKCIE SESJI
+   Do tej pory plan był liczony RAZ, przy starcie, i przez najbliższą godzinę
+   nie reagował na nic. Filip opisał to wprost: „jak mam gorszy dzień i zrobię
+   pięć podciągnięć, to niech mi powie, że na następnym schodzimy, a jak
+   młotkowe idą lepiej, to dokładamy".
+
+   Liczy to SILNIK, nie model językowy. Powód jest ten sam co zawsze: ciężar
+   musi mieć powód, który da się prześledzić i który jutro będzie taki sam.
+   Model dostanie te liczby dopiero na wejściu, żeby ułożyć je w zdanie.
+
+   Zasada: porównujemy wykonane serie robocze z celem KAŻDEGO ukończonego
+   ćwiczenia i liczymy średnie odchylenie. Wynik przekłada się na pozostałe
+   ćwiczenia — ale nigdy na główny bój (ten robisz pierwszy) i nigdy o więcej
+   niż jeden krok w dół albo w górę.
+   ============================================================ */
+function korektaWSesji(ses){
+  if(!ses || !ses.exercises) return null;
+
+  const zrobione = ses.exercises.filter(e => (e.sets || []).filter(x => !x.wu).length >= 2);
+  if(zrobione.length < 1) return null;
+
+  let suma = 0, n = 0;
+  const szczegoly = [];
+  zrobione.forEach(e => {
+    const rob = e.sets.filter(x => !x.wu);
+    const cel = e.sug && e.sug.r;
+    if(!cel) return;
+    const najlepsza = Math.max(...rob.map(x => x.r || 0));
+    if(!najlepsza) return;
+    const odch = (najlepsza - cel) / cel;
+    /* RPE mówi to samo innym językiem: ten sam wynik przy RPE 9 znaczy
+       co innego niż przy RPE 6. Traktujemy oba sygnały równorzędnie. */
+    const rpe = avg(rob.map(x => x.rpe));
+    const sufit = sufitFazy(phaseOf(ses.tygPlanu || tydzienPlanu(ses.date)));
+    const odchRpe = rpe != null ? (sufit - rpe) / 10 : 0;
+    const razem = odch + odchRpe;
+    suma += razem; n++;
+    szczegoly.push({name: e.name, cel, najlepsza, rpe, odch: razem});
+  });
+  if(!n) return null;
+
+  const sr = suma / n;
+  /* Pasmo obojętności: bez niego aplikacja reagowałaby na jedno powtórzenie
+     w tę czy w tamtą i zmieniała plan przy każdej serii. */
+  if(Math.abs(sr) < 0.12) return null;
+
+  const wDol = sr < 0;
+  const skala = wDol ? 0.95 : 1.05;
+  const pozostale = ses.exercises.filter(e =>
+    (e.sets || []).filter(x => !x.wu).length === 0 &&
+    e.sug && e.sug.w != null && e.sug.w > 0 &&
+    !(slotById(e.slot) || {}).fixed);
+
+  if(!pozostale.length) return null;
+
+  const naj = szczegoly.slice().sort((a,b) => a.odch - b.odch)[wDol ? 0 : szczegoly.length-1];
+  const powod = wDol
+    ? naj.name + ': ' + naj.najlepsza + ' powt. przy celu ' + naj.cel +
+      (naj.rpe != null ? ' i RPE ' + fmtKg(naj.rpe) : '') + ' — dziś idzie ciężej niż zwykle.'
+    : naj.name + ': ' + naj.najlepsza + ' powt. przy celu ' + naj.cel +
+      (naj.rpe != null ? ' i RPE ' + fmtKg(naj.rpe) : '') + ' — dziś masz lepszy dzień.';
+
+  return {
+    kierunek: wDol ? 'dol' : 'gora',
+    skala, powod,
+    cwiczenia: pozostale.map(e => ({
+      slot: e.slot, name: e.name, z: e.sug.w,
+      na: Math.max(2.5, roundTo(e.sug.w * skala, 2.5))
+    })).filter(x => x.na !== x.z)
+  };
+}
+
+/* Korekta jest PROPOZYCJĄ. Ta sama zasada, co przy planie ode mnie:
+   aplikacja nie zmienia po cichu liczb, na które patrzysz między seriami. */
+function przyjmijKorekteSesji(){
+  const k = korektaWSesji(SES);
+  if(!k) return;
+  k.cwiczenia.forEach(z => {
+    const e = SES.exercises.find(x => x.slot === z.slot && x.name === z.name);
+    if(e && e.sug){ e.sug.w = z.na; e.sug.korekta = k.kierunek; }
+  });
+  SES.korektaPrzyjeta = true;
+  saveSes(); renderSession();
+  toast(k.kierunek === 'dol' ? 'Zszedłem o 5% na pozostałych' : 'Dołożyłem 5% na pozostałych');
+}
+function odrzucKorekteSesji(){
+  SES.korektaOdrzucona = true;
+  saveSes(); renderSession();
+}
+
+function renderKorekta(){
+  const el = document.getElementById('korektaBox');
+  if(!el) return;
+  if(!SES || SES.korektaPrzyjeta || SES.korektaOdrzucona){ el.innerHTML = ''; return; }
+  const k = korektaWSesji(SES);
+  if(!k || !k.cwiczenia.length){ el.innerHTML = ''; return; }
+
+  el.innerHTML = '<div class="tip '+(k.kierunek==='dol'?'warn':'ok')+'">'+
+    '<b>'+(k.kierunek==='dol' ? 'Zejść o 5% na pozostałych?' : 'Dołożyć 5% na pozostałych?')+'</b>'+
+    '<div class="hm" style="margin-top:4px" id="korektaPowod">'+esc(k.powod)+'</div>'+
+    '<div class="hm" style="margin-top:6px">'+
+      k.cwiczenia.map(z => esc(z.name)+' '+fmtKg(z.z)+' → '+fmtKg(z.na)+' kg').join('<br>')+
+    '</div>'+
+    '<div class="btn2" style="margin-top:10px">'+
+      '<button class="btn sm" onclick="przyjmijKorekteSesji()">Dobra, zmień</button>'+
+      '<button class="btn ghost sm" onclick="odrzucKorekteSesji()">Zostaw jak jest</button>'+
+    '</div>'+
+    '<div class="note" style="margin-top:8px">Główny bój zostaje bez zmian — jego już nie ruszamy '+
+    'w trakcie. Zmiana dotyczy tylko ćwiczeń, których jeszcze nie zacząłeś.</div></div>';
+
+  /* Zdanie od modelu dochodzi PÓŹNIEJ i tylko podmienia opis powodu.
+     Ramka, liczby i przyciski są już na ekranie — jeśli sieć nie odpowie
+     albo model się pomyli, nie stanie się nic poza tym, że zostanie
+     zdanie z silnika. Nic tu na model nie czeka. */
+  if(aiDostepne()) aiKomentarzSesji().then(zdanie => {
+    const p = document.getElementById('korektaPowod');
+    if(zdanie && p) p.textContent = zdanie;
+  }).catch(() => {});
+}
+
 function renderSession(){
   renderRozgrzewka();
+  bezpiecznie('renderKorekta', renderKorekta);
   document.getElementById('sesStat').textContent =
     setCount(SES)+' serii · '+Math.round(vol(SES)).toLocaleString('pl')+' kg'+sesCzas();
   const nEl=document.getElementById('sesNote');
@@ -5153,6 +5285,357 @@ function delRun(id){
 }
 
 
+
+
+/* ============================================================
+   MODEL JĘZYKOWY — warstwa pomocnicza, nigdy decyzyjna
+
+   Zasada, od której nie odchodzimy: model dotyka WYŁĄCZNIE tekstu.
+   Nie liczy ciężarów, nie wybiera dnia, nie zmienia faz. Te rzeczy robi
+   silnik, bo mają mieć powód, który da się prześledzić i który jutro będzie
+   taki sam. Model dostaje gotowe liczby i układa je w zdanie, albo zamienia
+   Twój opis jedzenia w gramy białka — i za każdym razem czeka na Twoje
+   potwierdzenie, zanim cokolwiek wejdzie do danych.
+
+   Klucza nie ma w tym pliku i nie będzie. Telefon pyta Workera tym samym
+   tokenem co przy synchronizacji, a Worker trzyma klucz OpenRoutera jako
+   sekret. Aplikacja jest publiczna — klucz w niej byłby kluczem dla każdego.
+
+   Wszystko poniżej jest OPCJONALNE. Bez skonfigurowanego serwera, bez sieci
+   albo przy błędzie po stronie modelu aplikacja działa dokładnie tak jak
+   dotąd, tylko bez tych udogodnień.
+   ============================================================ */
+function aiDostepne(){ return srvGotowy(); }
+
+/* Log odpowiedzi modelu — do cotygodniowego przeglądu. Model, którego nikt
+   nie sprawdza, po cichu zaczyna zmyślać; bez zapisu nie da się tego zauważyć.
+   Trzymamy ostatnie 60 wpisów, żeby nie zjeść limitu pamięci telefonu. */
+function aiZapisz(wpis){
+  DB.ailog = (DB.ailog || []).concat([Object.assign({kiedy: new Date().toISOString()}, wpis)]).slice(-60);
+  save();
+}
+
+async function aiZapytaj(wiadomosci, opcje){
+  if(!aiDostepne()) throw new Error('Serwer nie jest skonfigurowany — Dane → Synchronizacja.');
+  const o = opcje || {};
+  const kontroler = new AbortController();
+  const stoper = setTimeout(() => kontroler.abort(), o.timeout || 20000);
+  try {
+    const r = await fetch(srvUrl('ai'), {
+      method: 'POST',
+      headers: srvNaglowki({'Content-Type': 'application/json'}),
+      body: JSON.stringify({tryb: o.tryb || 'tekst', messages: wiadomosci,
+                            max_tokens: o.max_tokens, temperature: o.temperature}),
+      signal: kontroler.signal
+    });
+    const dane = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error(dane.blad || ('Serwer odpowiedział ' + r.status));
+    return dane;
+  } finally { clearTimeout(stoper); }
+}
+
+/* ---- JEDZENIE → GRAMY BIAŁKA -------------------------------------------
+   Model dostaje jedno zadanie i ma odpowiedzieć samym JSON-em. Nawet jeśli
+   odpowie zdaniem dookoła, wyłuskujemy pierwszy nawias klamrowy — to tańsze
+   niż walka o idealny format i odporniejsze na zmianę modelu. */
+const AI_JEDZENIE = 'Jesteś licznikiem białka. Dostajesz opis posiłku po polsku. ' +
+  'Odpowiadasz WYŁĄCZNIE obiektem JSON: {"opis":"krótki opis","bialko":liczba_gramów,' +
+  '"pewnosc":"wysoka|srednia|niska","uwaga":"tekst albo pusty"}. ' +
+  'Liczysz TYLKO białko, w gramach, jako liczbę całkowitą. ' +
+  'Gdy ilość nie jest podana, przyjmij typową porcję i ustaw pewnosc na "niska", ' +
+  'a w uwadze napisz, jaką porcję założyłeś. ' +
+  'Gdy opis nie jest jedzeniem, ustaw bialko na 0 i wyjaśnij to w uwadze.';
+
+function aiWyluskajJson(tekst){
+  const t = String(tekst || '');
+  const i = t.indexOf('{'), j = t.lastIndexOf('}');
+  if(i < 0 || j <= i) return null;
+  try { return JSON.parse(t.slice(i, j + 1)); } catch(e){ return null; }
+}
+
+async function aiJedzenie(opis, zdjecieBase64){
+  const tresc = zdjecieBase64
+    ? [{type: 'text', text: opis || 'Co to za posiłek i ile ma białka?'},
+       {type: 'image_url', image_url: {url: zdjecieBase64}}]
+    : (opis || '');
+  const odp = await aiZapytaj(
+    [{role: 'system', content: AI_JEDZENIE}, {role: 'user', content: tresc}],
+    {tryb: zdjecieBase64 ? 'obraz' : 'tekst', max_tokens: 300});
+
+  const wynik = aiWyluskajJson(odp.tresc);
+  aiZapisz({co: 'jedzenie', pytanie: (opis || '[zdjęcie]').slice(0, 120),
+            odpowiedz: (odp.tresc || '').slice(0, 200), bialko: wynik && wynik.bialko});
+  if(!wynik || typeof wynik.bialko !== 'number')
+    throw new Error('Model odpowiedział czymś, czego nie umiem odczytać. Wpisz gramy ręcznie.');
+  return wynik;
+}
+
+/* ---- KOMENTARZ W TRAKCIE SESJI -----------------------------------------
+   Model NIE liczy korekty. Dostaje gotowy wynik z `korektaWSesji` i ma
+   powiedzieć to po ludzku. Gdy nie odpowie, zostaje zdanie z silnika. */
+const AI_TRENER = 'Jesteś trenerem siłowym. Dostajesz FAKTY z trwającego treningu ' +
+  'i gotową decyzję silnika aplikacji. Twoim zadaniem jest powiedzieć to jednym, ' +
+  'najwyżej dwoma zdaniami po polsku, tak jak trener na sali. ' +
+  'NIE zmieniaj liczb, nie podawaj innych ciężarów niż te w decyzji, nie dodawaj ' +
+  'zaleceń medycznych. Bez emotikon. Bez zwrotów typu "pamiętaj, żeby".';
+
+/* Przycisk „sprawdź połączenie" — jedno tanie zapytanie, żeby dało się
+   odróżnić zły token od braku sekretu i od padniętego dostawcy. */
+async function testAI(){
+  const el = document.getElementById('aiTest');
+  const pisz = h => { if(el) el.innerHTML = h; };
+  pisz('<div class="note" style="margin-top:9px">Sprawdzam…</div>');
+  try {
+    const odp = await aiZapytaj([{role:'user', content:'Odpowiedz jednym słowem: działa'}],
+                                {max_tokens: 20});
+    pisz('<div class="tip ok" style="margin-top:9px"><b>Działa</b>'+
+      '<div class="hm" style="margin-top:3px">'+
+      (odp.dostawca === 'cloudflare' ? 'Cloudflare Workers AI — za darmo, bez klucza'
+       : odp.dostawca === 'openrouter' ? 'OpenRouter — płatne, klucz w Workerze' : '')+
+      '<br>Model: '+esc(odp.model||'—')+
+      ' · zapytań dziś: '+(odp.zapytan_dzis||'?')+' z '+(odp.limit||'?')+'</div></div>');
+  } catch(e){
+    pisz('<div class="tip bad" style="margin-top:9px"><b>Nie działa</b>'+
+      '<div class="hm" style="margin-top:3px">'+esc(e.message)+'</div></div>');
+  }
+}
+
+async function aiKomentarzSesji(){
+  const k = korektaWSesji(SES);
+  if(!k || !aiDostepne()) return null;
+  const fakty = {
+    dzien: SES.day, faza: (PHASES[phaseOf(SES.tygPlanu || tydzienPlanu(SES.date))] || {}).n,
+    powod: k.powod, kierunek: k.kierunek,
+    zmiany: k.cwiczenia.map(z => z.name + ' ' + z.z + ' → ' + z.na + ' kg')
+  };
+  try {
+    const odp = await aiZapytaj(
+      [{role: 'system', content: AI_TRENER},
+       {role: 'user', content: JSON.stringify(fakty)}], {max_tokens: 160, temperature: 0.4});
+    aiZapisz({co: 'sesja', pytanie: k.powod, odpowiedz: (odp.tresc || '').slice(0, 250)});
+    return (odp.tresc || '').trim() || null;
+  } catch(e){ return null; }
+}
+
+/* ============================================================
+   BIAŁKO
+   Świadomie WĄSKO: same gramy białka, bez kalorii, tłuszczów i węglowodanów.
+
+   Powód jest z tej aplikacji, nie z teorii. Suplementy, obwody i pomiary
+   ciała wylatywały dziś dlatego, że przez trzy tygodnie nie zostały
+   wypełnione ani razu. Liczenie całego jedzenia jest kilka razy bardziej
+   pracochłonne, a białko jest jedyną pozycją, która przy odbudowie masy
+   naprawdę zmienia wynik. Jeśli po dwóch tygodniach ten licznik będzie
+   uzupełniany, dołożymy resztę. Jeśli nie — nie zbudowaliśmy czwartej
+   martwej zakładki.
+
+   Zakres 1,6–2,2 g na kilogram masy ciała to okolica, w której badania
+   przestają pokazywać dalszy zysk z dokładania. Poniżej 1,6 g/kg przy
+   treningu siłowym i lekkiej nadwyżce część pracy na siłowni się marnuje.
+   ============================================================ */
+const BIALKO_G_NA_KG = [1.6, 2.2];
+
+/* Typowe porcje. Wartości zaokrąglone — to licznik, nie tabela żywieniowa. */
+const BIALKOWE = [
+  {n:'Jajko',              g:6,  o:'jedno duże'},
+  {n:'Pierś z kurczaka',   g:31, o:'100 g po usmażeniu'},
+  {n:'Twaróg',             g:36, o:'200 g półtłustego'},
+  {n:'Skyr / jogurt grecki',g:17, o:'150 g'},
+  {n:'Odżywka białkowa',   g:24, o:'miarka 30 g'},
+  {n:'Mielone wołowe',     g:26, o:'100 g'},
+  {n:'Tuńczyk z puszki',   g:25, o:'jedna puszka odsączona'},
+  {n:'Ryż + warzywa',      g:5,  o:'porcja obiadowa — resztki z dania'}
+];
+
+function celBialka(){
+  const m = masaCiala();
+  return {min: Math.round(m * BIALKO_G_NA_KG[0]),
+          max: Math.round(m * BIALKO_G_NA_KG[1]),
+          masa: m};
+}
+
+function bialkoDnia(data){
+  const d = (DB.daily || []).find(x => x.date === (data || today()));
+  return d && d.bialko != null ? d.bialko : 0;
+}
+
+/* Dodawanie jest przyrostowe, bo tak wygląda dzień: coś zjadłeś, dopisujesz.
+   Wartość ujemna cofa pomyłkę. Zero znaczy „wyzeruj dzień". */
+function dodajBialko(g){
+  g = liczba(g);
+  if(g == null || !isFinite(g)) return;
+  const dzis = today();
+  let d = (DB.daily || []).find(x => x.date === dzis);
+  if(!d){ d = {date: dzis}; DB.daily.push(d); DB.daily.sort((a,b)=>a.date.localeCompare(b.date)); }
+  d.bialko = Math.max(0, Math.round((d.bialko || 0) + g));
+  save(); zsynchronizuj(); sygnal(12);
+  odswiezWidok();
+}
+function wyzerujBialko(){
+  const d = (DB.daily || []).find(x => x.date === today());
+  if(d) d.bialko = 0;
+  save(); zsynchronizuj(); odswiezWidok();
+}
+
+/* Średnia z ostatnich `dni` dni — liczona TYLKO po dniach, w których cokolwiek
+   wpisałeś. Wliczanie pustych dni jako zero robiłoby z jednej zapomnianej
+   soboty spadek średniej o kilkanaście gramów i licznik zacząłby kłamać. */
+function bialkoSrednia(dni){
+  const od = przesun(today(), -(dni || 7) + 1);
+  const wpisy = (DB.daily || []).filter(x => x.date >= od && x.date <= today() && x.bialko != null && x.bialko > 0);
+  if(!wpisy.length) return null;
+  return {srednia: Math.round(wpisy.reduce((a,x)=>a+x.bialko,0) / wpisy.length),
+          dni: wpisy.length, zDni: dni || 7};
+}
+
+
+/* ---- OBSŁUGA LICZENIA JEDZENIA -----------------------------------------
+   Model proponuje, Ty zatwierdzasz. Nic nie wchodzi do danych automatycznie —
+   przy porcjach „na oko" pomyłka o 15 g przy pięciu posiłkach dziennie to
+   już inny dzień, a błędu w liczniku nie widać tak jak błędu w ciężarze. */
+let JEDZENIE_PROPOZYCJA = null;
+
+function jedzenieBox(html){
+  const el = document.getElementById('jedzenieWynik');
+  if(el) el.innerHTML = html;
+}
+
+function pokazPropozycjeJedzenia(w){
+  JEDZENIE_PROPOZYCJA = w;
+  const pewnosc = {wysoka:'', srednia:' warn', niska:' warn'}[w.pewnosc] || '';
+  jedzenieBox('<div class="tip'+pewnosc+'" style="margin-top:9px">'+
+    '<b>'+esc(w.opis || 'Posiłek')+' — '+w.bialko+' g białka</b>'+
+    (w.pewnosc && w.pewnosc !== 'wysoka'
+      ? '<div class="hm" style="margin-top:3px">Szacunek '+esc(w.pewnosc)+'ej pewności'+
+        (w.uwaga ? ': '+esc(w.uwaga) : '')+'</div>'
+      : (w.uwaga ? '<div class="hm" style="margin-top:3px">'+esc(w.uwaga)+'</div>' : ''))+
+    '<div class="btn2" style="margin-top:9px">'+
+      '<button class="btn sm" onclick="zatwierdzJedzenie()">Dopisz '+w.bialko+' g</button>'+
+      '<button class="btn ghost sm" onclick="jedzenieBox(\'\')">Odrzuć</button>'+
+    '</div>'+
+    '<div class="note" style="margin-top:7px">Możesz poprawić liczbę w polu niżej — '+
+    'to szacunek modelu, nie pomiar.</div></div>');
+}
+
+function zatwierdzJedzenie(){
+  if(!JEDZENIE_PROPOZYCJA) return;
+  dodajBialko(JEDZENIE_PROPOZYCJA.bialko);
+  JEDZENIE_PROPOZYCJA = null;
+  const el = document.getElementById('jedzenieIn'); if(el) el.value = '';
+  toast('Dopisane');
+}
+
+async function policzJedzenie(){
+  const el = document.getElementById('jedzenieIn');
+  const tekst = el ? el.value.trim() : '';
+  if(!tekst){ toast('Napisz, co zjadłeś'); return; }
+  jedzenieBox('<div class="note" style="margin-top:9px">Liczę…</div>');
+  try { pokazPropozycjeJedzenia(await aiJedzenie(tekst)); }
+  catch(e){ jedzenieBox('<div class="tip bad" style="margin-top:9px">'+esc(e.message)+'</div>'); }
+}
+
+/* Zdjęcie idzie do modelu i NIE jest nigdzie zapisywane — zostaje sam wynik.
+   Zdjęcia w pamięci telefonu były odłożonym problemem z limitem 5 MB;
+   tak go po prostu nie tworzymy. Skalujemy do 800 px, bo model i tak nie
+   potrzebuje więcej, a mniejszy plik to szybsza odpowiedź na komórce. */
+async function policzJedzenieZdjecie(ev){
+  const plik = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if(!plik) return;
+  jedzenieBox('<div class="note" style="margin-top:9px">Przetwarzam zdjęcie…</div>');
+  try {
+    const maly = await zmniejszZdjecie(plik, 800);
+    const w = await aiJedzenie('Co jest na tym talerzu i ile ma białka?', maly);
+    /* Ze zdjęcia nie ma pewności nigdy — modele dobrze rozpoznają CO jest
+       na talerzu, a słabo ILE tego jest, i to porcja odpowiada za większość
+       błędu. Darmowe modele są w tym jeszcze słabsze, więc etykieta „wysoka"
+       z ich strony nie ma pokrycia i schodzi o stopień. */
+    if(w.pewnosc === 'wysoka') w.pewnosc = 'srednia';
+    pokazPropozycjeJedzenia(w);
+  } catch(e){
+    jedzenieBox('<div class="tip bad" style="margin-top:9px">'+esc(e.message)+'</div>');
+  }
+}
+
+function zmniejszZdjecie(plik, maxBok){
+  return new Promise((zwroc, odrzuc) => {
+    const czyt = new FileReader();
+    czyt.onerror = () => odrzuc(new Error('Nie udało się odczytać zdjęcia'));
+    czyt.onload = () => {
+      const img = new Image();
+      img.onerror = () => odrzuc(new Error('To nie wygląda na zdjęcie'));
+      img.onload = () => {
+        const sk = Math.min(1, maxBok / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * sk); c.height = Math.round(img.height * sk);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        zwroc(c.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = czyt.result;
+    };
+    czyt.readAsDataURL(plik);
+  });
+}
+
+let BIALKO_ROZW = false;
+function przelaczBialko(){ BIALKO_ROZW = !BIALKO_ROZW; odswiezWidok(); }
+
+function renderBialko(){
+  const c = celBialka();
+  const dzis = bialkoDnia();
+  const proc = c.min ? Math.round(dzis / c.min * 100) : 0;
+  const stan = dzis >= c.min ? 'ok' : dzis >= c.min * 0.6 ? 'warn' : '';
+
+  let h = '<div class="tip '+stan+'" onclick="przelaczBialko()" style="cursor:pointer;'+
+    '-webkit-tap-highlight-color:transparent">'+
+    '<b>Białko '+dzis+' / '+c.min+' g</b>'+
+    (dzis >= c.min ? ' · cel dobity' : ' · brakuje '+(c.min - dzis)+' g')+
+    '<span style="float:right;opacity:.6">'+(BIALKO_ROZW?'▴':'▾')+'</span>';
+
+  if(!BIALKO_ROZW){
+    h += '<div class="note" style="margin-top:4px">Dotknij, żeby dopisać</div></div>';
+    return h;
+  }
+
+  h += '<div style="margin-top:9px">' +
+    BIALKOWE.map(x =>
+      '<button class="btn ghost sm" style="margin:3px 3px 0 0" '+
+      'onclick="event.stopPropagation();dodajBialko('+x.g+')">'+
+      esc(x.n)+' <b>+'+x.g+'</b></button>').join('') +
+    '</div>' +
+    (aiDostepne()
+      ? '<div class="fld" style="margin-top:10px" onclick="event.stopPropagation()">'+
+          '<label>Albo opisz, co zjadłeś</label>'+
+          '<div style="display:flex;gap:7px">'+
+            '<input type="text" id="jedzenieIn" placeholder="np. 200 g ryżu i pierś z kurczaka" style="flex:1">'+
+            '<button class="btn sm" onclick="policzJedzenie()">Policz</button>'+
+          '</div>'+
+          '<button class="btn ghost sm" style="margin-top:7px;width:100%" '+
+            'onclick="document.getElementById(\'jedzenieFoto\').click()">Albo zrób zdjęcie talerza</button>'+
+          '<input type="file" id="jedzenieFoto" accept="image/*" capture="environment" '+
+            'style="display:none" onchange="policzJedzenieZdjecie(event)">'+
+          '<div id="jedzenieWynik"></div>'+
+        '</div>'
+      : '')+
+    '<div class="fld" style="margin-top:10px" onclick="event.stopPropagation()">'+
+      '<label>Albo wpisz gramy</label>'+
+      '<div style="display:flex;gap:7px">'+
+        '<input type="number" inputmode="decimal" id="bialkoIn" placeholder="np. 28" style="flex:1">'+
+        '<button class="btn sm" onclick="dodajBialko(document.getElementById(\'bialkoIn\').value);'+
+          'document.getElementById(\'bialkoIn\').value=\'\'">Dodaj</button>'+
+      '</div></div>'+
+    '<div class="note" style="margin-top:9px">Cel '+c.min+'–'+c.max+' g przy '+fmtKg(c.masa)+' kg '+
+      '(1,6–2,2 g na kilogram). Powyżej górnej granicy badania przestają pokazywać zysk.'+
+      (dzis > 0 ? ' <a href="javascript:void(0)" onclick="event.stopPropagation();wyzerujBialko()">Wyzeruj dziś</a>' : '')+
+      '</div>';
+
+  const sr = bialkoSrednia(7);
+  if(sr) h += '<div class="hm" style="margin-top:7px">Ostatnie 7 dni: średnio <b>'+sr.srednia+' g</b>'+
+    ' z '+sr.dni+' '+(sr.dni===1?'dnia':'dni')+' z wpisem.</div>';
+
+  return h + '</div>';
+}
+
 /* ============================================================
    DZIEŃ — dane z zegarka i świadomy odpoczynek
    Po sprzątaniu z 25 sierpnia zostały tu tylko rzeczy, które Filip
@@ -5945,6 +6428,29 @@ function renderReport(){
     h+='<div class="note" style="margin-top:10px">Na podstawie '+dCur.length+' '+(dCur.length===1?'wpisu':'wpisów')+'.</div></div>';
   }
 
+  /* BIAŁKO W RAPORCIE — liczba, która najczęściej tłumaczy stojącą progresję
+     u kogoś, kto trenuje regularnie. Pokazujemy średnią z dni Z WPISEM
+     i osobno, ile tych dni było, żeby nie udawać, że wiemy więcej. */
+  {
+    const c = celBialka();
+    const dni = dCur.filter(d => d.bialko != null && d.bialko > 0);
+    if(dni.length){
+      const sr = Math.round(dni.reduce((a,d)=>a+d.bialko,0) / dni.length);
+      const trafione = dni.filter(d => d.bialko >= c.min).length;
+      const stan = sr >= c.min ? 'ok' : sr >= c.min*0.8 ? 'warn' : 'bad';
+      h += '<h2>Białko</h2><div class="tip '+stan+'">'+
+        '<b>Średnio '+sr+' g dziennie</b> · cel '+c.min+'–'+c.max+' g'+
+        '<div class="hm" style="margin-top:4px">'+trafione+' z '+dni.length+
+        ' zapisanych dni w celu'+
+        (dni.length < curDays + 1 ? ' · '+dni.length+' dni z wpisem w tym tygodniu' : '')+
+        '</div>'+
+        (sr < c.min ? '<div class="note" style="margin-top:6px">Przy odbudowie masy to jest '+
+          'zwykle pierwsze miejsce, w którym gubi się efekt treningu — wcześniej niż '+
+          'objętość czy dobór ćwiczeń.</div>' : '')+
+        '</div>';
+    }
+  }
+
   const flags=[];
   if(curDays<2&&new Date().getDay()>=5) flags.push(['warn','Mało treningów w tym tygodniu — '+curDays+' z 4.']);
   if(sl!=null&&sl<6.5) flags.push(['bad','Średni sen '+sl.toFixed(1)+' h. Poniżej 6,5 h spada synteza białek i rośnie ryzyko kontuzji. To zwykle pierwszy powód, dla którego progresja staje.']);
@@ -6031,6 +6537,16 @@ function renderData(){
     '<div class="kv"><span class="k">Dni</span><span class="v">'+ORDER.join(', ')+'</span></div>'+
     '<div class="kv"><span class="k">Ćwiczeń w bibliotece</span><span class="v">'+Object.keys(LIB).length+'</span></div>'+
     '<div class="kv"><span class="k">Regionów</span><span class="v">'+Object.keys(REG).length+'</span></div>';
+  /* Stan połączenia z modelem — wprost, bo inaczej nie da się odróżnić
+     „nie skonfigurowane" od „nie działa". */
+  const aiEl = document.getElementById('aiStan');
+  if(aiEl) aiEl.innerHTML = aiDostepne()
+    ? '<div class="note">Model odpowiada przez Twojego Workera. Nic wrażliwego nie leży '+
+      'w aplikacji — ani klucz, ani adres dostawcy. Dotknij „Sprawdź połączenie", '+
+      'żeby zobaczyć, który model odpowiada.</div>'
+    : '<div class="note">Nieaktywne — najpierw ustaw adres i token serwera powyżej, '+
+      'a w Workerze dodaj powiązanie <b>AI</b> (za darmo) albo sekret '+
+      '<b>OPENROUTER_KEY</b> (płatne, mocniejsze modele).</div>';
   document.getElementById('setStart').value=DB.settings.start;
   document.getElementById('setGryf').value = DB.settings.gryf || '';
   document.getElementById('setRest').value=DB.settings.rest;
