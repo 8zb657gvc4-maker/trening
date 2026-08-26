@@ -193,6 +193,35 @@ h2:first-child{margin-top:0}
 .nast b{display:block;font-size:17px;font-weight:800}
 .nast span{font-size:9px;color:var(--dim)}
 
+
+
+/* Przełącznik sekcji raportu. Zakładka miała dwanaście nagłówków jeden pod
+   drugim — nawet po odchudzeniu tekstu to jest długi zjazd kciukiem, a szuka
+   się w niej zwykle JEDNEJ rzeczy. Cztery zakresy, jeden widoczny naraz. */
+.segm{display:flex;gap:5px;background:var(--card2);border:1px solid var(--line);
+  border-radius:12px;padding:4px;margin:10px 0 14px}
+.segm button{flex:1;background:transparent;color:var(--dim);border:0;padding:9px 4px;
+  border-radius:9px;font-size:12px;font-weight:700;letter-spacing:.2px}
+.segm button.on{background:var(--acc);color:#04101f}
+
+/* Cztery liczby w rzędzie — nagłówek tygodnia. Wcześniej te same dane szły
+   jako sześć wierszy „etykieta : wartość", czyli sześć linijek do przeczytania
+   zamiast jednego spojrzenia. */
+.stat4{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:10px 0 12px}
+.stat4>div{background:var(--card2);border:1px solid var(--line);border-radius:11px;
+  padding:10px 4px;text-align:center}
+.stat4 b{display:block;font-size:19px;font-weight:800;letter-spacing:-.5px;
+  font-variant-numeric:tabular-nums;line-height:1.1}
+.stat4 span{display:block;font-size:9px;color:var(--dim);margin-top:3px;letter-spacing:.4px}
+
+/* Objętość tydzień po tygodniu jako słupki. Lista liczb nie pokazuje kształtu,
+   a o kształt tu chodzi: czy rośnie, czy stoi, czy właśnie był deload. */
+.tygslupki{display:flex;gap:5px;align-items:flex-end;height:70px;margin-top:6px}
+.tygslupki>div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+.tygslupki i{display:block;border-radius:3px 3px 0 0;background:var(--acc)}
+.tygslupki u{display:block;text-align:center;font-size:9px;color:var(--dim);
+  text-decoration:none;margin-top:4px}
+
 /* Pole tekstowe OBOK przycisku. Bez tego przycisk zabierał całą szerokość
    (ma `width:100%`), a pole kurczyło się do paska kilku pikseli — dało się
    w nie pisać, ale nie dało się zobaczyć, co się napisało. */
@@ -1343,7 +1372,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '42';
+const WERSJA = '44';
 const WERSJA_DATA = '2026-08-26';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -1377,14 +1406,14 @@ function clearSes(){ SES=null; try{ localStorage.removeItem(SESKEY); }catch(e){}
 function blank(){
   const d = new Date(); d.setDate(d.getDate() - ((d.getDay()+6)%7));
   return {v:4, settings:{start:iso(d), rest:90}, workouts:[], daily:[], runs:[],
-          measures:[], questions:[], pain:[], skip:[], coach:null, nastepny:null, kosz:[],
+          measures:[], questions:[], pain:[], skip:[], posilki:[], coach:null, nastepny:null, kosz:[],
           przelozone:[], odpoczynek:[]};
 }
 function load(){
   try{ const r = localStorage.getItem(KEY); DB = r ? JSON.parse(r) : blank(); }
   catch(e){ DB = blank(); }
   if(!DB.settings) DB.settings = {start:iso(new Date()), rest:90};
-  ['workouts','daily','runs','measures','questions','pain','skip'].forEach(k=>{ if(!Array.isArray(DB[k])) DB[k]=[]; });
+  ['workouts','daily','runs','measures','questions','pain','skip','posilki'].forEach(k=>{ if(!Array.isArray(DB[k])) DB[k]=[]; });
   if(DB.coach===undefined) DB.coach = null;
   if(DB.nastepny===undefined) DB.nastepny = null;
   if(!Array.isArray(DB.przelozone)) DB.przelozone = [];
@@ -1642,6 +1671,7 @@ function mergeDB(a, b){
     return wynik;
   });
   scal('measures', m => m.date);
+  scal('posilki',  p => p.id);
   scal('pain',     p => p.id || (p.date+'|'+p.miejsce));
   /* przy pytaniach wygrywa wersja z odpowiedzią — po to je odsyłam */
   scal('questions', q => q.id, (nowy, stary) => !!nowy.answer && !stary.answer);
@@ -4041,10 +4071,14 @@ function renderHub(){
     renderZapis() + renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume +
     renderDzis() +
     '<div class="krata">' + kafelGotowosc() + kafelBialka() + '</div>' +
+    /* Rozwinięcie musi wyjść ZARAZ POD kafelkiem, który dotknąłeś. Wersja 40
+       doklejała je na końcu ekranu — dotykało się pierścienia, a panel
+       otwierał się kilka ekranów niżej i wyglądało to na brak reakcji. */
+    (PORANNE_ROZW ? renderPoranne() : '') +
+    (BIALKO_ROZW ? renderBialko() : '') +
     planBox + bezpieczneHtml('kafelPokrycia', kafelPokrycia) +
     bezpieczneHtml('kafelBoju', kafelBoju) +
     renderKolejne() +
-    (PORANNE_ROZW ? renderPoranne() : '') + (BIALKO_ROZW ? renderBialko() : '') +
     renderBraki() + coach + odpBox + czekaBox + renderPrzeloz() + syncBox;
 }
 
@@ -5759,14 +5793,33 @@ function bialkoDnia(data){
 }
 function makroDnia(data){
   const d = (DB.daily || []).find(x => x.date === (data || today())) || {};
-  return {bialko: d.bialko || 0, wegle: d.wegle || 0, tluszcz: d.tluszcz || 0,
-          kcal: d.kcal || 0};
+  const b = d.bialko || 0, w = d.wegle || 0, t = d.tluszcz || 0;
+  const zapisane = d.kcal || 0;
+  /* Dni sprzed makro mają samo białko i zero kalorii — pokazywanie „0 kcal"
+     obok „60 g białka" jest po prostu nieprawdą. Kalorie z samych znanych
+     makroskładników to dolna granica: tyle na pewno było. Oznaczamy to
+     znakiem „co najmniej", zamiast zmyślać resztę albo zerować. */
+  const zMakro = b*4 + w*4 + t*9;
+  return {bialko: b, wegle: w, tluszcz: t,
+          kcal: Math.max(zapisane, zMakro),
+          niepelne: zMakro > zapisane && zMakro > 0};
 }
 
 /* Dodawanie jest przyrostowe, bo tak wygląda dzień: coś zjadłeś, dopisujesz.
    Wartości ujemne cofają pomyłkę. Kalorie, jeśli ich nie podano, liczymy
    z makroskładników — 4/4/9 kcal na gram. */
-function dodajMakro(porcja){
+/* KAŻDY WPIS ZOSTAWIA ŚLAD.
+
+   Pierwsza wersja tylko dodawała do dziennej sumy. Efekt: nie dało się
+   zobaczyć, z czego ta suma powstała, ani cofnąć jednego posiłku — jedyne
+   cofnięcie to było wyzerowanie całego dnia. Pomyłka przy trzecim posiłku
+   kosztowała dwa poprzednie. To jest ta sama klasa błędu co kasowanie
+   treningu bez kosza i tak samo nie ma prawa zostać.
+
+   Suma dzienna zostaje tam, gdzie była (`daily`), bo liczy na niej gotowość
+   i raport, a stare wpisy sprzed tej zmiany nie mają swoich posiłków.
+   Usunięcie odejmuje dokładnie to, co dodało. */
+function dodajMakro(porcja, opis){
   const p = porcja || {};
   const licz = (x) => { const v = liczba(x); return (v == null || !isFinite(v)) ? 0 : v; };
   const b = licz(p.bialko), w = licz(p.wegle), t = licz(p.tluszcz);
@@ -5781,10 +5834,60 @@ function dodajMakro(porcja){
   d.wegle   = Math.max(0, Math.round((d.wegle   || 0) + w));
   d.tluszcz = Math.max(0, Math.round((d.tluszcz || 0) + t));
   d.kcal    = Math.max(0, Math.round((d.kcal    || 0) + kcal));
+
+  /* dodatnie wpisy to posiłki; ujemne to ręczna korekta i nie zaśmiecają listy */
+  if(b > 0 || w > 0 || t > 0 || kcal > 0){
+    DB.posilki = (DB.posilki || []).concat([{
+      id: uid('p'), date: dzis, godzina: new Date().toISOString().slice(11,16),
+      opis: (opis || 'Dopisane ręcznie').slice(0, 80),
+      bialko: Math.round(b), wegle: Math.round(w), tluszcz: Math.round(t),
+      kcal: Math.round(kcal)
+    }]).slice(-400);
+  }
+
   save(); zsynchronizuj(); sygnal(12);
   odswiezWidok();
 }
 function dodajBialko(g){ dodajMakro({bialko: g}); }
+
+function posilkiDnia(data){
+  return (DB.posilki || []).filter(x => x.date === (data || today()));
+}
+
+function usunPosilek(id){
+  const i = (DB.posilki || []).findIndex(x => x.id === id);
+  if(i < 0) return;
+  const p = DB.posilki[i];
+  const d = (DB.daily || []).find(x => x.date === p.date);
+  if(d){
+    d.bialko  = Math.max(0, (d.bialko  || 0) - (p.bialko  || 0));
+    d.wegle   = Math.max(0, (d.wegle   || 0) - (p.wegle   || 0));
+    d.tluszcz = Math.max(0, (d.tluszcz || 0) - (p.tluszcz || 0));
+    d.kcal    = Math.max(0, (d.kcal    || 0) - (p.kcal    || 0));
+  }
+  DB.posilki.splice(i, 1);
+  save(); zsynchronizuj();
+  toast('Usunięte: ' + p.opis);
+  odswiezWidok();
+}
+
+function listaPosilkow(){
+  const lista = posilkiDnia();
+  if(!lista.length) return '';
+  return '<div style="margin-top:10px" onclick="event.stopPropagation()">'+
+    '<div class="etyk" style="margin-bottom:5px">DZISIAJ ZJEDZONE</div>'+
+    lista.slice().reverse().map(x =>
+      '<div class="hist" style="padding:8px 0">'+
+        '<div style="min-width:0">'+
+          '<div class="hd" style="font-size:13px">'+esc(x.opis)+'</div>'+
+          '<div class="hm">'+x.godzina+' · '+x.kcal+' kcal · '+
+            x.bialko+' g B'+(x.wegle?' · '+x.wegle+' g W':'')+(x.tluszcz?' · '+x.tluszcz+' g T':'')+
+          '</div>'+
+        '</div>'+
+        '<button class="sx" onclick="usunPosilek(\''+x.id+'\')">×</button>'+
+      '</div>').join('')+
+    '</div>';
+}
 
 function wyzerujBialko(){
   const d = (DB.daily || []).find(x => x.date === today());
@@ -5868,7 +5971,8 @@ function pokazPropozycjeJedzenia(w){
 function zatwierdzJedzenie(){
   if(!JEDZENIE_PROPOZYCJA) return;
   const w = JEDZENIE_PROPOZYCJA;
-  dodajMakro({bialko: w.bialko, wegle: w.wegle, tluszcz: w.tluszcz, kcal: w.kcal});
+  dodajMakro({bialko: w.bialko, wegle: w.wegle, tluszcz: w.tluszcz, kcal: w.kcal},
+             w.opis || 'Posiłek');
   JEDZENIE_PROPOZYCJA = null;
   const el = document.getElementById('jedzenieIn'); if(el) el.value = '';
   toast('Dopisane');
@@ -5927,7 +6031,7 @@ function zmniejszZdjecie(plik, maxBok){
 
 function dodajPorcje(i){
   const x = BIALKOWE[i];
-  if(x) dodajMakro({bialko: x.b, wegle: x.w, tluszcz: x.t, kcal: x.kcal});
+  if(x) dodajMakro({bialko: x.b, wegle: x.w, tluszcz: x.t, kcal: x.kcal}, x.n);
 }
 
 let BIALKO_ROZW = false;
@@ -5941,9 +6045,9 @@ function renderBialko(){
 
   let h = '<div class="tip '+stan+'" onclick="przelaczBialko()" style="cursor:pointer;'+
     '-webkit-tap-highlight-color:transparent">'+
-    '<b>Białko '+dzis+' / '+c.min+' g</b>'+
-    (dzis >= c.min ? ' · cel dobity' : ' · brakuje '+(c.min - dzis)+' g')+
-    '<span style="float:right;opacity:.6">'+(BIALKO_ROZW?'▴':'▾')+'</span>';
+    '<b>Jedzenie</b>'+
+    (dzis >= c.min ? ' · cel białka dobity' : ' · brakuje '+(c.min - dzis)+' g białka')+
+    '<span style="float:right;opacity:.6">'+(BIALKO_ROZW?'▴ zwiń':'▾')+'</span>';
 
   if(!BIALKO_ROZW){
     h += '<div class="note" style="margin-top:4px">Dotknij, żeby dopisać</div></div>';
@@ -5954,10 +6058,15 @@ function renderBialko(){
   h += '<div class="card" style="margin-top:10px;padding:11px" onclick="event.stopPropagation()">'+
       '<div style="display:flex;justify-content:space-between;align-items:baseline">'+
         '<div class="etyk" style="margin:0">DZIŚ</div>'+
-        '<div><b style="font-size:19px">'+md.kcal+'</b>'+
+        '<div><b style="font-size:19px">'+(md.niepelne?'≥':'')+md.kcal+'</b>'+
         '<span style="color:var(--dim);font-size:12px"> / '+cm.kcal+' kcal</span></div>'+
       '</div>'+
       pasekMakro()+
+      (md.niepelne
+        ? '<div class="hm" style="margin-top:4px">Część dzisiejszych wpisów pochodzi '+
+          'sprzed liczenia makro — kalorie są policzone z tego, co znane, więc to '+
+          'dolna granica.</div>'
+        : '')+
       slupekMakro('Białko',      md.bialko,  cm.b.min, 'var(--acc)',  'g')+
       slupekMakro('Węglowodany', md.wegle,   cm.w.min, '#b98cff',     'g')+
       slupekMakro('Tłuszcze',    md.tluszcz, cm.t.min, 'var(--warn)', 'g')+
@@ -5998,6 +6107,8 @@ function renderBialko(){
       (cm.sposob !== 'Mifflin' ? ' — wpisz wzrost w Danych, żeby było dokładniej' : '')+'.'+
       (dzis > 0 ? ' <a href="javascript:void(0)" onclick="event.stopPropagation();wyzerujBialko()">Wyzeruj dziś</a>' : '')+
       '</div>';
+
+  h += listaPosilkow();
 
   const sr = bialkoSrednia(7);
   if(sr) h += '<div class="hm" style="margin-top:7px">Ostatnie 7 dni: średnio <b>'+sr.srednia+' g</b>'+
@@ -6712,6 +6823,12 @@ function raportDnia(){
   return h;
 }
 
+/* Która sekcja raportu jest otwarta. Domyślnie „Teraz" — po wejściu w Raport
+   człowiek najczęściej chce wiedzieć, co się właśnie stało, a nie jak
+   wyglądała objętość osiem tygodni temu. */
+let RAPORT_SEKCJA = 'teraz';
+function raportSekcja(k){ RAPORT_SEKCJA = k; renderReport(); scrollTop(); }
+
 function renderReport(){
   const w=weekNo(), p=phaseOf(tydzienPlanu());
   const cur=DB.workouts.filter(x=>inWeek(x.date,w));
@@ -6720,9 +6837,16 @@ function renderReport(){
   const dPrev=DB.daily.filter(x=>inWeek(x.date,w-1));
   const rCur=DB.runs.filter(x=>inWeek(x.date,w));
   const [ws,we]=weekRange(w);
-  let h='<div class="tip"><b>Tydzień '+w+'</b> · '+PHASES[p].n+' · '+plDate(ws)+' – '+plDate(we)+'</div>';
+  const SEKCJE = [['teraz','Teraz'],['tydzien','Tydzień'],['cialo','Mięśnie'],['jedzenie','Jedzenie']];
+  if(!SEKCJE.some(x => x[0] === RAPORT_SEKCJA)) RAPORT_SEKCJA = 'teraz';
+  const sek = RAPORT_SEKCJA;
 
-  h += raportDnia();
+  let h='<div class="tip"><b>Tydzień '+w+'</b> · '+PHASES[p].n+' · '+plDate(ws)+' – '+plDate(we)+'</div>'+
+    '<div class="segm">'+ SEKCJE.map(([k,n]) =>
+      '<button class="'+(k===sek?'on':'')+'" onclick="raportSekcja(\''+k+'\')">'+n+'</button>').join('') +
+    '</div>';
+
+  if(sek === 'teraz') h += raportDnia();
 
   /* NAJŚWIEŻSZY RAPORT SESJI — na górze zakładki, gdzie go szukasz.
 
@@ -6733,7 +6857,7 @@ function renderReport(){
      w zakładce „Raport" wisiał mój raport z 5 sierpnia i wyglądał jak
      najnowsza rzecz, jaką aplikacja ma do powiedzenia. */
   const ostSesja = DB.workouts.length ? DB.workouts[DB.workouts.length - 1] : null;
-  if(ostSesja){
+  if(sek === 'teraz' && ostSesja){
     const ile = Math.round((new Date(today()+'T00:00:00') -
                             new Date(ostSesja.date+'T00:00:00')) / 864e5);
     const kiedy = ile <= 0 ? 'dzisiaj' : ile === 1 ? 'wczoraj' : ile + ' dni temu';
@@ -6743,7 +6867,161 @@ function renderReport(){
       '<div class="card">' + bezpieczneHtml('raportSesji', () => raportSesji(ostSesja, {bezMapy: true})) + '</div>';
   }
 
-  if(DB.raport){
+  const cv=cur.reduce((a,x)=>a+vol(x),0), pv=prev.reduce((a,x)=>a+vol(x),0);
+  /* plan to 4 dni treningowe, nie 4 sesje — dwie sesje jednego dnia liczą się jako jeden dzień */
+  const curDays=new Set(cur.map(x=>x.date)).size;
+  const serieRazem = cur.reduce((a,x)=>a+setCount(x),0);
+  const rpeTyg = (() => {
+    const v = cur.flatMap(x => x.exercises.flatMap(e => e.sets.filter(y => !y.wu)))
+      .map(x => x.rpe).filter(x => x != null);
+    return v.length ? (v.reduce((a,b)=>a+b,0)/v.length) : null;
+  })();
+  const zmiana = pv ? Math.round((cv/pv - 1) * 100) : null;
+
+  if(sek === 'tydzien') h+='<h2>Ten tydzień</h2>'+
+    '<div class="stat4">'+
+      '<div><b class="'+(curDays>=4?'ok':curDays>=2?'':'bad')+'">'+curDays+'</b><span>DNI / 4</span></div>'+
+      '<div><b>'+serieRazem+'</b><span>SERII</span></div>'+
+      '<div><b>'+(cv >= 1000 ? Math.round(cv/1000)+'t' : Math.round(cv))+'</b><span>OBJĘTOŚĆ</span></div>'+
+      '<div><b class="'+(rpeTyg==null?'':rpeTyg<=sufitFazy(p)?'ok':'warn')+'">'+
+        (rpeTyg==null?'—':fmtKg(Math.round(rpeTyg*10)/10))+'</b><span>RPE / '+sufitFazy(p)+'</span></div>'+
+    '</div>'+
+    (zmiana != null
+      ? '<div class="hm" style="margin:-6px 0 12px">Objętość '+(zmiana>=0?'+':'')+zmiana+
+        '% wobec poprzedniego tygodnia'+(rCur.length?' · biegi '+rCur.length+'/2':'')+'</div>'
+      : '');
+
+  const KEYLIFTS=['Przysiad ze sztangą','Wyciskanie leżąc','Martwy ciąg klasyczny','Podciąganie'];
+  const rows=KEYLIFTS.map(name=>{
+    const c=bestIn(cur,name), pr=bestIn(prev,name);
+    if(!c) return null;
+    const ce=e1rm(c,name), pe=pr?e1rm(pr,name):null;
+    const dir=pe==null?'':ce>pe*1.01?'up':ce<pe*.99?'down':'flat';
+    return kv(name,fmtSet(c, name)+(dir==='up'?' ↑':dir==='down'?' ↓':dir==='flat'?' →':''),dir);
+  }).filter(Boolean);
+  if(sek === 'tydzien' && rows.length) h+='<h2>Główne boje</h2><div class="card">'+rows.join('')+
+    '<div class="note" style="margin-top:10px">Tylko boje, bo tylko one nie rotują — akcesoria zmieniają się, więc ich nie da się porównywać tydzień do tygodnia.</div></div>';
+
+  if(sek === 'cialo'){ h+=renderCoverage(); h+=renderTrendy(); }
+
+  const sl=avg(dCur.map(d=>d.sleep));
+  const rh=avg(dCur.map(d=>d.rhr)), rhP=avg(dPrev.map(d=>d.rhr));
+  const hv=avg(dCur.map(d=>d.hrv)), hvP=avg(dPrev.map(d=>d.hrv));
+  const st=avg(dCur.map(d=>d.steps).filter(x => x != null && x >= 1000));
+  const wg=avg(dCur.map(d=>d.weight)), wgP=avg(dPrev.map(d=>d.weight));
+  if(dCur.length){
+    const kaf = (wart, etyk, stan) =>
+      '<div><b class="'+(stan||'')+'">'+wart+'</b><span>'+etyk+'</span></div>';
+    const kafle = [];
+    if(sl!=null) kafle.push(kaf(sl.toFixed(1), 'SEN (H)', sl>=7?'ok':sl>=6.5?'':'bad'));
+    if(hv!=null) kafle.push(kaf(Math.round(hv), 'HRV', hvP?(hv>hvP?'ok':hv<hvP*.9?'bad':''):''));
+    if(rh!=null) kafle.push(kaf(Math.round(rh), 'TĘTNO SP.', rhP?(rh<rhP?'ok':rh>rhP+2?'bad':''):''));
+    if(wg!=null) kafle.push(kaf(wg.toFixed(1), 'WAGA (KG)', ''));
+    if(st!=null && kafle.length < 4) kafle.push(kaf(Math.round(st/1000)+'k', 'KROKI', ''));
+    if(sek === 'tydzien' && kafle.length){
+      h+='<h2>Regeneracja</h2><div class="stat4">'+kafle.slice(0,4).join('')+'</div>'+
+        '<div class="hm" style="margin:-6px 0 12px">Średnie z '+dCur.length+' '+
+        (dCur.length===1?'wpisu':'wpisów')+' w tym tygodniu.</div>';
+    }
+  }
+
+  /* BIAŁKO W RAPORCIE — liczba, która najczęściej tłumaczy stojącą progresję
+     u kogoś, kto trenuje regularnie. Pokazujemy średnią z dni Z WPISEM
+     i osobno, ile tych dni było, żeby nie udawać, że wiemy więcej. */
+  {
+    const c = celBialka();
+    const dni = dCur.filter(d => d.bialko != null && d.bialko > 0);
+    if(dni.length){
+      const sr = Math.round(dni.reduce((a,d)=>a+d.bialko,0) / dni.length);
+      const trafione = dni.filter(d => d.bialko >= c.min).length;
+      const stan = sr >= c.min ? 'ok' : sr >= c.min*0.8 ? 'warn' : 'bad';
+      const kc = Math.round(dni.reduce((a,d)=>a+(d.kcal||0),0) / dni.length);
+      const cm = celeMakro();
+      if(sek === 'jedzenie') h += '<h2>Tydzień na talerzu</h2><div class="stat4">'+
+        '<div><b class="'+stan+'">'+sr+'</b><span>BIAŁKO / '+c.min+'</span></div>'+
+        (kc ? '<div><b>'+kc+'</b><span>KCAL / '+cm.kcal+'</span></div>' : '')+
+        '<div><b>'+trafione+'/'+dni.length+'</b><span>DNI W CELU</span></div>'+
+        '<div><b>'+dni.length+'</b><span>DNI Z WPISEM</span></div>'+
+        '</div>'+
+        (sr < c.min
+          ? '<div class="hm" style="margin:-6px 0 12px">Brakuje '+(c.min-sr)+
+            ' g dziennie. Przy odbudowie masy to zwykle pierwsze miejsce, w którym '+
+            'gubi się efekt treningu.</div>'
+          : '<div class="hm" style="margin:-6px 0 12px">Cel dowieziony.</div>');
+    }
+  }
+
+  const flags=[];
+  if(curDays<2&&new Date().getDay()>=5) flags.push(['warn','Mało treningów w tym tygodniu — '+curDays+' z 4.']);
+  if(sl!=null&&sl<6.5) flags.push(['bad','Średni sen '+sl.toFixed(1)+' h. Poniżej 6,5 h spada synteza białek i rośnie ryzyko kontuzji. To zwykle pierwszy powód, dla którego progresja staje.']);
+  if(rh!=null&&rhP!=null&&rh>rhP+3) flags.push(['warn','Tętno spoczynkowe wyższe o '+Math.round(rh-rhP)+' uderzeń niż tydzień temu.']);
+  if(hv!=null&&hvP!=null&&hv<hvP*.85) flags.push(['warn','HRV spadło o '+Math.round((1-hv/hvP)*100)+'%.']);
+  if(pv>0&&cv<pv*.75&&cur.length>=3&&p!==2) flags.push(['warn','Objętość spadła o '+Math.round((1-cv/pv)*100)+'% mimo pełnego tygodnia.']);
+  if(p===2) flags.push(['','Tydzień deloadu — spadek objętości jest zamierzony.']);
+  /* Ostrzeżenia zostają w „Teraz" — to jedyna sekcja, którą otwiera się
+     bez konkretnego pytania, więc tam mają szansę zostać zauważone. */
+  if(sek === 'teraz' && flags.length)
+    h+='<h2>Na co zwrócić uwagę</h2>'+flags.map(f=>'<div class="tip '+f[0]+'">'+f[1]+'</div>').join('');
+
+  const weeks=[];
+  for(let i=1;i<=Math.min(8,w);i++){
+    const ww=DB.workouts.filter(x=>inWeek(x.date,i));
+    if(ww.length) weeks.push([i,ww.length,Math.round(ww.reduce((a,x)=>a+vol(x),0))]);
+  }
+  if(weeks.length>1){
+    const mx=Math.max(...weeks.map(x=>x[2]))||1;
+    const maks = Math.max(...weeks.map(x => x[2]));
+    if(sek === 'tydzien') h+='<h2>Objętość tydzień po tygodniu</h2><div class="card">'+
+      '<div class="tygslupki">'+ weeks.map(([i,n,v]) =>
+        '<div><i style="height:'+(maks>0 ? Math.max(3, Math.round(v/maks*100)) : 3)+'%'+
+        (i===w ? ';background:var(--ok)' : '')+'"></i>'+
+        '<u>T'+i+'</u></div>').join('') +'</div>'+
+      '<div class="hm" style="margin-top:8px">'+
+        weeks.map(([i,n,v]) => 'T'+i+' '+(v>=1000?Math.round(v/1000)+'t':Math.round(v)+' kg')).join(' · ')+
+      '</div></div>';
+  }
+  /* Sekcja „Jedzenie" bez historii to jeden rząd liczb — a najciekawsze przy
+     jedzeniu jest to, czy trzymasz poziom, a nie ile było wczoraj. Siedem
+     słupków wobec celu białka mówi to od razu. */
+  if(sek === 'jedzenie'){
+    const cB = celBialka(), cm2 = celeMakro();
+    const dni7 = [];
+    for(let i = 6; i >= 0; i--){
+      const d = przesun(today(), -i);
+      const w2 = (DB.daily || []).find(x => x.date === d) || {};
+      dni7.push([d, w2.bialko || 0, w2.kcal || 0]);
+    }
+    if(dni7.some(x => x[1] > 0)){
+      const maks = Math.max(cB.min, ...dni7.map(x => x[1]));
+      h += '<h2>Ostatnie 7 dni</h2><div class="card">'+
+        '<div class="tygslupki" style="height:80px">'+
+          dni7.map(([d, b]) =>
+            '<div><i style="height:'+(maks ? Math.max(3, Math.round(b/maks*100)) : 3)+'%;'+
+            'background:'+(b >= cB.min ? 'var(--ok)' : b > 0 ? 'var(--warn)' : 'var(--line)')+
+            '"></i><u>'+plDate(d).split(' ')[0]+'</u></div>').join('')+
+        '</div>'+
+        '<div class="hm" style="margin-top:8px">Zielony = cel białka ('+cB.min+' g) dowieziony. '+
+        'Szary = brak wpisu.</div></div>';
+    }
+    h += listaPosilkow();
+  }
+
+  /* Każda sekcja musi mieć swój stan pusty. Bez tego przełączenie na „Jedzenie"
+     w dniu bez wpisów dawało goły ekran z samym przełącznikiem i wyglądało
+     jak awaria. */
+  const pustaSekcja = {
+    teraz:    !cur.length && !dCur.length && !DB.workouts.length,
+    tydzien:  !cur.length && !dCur.length && !rCur.length,
+    cialo:    !DB.workouts.length,
+    jedzenie: !DB.daily.some(d => d.bialko)
+  }[sek];
+  if(pustaSekcja) h+='<div class="empty">'+
+    {teraz:    'Nic jeszcze nie ma.<br>Zacznij trening albo wpisz dane z rana.',
+     tydzien:  'Brak danych z tego tygodnia.<br>Zaloguj trening albo wpisz dane z Garmina.',
+     cialo:    'Mapa mięśni potrzebuje choć jednego treningu.',
+     jedzenie: 'Nic jeszcze nie zapisane.<br>Białko dopisujesz na ekranie Trening.'}[sek]+
+    '</div>';
+  if(sek === 'teraz' && DB.raport){
     /* Raport potrafi mieć cztery tysiące znaków. Cały naraz to ściana, przez
        którą przewija się do końca i nie czyta nic — a najważniejsze zdania
        stoją zawsze na górze, zaraz za kaflami. Domyślnie pokazujemy tę część,
@@ -6770,95 +7048,6 @@ function renderReport(){
     if(srvGotowy()) h+='<button class="btn ghost sm" style="margin-bottom:14px" onclick="srvPull()">Sprawdź, czy jest nowszy</button>';
   }
 
-  const cv=cur.reduce((a,x)=>a+vol(x),0), pv=prev.reduce((a,x)=>a+vol(x),0);
-  /* plan to 4 dni treningowe, nie 4 sesje — dwie sesje jednego dnia liczą się jako jeden dzień */
-  const curDays=new Set(cur.map(x=>x.date)).size;
-  h+='<h2>Ten tydzień</h2><div class="card">';
-  h+=kv('Dni treningowe',curDays+' / 4',curDays>=4?'up':curDays>=2?'flat':'down');
-  if(cur.length>curDays) h+=kv('w tym sesji',cur.length);
-  h+=kv('Biegi',rCur.length+' / 2',rCur.length>=2?'up':rCur.length>=1?'flat':'down');
-  h+=kv('Serie razem',cur.reduce((a,x)=>a+setCount(x),0));
-  h+=kv('Objętość',Math.round(cv).toLocaleString('pl')+' kg',pv?(cv>pv?'up':cv<pv*.9?'down':'flat'):'');
-  if(pv) h+=kv('vs poprzedni tydzień',(cv>=pv?'+':'')+Math.round((cv/pv-1)*100)+'%',cv>=pv?'up':'down');
-  h+='</div>';
-
-  const KEYLIFTS=['Przysiad ze sztangą','Wyciskanie leżąc','Martwy ciąg klasyczny','Podciąganie'];
-  const rows=KEYLIFTS.map(name=>{
-    const c=bestIn(cur,name), pr=bestIn(prev,name);
-    if(!c) return null;
-    const ce=e1rm(c,name), pe=pr?e1rm(pr,name):null;
-    const dir=pe==null?'':ce>pe*1.01?'up':ce<pe*.99?'down':'flat';
-    return kv(name,fmtSet(c, name)+(dir==='up'?' ↑':dir==='down'?' ↓':dir==='flat'?' →':''),dir);
-  }).filter(Boolean);
-  if(rows.length) h+='<h2>Główne boje</h2><div class="card">'+rows.join('')+
-    '<div class="note" style="margin-top:10px">Tylko boje, bo tylko one nie rotują — akcesoria zmieniają się, więc ich nie da się porównywać tydzień do tygodnia.</div></div>';
-
-  h+=renderCoverage();
-  h+=renderTrendy();
-
-  const sl=avg(dCur.map(d=>d.sleep));
-  const rh=avg(dCur.map(d=>d.rhr)), rhP=avg(dPrev.map(d=>d.rhr));
-  const hv=avg(dCur.map(d=>d.hrv)), hvP=avg(dPrev.map(d=>d.hrv));
-  const st=avg(dCur.map(d=>d.steps).filter(x => x != null && x >= 1000));
-  const wg=avg(dCur.map(d=>d.weight)), wgP=avg(dPrev.map(d=>d.weight));
-  if(dCur.length){
-    h+='<h2>Regeneracja (średnie)</h2><div class="card">';
-    if(sl!=null) h+=kv('Sen',sl.toFixed(1)+' h',sl>=7?'up':sl>=6.5?'flat':'down');
-    if(rh!=null) h+=kv('Tętno spoczynkowe',Math.round(rh),rhP?(rh<rhP?'up':rh>rhP+2?'down':'flat'):'');
-    if(hv!=null) h+=kv('HRV',Math.round(hv)+' ms',hvP?(hv>hvP?'up':hv<hvP*.9?'down':'flat'):'');
-    if(st!=null) h+=kv('Kroki',Math.round(st).toLocaleString('pl'));
-    if(wg!=null) h+=kv('Waga',wg.toFixed(1)+' kg',wgP?(Math.abs(wg-wgP)<.15?'flat':wg>wgP?'up':'down'):'');
-    h+='<div class="note" style="margin-top:10px">Na podstawie '+dCur.length+' '+(dCur.length===1?'wpisu':'wpisów')+'.</div></div>';
-  }
-
-  /* BIAŁKO W RAPORCIE — liczba, która najczęściej tłumaczy stojącą progresję
-     u kogoś, kto trenuje regularnie. Pokazujemy średnią z dni Z WPISEM
-     i osobno, ile tych dni było, żeby nie udawać, że wiemy więcej. */
-  {
-    const c = celBialka();
-    const dni = dCur.filter(d => d.bialko != null && d.bialko > 0);
-    if(dni.length){
-      const sr = Math.round(dni.reduce((a,d)=>a+d.bialko,0) / dni.length);
-      const trafione = dni.filter(d => d.bialko >= c.min).length;
-      const stan = sr >= c.min ? 'ok' : sr >= c.min*0.8 ? 'warn' : 'bad';
-      h += '<h2>Białko</h2><div class="tip '+stan+'">'+
-        '<b>Średnio '+sr+' g dziennie</b> · cel '+c.min+'–'+c.max+' g'+
-        '<div class="hm" style="margin-top:4px">'+trafione+' z '+dni.length+
-        ' zapisanych dni w celu'+
-        (dni.length < curDays + 1 ? ' · '+dni.length+' dni z wpisem w tym tygodniu' : '')+
-        '</div>'+
-        (sr < c.min ? '<div class="note" style="margin-top:6px">Przy odbudowie masy to jest '+
-          'zwykle pierwsze miejsce, w którym gubi się efekt treningu — wcześniej niż '+
-          'objętość czy dobór ćwiczeń.</div>' : '')+
-        '</div>';
-    }
-  }
-
-  const flags=[];
-  if(curDays<2&&new Date().getDay()>=5) flags.push(['warn','Mało treningów w tym tygodniu — '+curDays+' z 4.']);
-  if(sl!=null&&sl<6.5) flags.push(['bad','Średni sen '+sl.toFixed(1)+' h. Poniżej 6,5 h spada synteza białek i rośnie ryzyko kontuzji. To zwykle pierwszy powód, dla którego progresja staje.']);
-  if(rh!=null&&rhP!=null&&rh>rhP+3) flags.push(['warn','Tętno spoczynkowe wyższe o '+Math.round(rh-rhP)+' uderzeń niż tydzień temu.']);
-  if(hv!=null&&hvP!=null&&hv<hvP*.85) flags.push(['warn','HRV spadło o '+Math.round((1-hv/hvP)*100)+'%.']);
-  if(pv>0&&cv<pv*.75&&cur.length>=3&&p!==2) flags.push(['warn','Objętość spadła o '+Math.round((1-cv/pv)*100)+'% mimo pełnego tygodnia.']);
-  if(p===2) flags.push(['','Tydzień deloadu — spadek objętości jest zamierzony.']);
-  if(flags.length) h+='<h2>Na co zwrócić uwagę</h2>'+flags.map(f=>'<div class="tip '+f[0]+'">'+f[1]+'</div>').join('');
-
-  const weeks=[];
-  for(let i=1;i<=Math.min(8,w);i++){
-    const ww=DB.workouts.filter(x=>inWeek(x.date,i));
-    if(ww.length) weeks.push([i,ww.length,Math.round(ww.reduce((a,x)=>a+vol(x),0))]);
-  }
-  if(weeks.length>1){
-    const mx=Math.max(...weeks.map(x=>x[2]))||1;
-    h+='<h2>Objętość tydzień po tygodniu</h2><div class="card">'+weeks.map(([i,n,v])=>
-      '<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px">'+
-      '<span style="color:'+(i===w?'var(--acc)':'var(--dim)')+';font-weight:'+(i===w?'700':'400')+'">Tydz. '+i+' · '+n+' tren.</span>'+
-      '<span class="mono" style="color:var(--dim)">'+v.toLocaleString('pl')+' kg</span></div>'+
-      '<div style="height:7px;background:var(--card2);border-radius:4px;overflow:hidden">'+
-      '<div style="height:100%;width:'+Math.round(v/mx*100)+'%;background:'+(i===w?'var(--acc)':'var(--line)')+';border-radius:4px"></div></div></div>').join('')+'</div>';
-  }
-  if(!cur.length&&!dCur.length&&!rCur.length)
-    h+='<div class="empty">Brak danych z tego tygodnia.<br>Zaloguj trening albo wpisz dane z Garmina.</div>';
   h+='<div class="tip" style="margin-top:16px">Głębsza analiza: <b>Dane → Wyślij do iCloud</b>, a potem w Cowork „przeanalizuj mój tydzień".</div>';
   document.getElementById('reportBody').innerHTML=h;
 }
