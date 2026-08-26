@@ -641,13 +641,6 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   <div class="note" style="margin-bottom:9px">Usunięty trening trafia do kosza w zakładce Dane i przez 30 dni da się go przywrócić.</div>
   <div class="card" id="histList"></div>
 
-  <h2>Zdjęcia sylwetki</h2>
-  <div class="note" style="margin-bottom:9px">To samo światło, pora i poza.</div>
-  <div class="card">
-    <button class="btn ghost sm" onclick="document.getElementById('fotoIn').click()">Dodaj zdjęcie</button>
-    <input type="file" id="fotoIn" accept="image/*" style="display:none" onchange="addFoto(event)">
-    <div id="fotoList"></div>
-  </div>
 </div>
 
 <!-- ================= RAPORT ================= -->
@@ -1394,11 +1387,10 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '48';
+const WERSJA = '49';
 const WERSJA_DATA = '2026-08-27';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
-const FOTOKEY = 'trening_foto';      /* zdjęcia sylwetki — osobno, żeby nie puchł główny eksport */
 let DB = null, SES = null, SUB = 'hub';
 
 /* ============================================================
@@ -1837,7 +1829,7 @@ function save(){
     try { alert('BRAK MIEJSCA W PAMIĘCI TELEFONU\n\n'+
       'Trening NIE zapisał się na stałe. Zanim zamkniesz aplikację:\n'+
       '1. Dane → Eksportuj (zapisz plik)\n'+
-      '2. Dane → Zdjęcia sylwetki → usuń kilka\n\n'+
+      '2. Dane → Wyślij do iCloud, potem wyczyść stare treningi\n\n'+
       'Zdjęcia zajmują najwięcej miejsca.'); } catch(e2){}
     toast('BŁĄD ZAPISU — zrób eksport zanim zamkniesz');
   }
@@ -1895,7 +1887,27 @@ function tydzienPlanu(ref){
     const n = (DB.workouts || []).filter(x => x.date >= od && x.date <= doo).length;
     licz += n >= 2 ? 1 : n >= 1 ? 0.5 : 0;
   }
-  return Math.min(kal, Math.floor(licz) + 1);
+  const zHistorii = Math.min(kal, Math.floor(licz) + 1);
+
+  /* ZAPADKA. Tydzień planu liczy się z historii, więc skasowanie treningu
+     sprzed dwóch tygodni potrafiło cofnąć fazę — z intensyfikacji z powrotem
+     do budowy, w środku cyklu, bez słowa. Usuwanie archiwum nie ma prawa
+     zmieniać tego, co robisz dziś.
+
+     Pamiętamy więc najwyższy osiągnięty tydzień i nigdy nie schodzimy niżej.
+     Pytanie o PRZESZŁĄ datę (raport, historia) omija zapadkę, bo tam chodzi
+     o to, jak było, a nie o to, gdzie jesteś. */
+  if(ref !== today()) return zHistorii;
+
+  DB.settings = DB.settings || {};
+  /* Zapadka jest przypisana do KONKRETNEGO planu. Zmiana daty startu znaczy
+     nowy blok treningowy, więc szczyt z poprzedniego nie ma prawa go trzymać
+     w intensyfikacji. Bez tego podmiana planu zostawiałaby fazę zamrożoną
+     na zawsze. */
+  const z = DB.settings.szczyt;
+  const szczyt = (z && z.start === DB.settings.start) ? (z.tydzien || 0) : 0;
+  if(zHistorii > szczyt) DB.settings.szczyt = {start: DB.settings.start, tydzien: zHistorii};
+  return Math.min(kal, Math.max(zHistorii, szczyt));
 }
 
 /* Ile tygodni kalendarza przepadło — do pokazania człowiekowi, nie do liczenia. */
@@ -3602,9 +3614,17 @@ function suggestNext(naJutro){
     ? Math.round((new Date(ref+'T00:00:00') - new Date(ostatni.date+'T00:00:00'))/864e5)
     : null;
   const odNowa = przerwaDni != null && przerwaDni >= 7;
-  const nastepnyPoKolei = (!ostatni || odNowa)
+  /* Restart po przerwie zaczyna od początku rotacji — chyba że ostatnia
+     sesja przed przerwą to był właśnie ten dzień. Wyjazd zaczynał się kiedyś
+     od dnia push i kończył dniem push; po powrocie aplikacja proponowała
+     push trzeci raz z rzędu, tyle że z tygodniową dziurą w środku. */
+  const nastepnyPoKolei = !ostatni
     ? ORDER[0]
-    : (ORDER[(ORDER.indexOf(ostatni.day) + 1) % ORDER.length] || ORDER[0]);
+    : odNowa
+      ? (ostatni.day === ORDER[0]
+          ? (ORDER[1] || ORDER[0])
+          : ORDER[0])
+      : (ORDER[(ORDER.indexOf(ostatni.day) + 1) % ORDER.length] || ORDER[0]);
   const kolejka = wKolejce(nastepnyPoKolei);
 
   const zakw = (DB.daily.find(x => x.date === ref) || {}).zakwasy || {};
@@ -3676,9 +3696,12 @@ function suggestNext(naJutro){
   cand = kolejka;
 
   const why = [];
-  if(odNowa && day === ORDER[0])
+  if(odNowa && day === nastepnyPoKolei)
     why.push('Przerwa '+przerwaDni+' dni — rotacja startuje od początku, czyli od '+
-      ORDER[0]+' ('+((PLAN[ORDER[0]]||{}).name||'')+'). Nie wracasz w środek cyklu.');
+      day+' ('+((PLAN[day]||{}).name||'')+'). Nie wracasz w środek cyklu.'+
+      (day !== ORDER[0]
+        ? ' Pomijam '+ORDER[0]+', bo to była Twoja ostatnia sesja przed przerwą.'
+        : ''));
   if(luzniej === 1)
     why.push(day + ' był ' + dniOd(day) + ' dni temu, ale to jedyny dzień, ' +
       'który nie kłóci się z regeneracją — reszta albo była wczoraj, albo boli.');
@@ -4404,10 +4427,20 @@ function korektaWSesji(ses){
   return {
     kierunek: wDol ? 'dol' : 'gora',
     skala, powod,
-    cwiczenia: pozostale.map(e => ({
-      slot: e.slot, name: e.name, z: e.sug.w,
-      na: Math.max(2.5, roundTo(e.sug.w * skala, 2.5))
-    })).filter(x => x.na !== x.z)
+    /* TRZECI RAZ TEN SAM BŁĄD, tym razem złapany przez przegląd zewnętrzny.
+       Pięć procent z 20 kg to 19 kg, a 19 zaokrąglone do 2,5 wraca na 20.
+       Filtr „pokaż tylko realne zmiany" wyrzucał wtedy WSZYSTKIE ćwiczenia
+       i korekta kończyła się pustą listą: silnik decydował, że dzień idzie
+       gorzej, i nie robił nic. Przy hantlach 12,5–20 kg, czyli przy całej
+       górze ciała, nie działała ani razu.
+
+       Skoro decyzja zapadła, zmiana musi wynosić co najmniej jeden krok
+       sprzętu. Zaokrąglenie nie ma prawa jej zjeść. */
+    cwiczenia: pozostale.map(e => {
+      let na = roundTo(e.sug.w * skala, 2.5);
+      if(na === e.sug.w) na = e.sug.w + (wDol ? -2.5 : 2.5);
+      return {slot: e.slot, name: e.name, z: e.sug.w, na: Math.max(2.5, na)};
+    }).filter(x => x.na !== x.z)
   };
 }
 
@@ -5949,6 +5982,11 @@ function listaPosilkow(){
 function wyzerujBialko(){
   const d = (DB.daily || []).find(x => x.date === today());
   if(d){ d.bialko = 0; d.wegle = 0; d.tluszcz = 0; d.kcal = 0; }
+  /* Suma i lista muszą znikać razem. Wcześniej pierścień pokazywał zero,
+     a pod spodem dalej wisiały posiłki — dwa różne stany tego samego dnia
+     na jednym ekranie. Usunięcie potem któregokolwiek z nich odejmowało
+     od zera, czyli nie robiło nic i wyglądało na zepsuty przycisk. */
+  DB.posilki = (DB.posilki || []).filter(x => x.date !== today());
   save(); zsynchronizuj(); odswiezWidok();
 }
 
@@ -6274,7 +6312,6 @@ function renderDaily(){
       '<div class="hm">'+(bits.join(' · ')||'—')+(d.note?' · '+esc(d.note):'')+'</div></div>'+
       '<button class="sx" onclick="delDaily(\''+d.date+'\')">×</button></div>';
   }).join('') : '<div class="empty">Brak wpisów.<br>Przepisz dziś dane z Garmina.</div>';
-  renderFoto();
 }
 
 function saveDaily(){
@@ -6377,59 +6414,6 @@ const OBW=[['mKlatka','klatka','Klatka'],['mTalia','talia','Talia'],
    w polu `answer` przy najbliższym wczytaniu. Scalanie jest tak
    ustawione, że wersja z odpowiedzią wygrywa nad wersją bez.
    ============================================================ */
-
-/* ============================================================
-   ZDJĘCIA SYLWETKI
-   Skalowane do 700 px i zapisywane osobno od reszty danych —
-   base64 w głównym pliku rozdąłby eksport do kilku megabajtów
-   i spowolnił każdą analizę.
-   ============================================================ */
-function fotoLoad(){
-  try{ return JSON.parse(localStorage.getItem(FOTOKEY)||'[]'); }catch(e){ return []; }
-}
-function fotoSave(list){
-  try{ localStorage.setItem(FOTOKEY, JSON.stringify(list)); return true; }
-  catch(e){ toast('Brak miejsca — usuń starsze zdjęcia'); return false; }
-}
-function addFoto(ev){
-  const f=ev.target.files[0]; ev.target.value='';
-  if(!f) return;
-  const r=new FileReader();
-  r.onload=e=>{
-    const img=new Image();
-    img.onload=()=>{
-      const max=700, sk=Math.min(1, max/Math.max(img.width,img.height));
-      const c=document.createElement('canvas');
-      c.width=Math.round(img.width*sk); c.height=Math.round(img.height*sk);
-      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      const dataUrl=c.toDataURL('image/jpeg',0.72);
-      const list=fotoLoad();
-      list.push({date:today(), img:dataUrl});
-      list.sort((a,b)=>a.date.localeCompare(b.date));
-      if(fotoSave(list)){ renderFoto(); toast('Dodano zdjęcie'); }
-    };
-    img.onerror=()=>toast('Nie udało się wczytać zdjęcia');
-    img.src=e.target.result;
-  };
-  r.readAsDataURL(f);
-}
-function delFoto(i){
-  if(!confirm('Usunąć to zdjęcie?')) return;
-  const list=fotoLoad(); list.splice(i,1); fotoSave(list); renderFoto();
-}
-function renderFoto(){
-  const box=document.getElementById('fotoList');
-  if(!box) return;
-  const list=fotoLoad();
-  if(!list.length){ box.innerHTML='<div class="empty" style="padding:18px">Brak zdjęć.</div>'; return; }
-  const kb=Math.round(JSON.stringify(list).length/1024);
-  box.innerHTML='<div class="fgrid">'+list.map((f,i)=>
-    '<figure class="fitem"><img src="'+f.img+'" alt="">'+
-    '<figcaption>'+plDate(f.date)+'</figcaption>'+
-    '<button class="sx" onclick="delFoto('+i+')">×</button></figure>').join('')+'</div>'+
-    '<div class="note" style="margin-top:8px">'+list.length+' '+
-    (list.length===1?'zdjęcie':'zdjęć')+' · '+kb+' kB</div>';
-}
 
 /* ============================================================
    RAPORT
@@ -7315,7 +7299,6 @@ function renderData(){
     kv('Pomiary obwodów',DB.measures.length)+
     kv('Pierwszy trening',DB.workouts.length?plDate(DB.workouts[0].date):'—')+
     kv('Rozmiar danych',Math.round(JSON.stringify(DB).length/1024)+' kB')+
-    kv('Zdjęcia',fotoLoad().length+' · '+Math.round(JSON.stringify(fotoLoad()).length/1024)+' kB')+
     kv('Wersja aplikacji','<b style="font-size:17px">'+WERSJA+'</b> · '+plDate(WERSJA_DATA));
 
   const pooled=[...new Set(ORDER.flatMap(k=>PLAN[k].slots.flatMap(s=>s.pool||[])))].sort();
