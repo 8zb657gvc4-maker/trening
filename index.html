@@ -1568,6 +1568,28 @@ function zastosujPlan(){
   const klucze = Object.keys(PLAN).filter(k => !(PLAN[k] || {}).wycofany);
   const chciana = (p.order || DOMYSLNY_ORDER).filter(k => klucze.includes(k));
   ORDER  = chciana.concat(klucze.filter(k => !chciana.includes(k)));
+  oczyscNastepny();
+}
+
+/* ZAPISANA PROPOZYCJA PRZEŻYWA ZMIANĘ PLANU — i to jest pułapka.
+
+   `nastepny` zapisany w wersji 51 wskazywał na dzień C. Wersja 53 wycofała C
+   z rotacji, ale zapisu nikt nie ruszył. Efekt: ekran główny podawał
+   „Nogi — martwy ciąg (wycofany)" z guzikiem „Rozpocznij trening", a ekran
+   sugestii — liczony od nowa — mówił „dziś wolne". Dwa ekrany, dwie odpowiedzi
+   na to samo pytanie, i ta wyglądająca wiarygodnie była pierwsza.
+
+   Sprawdzana była data, litera dnia już nie. A stąd wyciekało dalej: gotowość
+   liczyła się DLA WYCOFANEGO DNIA, `nogiDnia` uznawało go za zaplanowane nogi
+   i odsuwało bieg jakościowy, a karta „nie dziś?" proponowała przełożenie
+   treningu, którego nie ma w planie.
+
+   Dlatego czyścimy przy KAŻDYM zastosowaniu planu, nie tylko przy wczytaniu:
+   plan zmienia się także przy synchronizacji i przy edycji z ekranu Dane. */
+function oczyscNastepny(){
+  if(typeof DB === 'undefined' || !DB || !DB.nastepny) return;
+  const d = PLAN[DB.nastepny.dzien];
+  if(!d || d.wycofany) DB.nastepny = null;
 }
 function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length); }
 
@@ -1575,7 +1597,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '53';
+const WERSJA = '54';
 const WERSJA_DATA = '2026-08-27';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3697,11 +3719,20 @@ function renderObwod(){
   }
   return '<h2>Obwód na czas</h2><div class="card">'+
     '<div class="note">Stoper, rundy, tyle ile dasz radę.</div>'+
+    /* Guzik „Start" ściskał opis obwodu: „15× Przysiad w miejscu wolno"
+       łamało się na cztery linie obok szerokiego, półpustego guzika.
+       Kolumna tekstu dostaje `flex:1;min-width:0`, żeby brała całą wolną
+       szerokość. Guzik dostaje `width:auto` PRZED `flex-shrink:0` — sama
+       blokada kurczenia zrobiła szkodę większą niż naprawiła, bo `.btn` ma
+       w CSS `width:100%` i guzik rozepchnął się na cały wiersz, a tekst
+       zszedł do jednego słowa w linii. */
     Object.entries(OBWODY).map(([k,o]) =>
-      '<div class="hist"><div><div class="hd">'+esc(o.n)+' · '+o.min+' min</div>'+
+      '<div class="hist" style="align-items:flex-start">'+
+      '<div style="flex:1;min-width:0"><div class="hd">'+esc(o.n)+' · '+o.min+' min</div>'+
       '<div class="hm">'+esc(o.cw.map(([n,r]) => r+'× '+n).join(' · '))+'</div>'+
       '<div class="note" style="margin-top:2px">'+esc(o.opis)+'</div></div>'+
-      '<button class="btn ghost sm" onclick="startObwod(\''+k+'\')">Start</button></div>').join('')+
+      '<button class="btn ghost sm" style="width:auto;flex-shrink:0;padding:10px 16px" '+
+      'onclick="startObwod(\''+k+'\')">Start</button></div>').join('')+
     '<div class="note" style="margin-top:10px"><b>Uczciwie:</b> to wytrzymałość, nie siła. Raz–dwa w tygodniu — dobrze. Jako cały plan — siła zejdzie.</div></div>';
 }
 
@@ -3715,6 +3746,10 @@ function przelaczPlan(){ PLAN_ROZW = !PLAN_ROZW; renderHub(); }
    to jak „aplikacja nic dziś nie proponuje". Zaległy plan przenosi się teraz
    sam na dziś i mówi, ile dni czekał. */
 function przeterminowany(n){
+  /* Drugi bezpiecznik obok `oczyscNastepny`: plan potrafi przyjść z serwera
+     bez zmiany planu treningowego, a wtedy `zastosujPlan` się nie odpala.
+     Dzień spoza planu albo wycofany nie ma prawa dojść do ekranu. */
+  if(n && n.dzien && !(PLAN[n.dzien] && !PLAN[n.dzien].wycofany)) return null;
   if(!n || !n.cwiczenia || !n.data || n.data >= today()) return n;
   if(DB.workouts.some(w => w.date >= n.data)) return null;   /* już odrobiony */
   /* Przenosimy TYLKO plan, który przeze mnie przeszedł. Plan aplikacji nie ma
@@ -4291,8 +4326,12 @@ function bezpiecznie(nazwa, f){
 }
 
 function renderSub(){
-  const w=weekNo(), p=phaseOf(tydzienPlanu());
-  const bad = document.getElementById('hBadge'); if(bad) bad.textContent='T'+w;
+  const p=phaseOf(tydzienPlanu());
+  /* Plakietka „T4" pokazywała tydzień KALENDARZA, a raport pod nią — tydzień
+     PLANU. Po tygodniu bez siłowni różniły się o jeden i nie dało się zgadnąć,
+     który jest który. Wszystkie trzy miejsca liczą teraz to samo. */
+  const bad = document.getElementById('hBadge');
+  if(bad) bad.textContent='T'+tydzienPlanu();
   /* NAGŁÓWEK NIE JEST MIEJSCEM NA NAZWĘ FAZY. „Budowa" stała tam codziennie
      przez trzy tygodnie i nie zmieniała żadnej decyzji — Filip zgłosił to
      wprost: „caly czas na glownej mam napis budowa nie wiem po co mi to".
@@ -5985,7 +6024,10 @@ function radaBiegowa(){
 function renderRun(){
   const w=tydzienPlanu(), r=biegTygodnia(w);
   const mine=DB.runs.filter(x=>inWeek(x.date,w) && czyBieg(x));
-  let h='<div class="tip rn"><b>Tydzień '+w+'</b> — dwa biegi: jeden spokojny, jeden jakościowy. '+
+  /* „planu" dopisane celowo: to ten sam licznik co w nagłówku raportu.
+     Bez tego słowa dwa ekrany pokazywały „Tydzień" z dwóch różnych liczników
+     i wyglądało to na błąd nawet wtedy, gdy liczby się zgadzały. */
+  let h='<div class="tip rn"><b>Tydzień '+w+' planu</b> — dwa biegi: jeden spokojny, jeden jakościowy. '+
     'Dni dobierają się same tak, żeby nie kolidowały z nogami na siłowni. '+
     'Nie zwiększaj tygodniowej objętości o więcej niż ~10%: kontuzje biegowe biorą się z przyrostu kilometrów, nie z tempa.</div>';
   radaBiegowa().forEach(x=>{ h+='<div class="tip '+x[0]+'">'+esc(x[1])+'</div>'; });
@@ -6143,30 +6185,87 @@ function aiWyluskajJson(tekst){
   try { return JSON.parse(t.slice(i, j + 1)); } catch(e){ return null; }
 }
 
-async function aiJedzenie(opis, zdjecieBase64){
-  /* Gdy jest i zdjęcie, i opis, mówimy modelowi wprost, do czego służy które.
-     Bez tego traktował zdjęcie jako całą prawdę i ignorował opis — a to opis
-     jest pewniejszy w tym, CO to jest. */
-  const tekstZdjecia = opis
-    ? 'Na zdjęciu jest: ' + opis + '. Rozpoznanie masz ode mnie i jest pewne — '+
-      'ze zdjęcia oszacuj przede wszystkim WIELKOŚĆ PORCJI w gramach '+
-      '(punkty odniesienia: talerz ok. 26 cm, sztućce, szklanka). '+
-      'Jeśli zdjęcie przeczy opisowi, trzymaj się opisu.'
-    : 'Co jest na tym talerzu i ile ma makroskładników? Oszacuj wielkość porcji '+
-      'w gramach, korzystając z rozmiaru talerza i sztućców.';
-  const tresc = zdjecieBase64
-    ? [{type: 'text', text: tekstZdjecia},
-       {type: 'image_url', image_url: {url: zdjecieBase64}}]
-    : (opis || '');
+/* ZDJĘCIE IDZIE DWOMA KROKAMI, NIE JEDNYM.
+
+   Pierwsza wersja wysyłała zdjęcie razem z żądaniem „odpowiedz samym JSON-em"
+   do modelu obrazowego. Na darmowych modelach to nie miało prawa zadziałać:
+   wracały zdania w rodzaju „Na talerzu jest 12 makroskładników, a każdy z nich
+   zawiera 2 pudełka" (log z 27 sierpnia), więc aplikacja zawsze kończyła
+   komunikatem „wpisz gramy ręcznie".
+
+   Rozbijamy to na dwa zadania, bo są to dwie różne umiejętności:
+     1. model obrazowy patrzy i mówi PO LUDZKU, co widzi i ile tego jest,
+     2. model tekstowy — ten sam, który od miesiąca liczy makro z opisów
+        i robi to dobrze — zamienia opis na liczby.
+
+   Zysk jest podwójny: mały darmowy model dostaje zadanie w swoich
+   możliwościach, a liczenie makro zostaje tam, gdzie już działa. Gdy kiedyś
+   w MODEL_OBRAZ stanie mocny model, który sam odda JSON, krok drugi po prostu
+   się nie odpali — sprawdzamy to po odpowiedzi, nie po nazwie modelu.
+
+   Koszt: dwa zapytania na zdjęcie zamiast jednego. Przy limicie 200 dziennie
+   i kilku posiłkach to bez znaczenia. */
+async function aiOpiszZdjecie(zdjecieBase64, opis){
+  const polecenie = opis
+    ? 'Na zdjęciu jest: ' + opis + '. CO to jest, wiesz ode mnie i to jest pewne. '+
+      'Twoje jedyne zadanie to napisać, ILE tego jest. Oszacuj wagę każdego '+
+      'składnika w gramach, korzystając z punktów odniesienia: talerz ma około '+
+      '26 cm, widelec 20 cm, szklanka 250 ml. Odpowiedz jednym zdaniem po polsku, '+
+      'samą listą składników z gramami.'
+    : 'Wypisz po polsku, co jest na tym talerzu i ile tego jest. Przy każdym '+
+      'składniku podaj szacowaną wagę w gramach — punkty odniesienia: talerz '+
+      'około 26 cm, widelec 20 cm, szklanka 250 ml. Bez wstępu, sama lista.';
   const odp = await aiZapytaj(
-    [{role: 'system', content: AI_JEDZENIE}, {role: 'user', content: tresc}],
-    {tryb: zdjecieBase64 ? 'obraz' : 'tekst', max_tokens: 300});
+    [{role: 'system', content: 'Opisujesz zdjęcia jedzenia po polsku. Krótko i konkretnie, '+
+                               'samymi składnikami i gramami. Nie zmyślaj tego, czego nie widać.'},
+     {role: 'user', content: [{type: 'text', text: polecenie},
+                              {type: 'image_url', image_url: {url: zdjecieBase64}}]}],
+    {tryb: 'obraz', max_tokens: 250, timeout: 40000});
+  return odp;
+}
+
+async function aiJedzenie(opis, zdjecieBase64){
+  let zeZdjecia = '';
+
+  if(zdjecieBase64){
+    const odp = await aiOpiszZdjecie(zdjecieBase64, opis);
+    zeZdjecia = (odp.tresc || '').trim();
+    aiZapisz({co: 'jedzenie-zdjecie', pytanie: (opis || '[samo zdjęcie]').slice(0, 120),
+              odpowiedz: zeZdjecia.slice(0, 200), model: odp.model});
+
+    /* Mocny model obrazowy potrafi oddać gotowy JSON od razu — wtedy nie ma
+       po co pytać drugi raz. Sprawdzamy odpowiedź, nie nazwę modelu. */
+    const odRazu = aiWyluskajJson(zeZdjecia);
+    if(odRazu && typeof odRazu.bialko === 'number') return domknijMakro(odRazu);
+
+    if(!zeZdjecia)
+      throw new Error('Model nie opisał zdjęcia. Napisz w polu wyżej, co to jest.');
+  }
+
+  /* Opis od Filipa jest pewniejszy w tym, CO to jest — model widzi tylko,
+     ILE tego jest. Mówimy o tym wprost, bo inaczej model traktował swoje
+     rozpoznanie ze zdjęcia jak fakt i ignorował słowa człowieka. */
+  const pytanie = zeZdjecia
+    ? (opis ? 'Zjadłem: ' + opis + '. To rozpoznanie jest pewne.\n'
+            : 'Zjadłem to, co poniżej.\n') +
+      'Ze zdjęcia tego posiłku odczytano wielkość porcji: ' + zeZdjecia + '\n' +
+      'Policz makroskładniki. Przy sprzeczności trzymaj się mojego opisu, '+
+      'a ze zdjęcia bierz wyłącznie ilości.'
+    : (opis || '');
+
+  const odp = await aiZapytaj(
+    [{role: 'system', content: AI_JEDZENIE}, {role: 'user', content: pytanie}],
+    {tryb: 'tekst', max_tokens: 300});
 
   const wynik = aiWyluskajJson(odp.tresc);
-  aiZapisz({co: 'jedzenie', pytanie: (opis || '[zdjęcie]').slice(0, 120),
+  aiZapisz({co: 'jedzenie', pytanie: pytanie.slice(0, 200),
             odpowiedz: (odp.tresc || '').slice(0, 200), bialko: wynik && wynik.bialko});
   if(!wynik || typeof wynik.bialko !== 'number')
     throw new Error('Model odpowiedział czymś, czego nie umiem odczytać. Wpisz gramy ręcznie.');
+  return domknijMakro(wynik);
+}
+
+function domknijMakro(wynik){
 
   /* Model bywa nierówny w arytmetyce: potrafi podać makro i kalorie, które
      się z nim nie zgadzają. Kalorie z makroskładników są policzalne, więc
@@ -7748,8 +7847,20 @@ function raportDnia(){
 let RAPORT_SEKCJA = 'teraz';
 function raportSekcja(k){ RAPORT_SEKCJA = k; renderReport(); scrollTop(); }
 
+/* JEDNA LINIJKA, DWA RÓŻNE LICZNIKI — i nie dało się tego zauważyć.
+
+   Nagłówek raportu brał numer z `weekNo()` (tygodnie kalendarza od startu),
+   a nazwę fazy z `phaseOf(tydzienPlanu())` (tygodnie, w których naprawdę
+   był trening). Po tygodniu w Chorwacji te liczniki rozjechały się o jeden
+   i raport pisał „Tydzień 4 · Budowa", podczas gdy plan biegowy na sąsiednim
+   ekranie mówił „Tydzień 3" — o tym samym dniu. Numer wyglądał wiarygodnie
+   i był z innego licznika niż wszystko obok niego.
+
+   Numer bierzemy więc stamtąd, skąd biorą się ciężary i faza: z tygodnia
+   planu. Zakres dat zostaje kalendarzowy, bo opisuje dane pokazane niżej —
+   i jest teraz podpisany „dane z", żeby nie udawał zakresu tygodnia planu. */
 function renderReport(){
-  const w=weekNo(), p=phaseOf(tydzienPlanu());
+  const w=weekNo(), wPlanu=tydzienPlanu(), p=phaseOf(wPlanu);
   const cur=DB.workouts.filter(x=>inWeek(x.date,w));
   const prev=DB.workouts.filter(x=>inWeek(x.date,w-1));
   const dCur=DB.daily.filter(x=>inWeek(x.date,w));
@@ -7760,7 +7871,8 @@ function renderReport(){
   if(!SEKCJE.some(x => x[0] === RAPORT_SEKCJA)) RAPORT_SEKCJA = 'teraz';
   const sek = RAPORT_SEKCJA;
 
-  let h='<div class="tip"><b>Tydzień '+w+'</b> · '+PHASES[p].n+' · '+plDate(ws)+' – '+plDate(we)+'</div>'+
+  let h='<div class="tip"><b>Tydzień '+wPlanu+' planu</b> · '+PHASES[p].n+
+    ' · dane z '+plDate(ws)+' – '+plDate(we)+'</div>'+
     '<div class="segm">'+ SEKCJE.map(([k,n]) =>
       '<button class="'+(k===sek?'on':'')+'" onclick="raportSekcja(\''+k+'\')">'+n+'</button>').join('') +
     '</div>';
