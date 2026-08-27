@@ -231,6 +231,66 @@ h2:first-child{margin-top:0}
 .stp.pusty .val{color:var(--dim)}
 
 
+
+
+/* Trzy słupki makro — nazwa, tor, liczba. Tor jest elastyczny, nazwa
+   i liczba mają stałą szerokość, żeby liczby stały w jednej kolumnie
+   i dało się je porównać wzrokiem bez czytania. */
+.mkw{display:flex;align-items:center;gap:9px;margin:7px 0}
+.mkn{width:82px;font-size:11.5px;color:var(--dim);flex:none}
+.mkt{flex:1;height:8px;border-radius:4px;background:var(--line);overflow:hidden;display:block}
+.mkt i{display:block;height:100%;border-radius:4px}
+.mkl{width:74px;text-align:right;font-size:12.5px;font-weight:700;flex:none;
+  font-variant-numeric:tabular-nums}
+.mkc{color:var(--dim);font-weight:400;font-size:10.5px}
+
+
+/* Ćwiczenie w raporcie sesji: nazwa i cel po lewej, serie jako kafelki po prawej.
+   Kafelek niesie liczbę powtórzeń, kolor od tego, czy seria się domknęła,
+   i małe RPE w rogu. Da się to przeczytać jednym spojrzeniem, spoconym. */
+.cwr{padding:10px 0;border-bottom:1px solid var(--line)}
+.cwr:last-child{border-bottom:0}
+.cwn{font-size:13px;font-weight:600;display:flex;justify-content:space-between;
+  align-items:baseline;gap:10px}
+.cwn span{font-size:10.5px;color:var(--dim);font-weight:400;flex:none}
+.serie{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.serie i{position:relative;min-width:34px;height:30px;border-radius:8px;
+  background:var(--line);color:var(--txt);font-size:13px;font-weight:700;
+  font-style:normal;display:flex;align-items:center;justify-content:center;
+  font-variant-numeric:tabular-nums}
+.serie i.ok{background:rgba(61,220,132,.22);color:#7df0b0}
+.serie i.warn{background:rgba(255,138,61,.22);color:#ffb782}
+.serie i.bad{background:rgba(229,72,77,.24);color:#ff9ea0}
+.serie i u{position:absolute;right:3px;top:2px;font-size:7.5px;opacity:.75;
+  text-decoration:none;font-weight:600}
+
+/* Wykres słupkowy z linią celu — szerokość rodzica, wysokość ze stosunku boków. */
+.wyk{width:100%;height:auto;display:block;overflow:visible}
+
+/* ============================================================
+   SEKCJE ZWIJANE
+   Trzy miejsca w aplikacji robiły to samo: wysypywały na ekran całą listę,
+   z której realnie potrzebna jest pierwsza pozycja. Ostatnie treningi,
+   ostatnie dziesięć dni w Dzienniku i sprzęt niedostępny w Danych
+   zajmowały razem więcej miejsca niż wszystko, po co się tu wchodzi.
+
+   Nagłówek zawsze niesie STRESZCZENIE — ile pozycji, co najnowsze — więc
+   po rozwinięcie sięga się tylko wtedy, gdy naprawdę czegoś się szuka.
+   Stan pamiętamy, bo jeśli ktoś raz rozwinął, to zwykle chce tak mieć.
+   ============================================================ */
+.zwij{border:1px solid var(--line);border-radius:14px;background:var(--card);
+  margin-bottom:10px;overflow:hidden}
+.zwij>button{width:100%;background:none;border:0;color:var(--txt);
+  padding:13px 14px;display:flex;align-items:center;gap:10px;text-align:left}
+.zwij .zt{font-size:13.5px;font-weight:600}
+.zwij .zs{font-size:11px;color:var(--dim);margin-top:2px}
+.zwij .zn{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.zwij .licz{font-size:11px;color:var(--dim);background:var(--line);
+  padding:2px 8px;border-radius:9px;font-variant-numeric:tabular-nums}
+.zwij .strz{color:var(--dim);font-size:12px;transition:transform .15s}
+.zwij.otw .strz{transform:rotate(180deg)}
+.zwij .zc{padding:0 12px 12px}
+
 /* ============================================================
    KARTA DNIA — jedyna rzecz, po którą naprawdę otwierasz aplikację
 
@@ -568,9 +628,11 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   <!-- HUB -->
   <div class="sub on" id="s-hub">
     <div id="weekStrip"></div>
-    <div class="tip" id="phaseTip"></div>
     <div id="coachBox"></div>
 
+    <!-- Kardio wyżej: od września to dwa kilometry KAŻDEGO ranka, czyli
+         częściej niż siłownia. Element, w który wchodzi się codziennie,
+         nie może stać pod listą, którą trzeba przewinąć. -->
     <button class="hub run" onclick="openRun()">
       <div class="ic"><svg viewBox="0 0 24 24"><circle cx="15" cy="4.5" r="2"/><path d="M12 21l1.5-5.5-3.5-3 1-5.5 3 2.5 3 1M8.5 13L7 15.5 4 16M13.5 15.5L16 19l1 2.5"/></svg></div>
       <div><div class="tt">Bieganie, pływanie, SUP</div>
@@ -578,8 +640,9 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
       <div class="ar">›</div>
     </button>
 
-    <h2>Ostatnie treningi</h2>
-    <div class="card" id="recent"></div>
+    <!-- Historia zwinięta. Sześć wpisów zajmowało pół ekranu, a realnie
+         potrzebny jest jeden: ten ostatni. Reszta jest na dotknięcie. -->
+    <div id="recentBox"></div>
   </div>
 
   <!-- WYBOR DNIA -->
@@ -669,8 +732,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <button class="btn" style="margin-top:13px" onclick="saveDaily()">Zapisz dzień</button>
   </div>
 
-  <h2>Ostatnie 10 dni</h2>
-  <div class="card" id="dailyList"></div>
+  <div id="dailyList"></div>
 
   <h2>Historia treningów</h2>
   <div class="note" style="margin-bottom:9px">Usunięty trening trafia do kosza w zakładce Dane i przez 30 dni da się go przywrócić.</div>
@@ -722,9 +784,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <div class="note" style="margin-top:11px">Historia treningów jest niezależna od planu.</div>
   </div>
 
-  <h2>Sprzęt niedostępny</h2>
-  <div class="note" style="margin-bottom:9px">Odznacz to, czego nie masz jak zrobić.</div>
-  <div class="card" id="skipList"></div>
+  <div id="skipList"></div>
 
   <h2>Ustawienia</h2>
   <div class="card">
@@ -748,7 +808,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
       Ciężary, objętość i wybór dnia liczy silnik aplikacji — to się nie zmienia.</div>
   </div>
   <h2>Statystyki</h2>
-  <div class="card" id="stats"></div>
+  <div id="stats"></div>
   <h2>Aktualizacja</h2>
   <div class="card">
     <div id="wersjaStan"></div>
@@ -1036,7 +1096,13 @@ const DOMYSLNA_LIB = {
 
 
 const DOMYSLNY_PLAN = {
-  A: { name:'Nogi — przysiad', grp:'nogi', slots:[
+  /* --- A: NOGI. Jedyny dzień nóg w tygodniu. ----------------------------
+     Do wersji 50 nogi wypadały dwa razy (A i C) i to był główny powód,
+     dla którego Filip je omijał. Zostają raz, ale za to porządnie: siedem
+     pozycji zamiast sześciu, bo przy jednej sesji na tydzień nie ma drugiej
+     szansy w razie potknięcia. Tułów przeniesiony do dni góry — na nogach
+     i tak nie zostaje siła na deskę. */
+  A: { name:'Nogi', grp:'nogi', slots:[
     {id:'A1', lab:'Główny bój', fixed:'Przysiad ze sztangą',
      t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
      s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
@@ -1050,57 +1116,75 @@ const DOMYSLNY_PLAN = {
      pool:['Uginanie nóg leżąc','Uginanie nóg siedząc'],
      t:['3×12','3×10-12','2×12','3×10-12'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
-    /* BŁĄD, który to naprawia: A5 i C5 rotowały między wspięciami stojąc
-       a siedząc, jakby to były warianty tego samego. To dwa różne mięśnie —
-       brzuchaty pracuje przy wyprostowanym kolanie, płaszczkowaty przy
-       zgiętym. Rotacja sprawiała, że w niektórych tygodniach jeden dostawał
-       siedem serii, a drugi zero. Teraz A5 to zawsze brzuchaty, C5 zawsze
-       płaszczkowaty, a rotacja idzie WEWNĄTRZ każdego z nich. */
-    {id:'A5', lab:'Łydki — brzuchaty (stojąc)',
+    /* Jednonóż zostaje mimo skrócenia planu, bo od września dochodzą
+       poranne dwa kilometry. Bieganie obciąża jedną nogę naraz, a przysiad
+       ze sztangą uczy wyłącznie pracy obunóż — różnice między nogami
+       wychodzą dopiero na bieżni, w postaci kolana. */
+    {id:'A5', lab:'Jednonóż / stabilizacja miednicy',
+     pool:['Przysiad bułgarski','Wykroki chodzone','Odwodzenie nogi w bok'],
+     t:['2×10/nogę RPE6','3×8-10 RPE8','2×10 RPE5','2×8-10 RPE8'],
+     s:[2,3,2,2], rr:[[10,10],[8,10],[10,10],[8,10]]},
+    /* Brzuchaty pracuje przy wyprostowanym kolanie, płaszczkowaty przy
+       zgiętym — to dwa mięśnie, nie dwa warianty jednego. Dlatego dwa
+       osobne sloty, a rotacja idzie wewnątrz każdego z nich. */
+    {id:'A6', lab:'Łydki — brzuchaty (stojąc)',
      pool:['Wspięcia na palce stojąc','Wspięcia na palce jednonóż'],
      t:['2×15','2×12-15','2×15','2×12-15'],
      s:[2,2,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]},
-    {id:'A6', lab:'Tułów', pool:['Ab wheel','Allahy na wyciągu','Unoszenie nóg w zwisie','Plank'],
+    {id:'A7', lab:'Łydki — płaszczkowaty (siedząc)',
+     pool:['Wspięcia na palce siedząc','Wspięcia siedząc z obciążeniem'],
+     t:['2×15','2×15-20','2×15','2×15-20'],
+     s:[2,2,2,2], rr:[[15,15],[15,20],[15,15],[15,20]]}
+  ]},
+
+  /* --- B: PUSH pierwszy. Główny bój: wyciskanie leżąc. ------------------ */
+  B: { name:'Push — wyciskanie', grp:'push', slots:[
+    {id:'B1', lab:'Główny bój', fixed:'Wyciskanie leżąc',
+     t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
+     s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
+    /* Góra klatki ma własny slot, bo przez dziesięć tygodni z rzędu
+       mieściła się w 3,0 seriach przy normie 4-12 — jako jedna z pięciu
+       opcji w puli „klatka" po prostu przegrywała losowanie. */
+    {id:'B2', lab:'Klatka — góra',
+     pool:['Wyciskanie hantli, skos','Wyciskanie sztangą, skos','Brama dół→góra'],
+     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
+    {id:'B3', lab:'Klatka — region',
+     pool:['Rozpiętki płasko','Brama góra→dół','Rozpiętki na maszynie',
+           'Wyciskanie, skos ujemny','Dipy'],
+     t:['3×15','3×12-15','2×15','3×12-15'],
+     s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
+    /* Slot dedykowany GŁOWIE DŁUGIEJ tricepsa. Prostowanie na wyciągu
+       w dół prawie jej nie rusza — przyczepia się do łopatki i pracuje
+       dopiero przy ramieniu nad głową. Boczna i przyśrodkowa i tak
+       dostają sześć–siedem serii z samego wyciskania. */
+    {id:'B4', lab:'Triceps — głowa długa',
+     pool:['Francuskie zza głowy','Prostowanie zza głowy wyciąg'],
+     t:['2×12','3×10-12','2×12','2×10-12'],
+     s:[2,3,2,2], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    /* Trzy serie zamiast dwóch: pomiar dawał 4,8 przy normie 6-16.
+       Boczny akton naramiennego znosi dużą objętość i szybko wraca. */
+    {id:'B5', lab:'Bark — bok',
+     pool:['Unoszenie hantli bokiem','Unoszenie bokiem na wyciągu','Unoszenie bokiem na maszynie'],
+     t:['3×15','3×12-15','2×15','3×15-20'],
+     s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[15,20]]},
+    {id:'B6', lab:'Tułów — brzuch',
+     pool:['Ab wheel','Allahy na wyciągu','Unoszenie nóg w zwisie','Plank'],
      t:['3×40s','3×50s','2×40s','3×60s'],
      s:[3,3,2,3], rr:[[40,40],[50,50],[40,40],[60,60]]}
   ]},
 
-  B: { name:'Góra — push', grp:'góra', slots:[
-    {id:'B1', lab:'Główny bój', fixed:'Wyciskanie leżąc',
-     t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
-     s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
-    {id:'B2', lab:'Wyciskanie pionowe',
-     pool:['Wyciskanie żołnierskie','Wyciskanie hantli nad głowę','Arnold press'],
-     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×6-8 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[6,8]]},
-    {id:'B3', lab:'Ciąg poziomy (balans barków)',
-     pool:['Wiosłowanie sztangą','Wiosłowanie na wyciągu','Wiosłowanie na maszynie'],
-     t:['3×10 RPE6','3×8-10 RPE7','2×10 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    {id:'B4', lab:'Klatka — region',
-     pool:['Rozpiętki płasko','Brama dół→góra','Brama góra→dół','Wyciskanie hantli, skos',
-           'Dipy','Rozpiętki na maszynie','Wyciskanie, skos ujemny'],
-     t:['3×15','3×12-15','2×15','3×12-15'],
-     s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
-    /* Slot dedykowany GŁOWIE DŁUGIEJ. Wcześniej rotował z prostowaniem
-       na wyciągu w dół — a to ćwiczenie prawie jej nie rusza, bo długa głowa
-       przyczepia się do łopatki i pracuje dopiero przy ramieniu nad głową.
-       W tygodniach z wyciągiem długa spadała do 2,7 przy normie 3-10.
-       Boczna i przyśrodkowa mają po 6-7 serii z samego wyciskania. */
-    {id:'B5', lab:'Triceps — głowa długa',
-     pool:['Francuskie zza głowy','Prostowanie zza głowy wyciąg'],
-     t:['2×12','3×10-12','2×12','2×10-12'],
-     s:[2,3,2,2], rr:[[12,12],[10,12],[12,12],[10,12]]},
-    /* Cztery serie zamiast trzech: pomiar dawał 4,8 przy normie 6-16.
-       Boczny akton naramiennego znosi dużą objętość i szybko się regeneruje —
-       to jeden z niewielu mięśni, przy których więcej serii naprawdę pomaga. */
-    {id:'B6', lab:'Bark — bok',
-     pool:['Unoszenie hantli bokiem','Unoszenie bokiem na wyciągu','Unoszenie bokiem na maszynie'],
-     t:['3×15','3×12-15','2×15','3×15-20'],
-     s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[15,20]]}
-  ]},
+  /* --- C: WYCOFANY. -----------------------------------------------------
+     Do wersji 50 to był drugi dzień nóg, z martwym ciągiem jako głównym
+     bojem. Nogi zeszły do jednego dnia w tygodniu, a martwy ciąg przeniósł
+     się do dnia F — jest ćwiczeniem pleców tak samo jak nóg i po nim
+     potrzeba doby przerwy, którą tam dostaje.
 
-  C: { name:'Nogi — martwy ciąg', grp:'nogi', slots:[
+     Dzień zostaje w planie WYŁĄCZNIE po to, żeby treningi zapisane pod
+     literą C dalej dawały się otworzyć i policzyć. `wycofany` trzyma go
+     z dala od rotacji i od wyboru dnia. Usunięcie go zamieniłoby opis
+     wykonanych sesji w „nieznany dzień". */
+  C: { name:'Nogi — martwy ciąg (wycofany)', grp:'nogi', wycofany:true, slots:[
     {id:'C1', lab:'Główny bój', fixed:'Martwy ciąg klasyczny',
      t:['— pomijasz w tyg. 1-2','3×5 RPE7','2×5 RPE5','3×3-5 RPE8'],
      s:[0,3,2,3], rr:[[0,0],[5,5],[5,5],[3,5]]},
@@ -1118,9 +1202,6 @@ const DOMYSLNY_PLAN = {
      pool:['Wspięcia na palce siedząc','Wspięcia siedząc z obciążeniem'],
      t:['2×15','2×15-20','2×15','2×15-20'],
      s:[2,2,2,2], rr:[[15,15],[15,20],[15,15],[15,20]]},
-    /* Skośne miały 0,7 serii tygodniowo przy normie 2-10 — nie było w planie
-       ANI JEDNEGO ćwiczenia, które by je obciążało. Dzień A pilnuje prostego
-       i stabilizacji, dzień C skośnych. */
     {id:'C6', lab:'Tułów — skośne', pool:['Deska bokiem','Skłon boczny z hantlem'],
      t:['3×10','3×12','2×10','3×12-15'],
      s:[3,3,2,3], rr:[[10,10],[12,12],[10,10],[12,15]]},
@@ -1129,40 +1210,101 @@ const DOMYSLNY_PLAN = {
      s:[2,2,1,2], rr:[[30,30],[40,40],[30,30],[45,45]]}
   ]},
 
-  D: { name:'Góra — pull', grp:'góra', slots:[
+  /* --- D: PULL pierwszy. Główny bój: podciąganie. ------------------------ */
+  D: { name:'Pull — podciąganie', grp:'pull', slots:[
     {id:'D1', lab:'Główny bój', fixed:'Podciąganie',
      t:['3×6-8 RPE6','3×6-10 RPE8','2×6 RPE5','3×5-8 + obciążenie'],
      s:[3,3,2,3], rr:[[6,8],[6,10],[6,6],[5,8]]},
     {id:'D2', lab:'Ciąg poziomy',
-     pool:['Wiosłowanie hantlem','Wiosłowanie sztangą','Wiosłowanie na maszynie'],
+     pool:['Wiosłowanie hantlem','Wiosłowanie sztangą','Wiosłowanie na maszynie','Wiosłowanie na wyciągu'],
      t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×6-8 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[6,8]]},
-    /* Slot dedykowany GÓRZE klatki. Wcześniej była tu ogólna „klatka — region"
-       z pulą, w której skos był jedną z pięciu opcji — i pomiar pokazał
-       3,0 serii tygodniowo przy normie 4-12 przez dziesięć tygodni z rzędu.
-       Środek klatki ma wyciskanie leżąc jako główny bój, dół ma B4;
-       góra nie miała nic swojego. */
-    {id:'D3', lab:'Klatka — góra',
-     pool:['Wyciskanie hantli, skos','Wyciskanie sztangą, skos','Brama dół→góra'],
-     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    /* Tył barku miał 3,0 przy normie 5-14 — a to on równoważy całe wyciskanie
-       i chroni bark przed konfliktem podbarkowym. Cztery serie plus dorzucenie
-       tyłu barku do dnia push (B3). */
+    {id:'D3', lab:'Ciąg pionowy — dodatkowy',
+     pool:['Ściąganie drążka','Ściąganie wąsko podchwytem'],
+     t:['2×8','2×10-12','2×8','2×10-12'],
+     s:[2,2,2,2], rr:[[8,8],[10,12],[8,8],[10,12]]},
+    /* Tył barku miał 3,0 przy normie 5-14 — a to on równoważy całe
+       wyciskanie i chroni bark przed konfliktem podbarkowym. */
     {id:'D4', lab:'Tył barku / góra pleców',
      pool:['Face pull','Odwrotne rozpiętki','Szrugsy ze sztangą','Szrugsy z hantlami'],
      t:['3×15','3×15-20','2×15','3×15-20'],
      s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
     {id:'D5', lab:'Biceps',
      pool:['Uginanie ramion','Uginanie młotkowe','Uginanie na modlitewniku','Uginanie na wyciągu'],
+     t:['3×12','3×10-12','2×12','3×8-10'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
+    /* Skośne nie mają w planie nic poza tym slotem i E6. Bez nich
+       schodziły do 0,7 serii tygodniowo przy normie 2-10. */
+    {id:'D6', lab:'Tułów — skośne', pool:['Deska bokiem','Skłon boczny z hantlem'],
+     t:['2×10','3×12','2×10','3×12-15'],
+     s:[2,3,2,3], rr:[[10,10],[12,12],[10,10],[12,15]]}
+  ]},
+
+  /* --- E: PUSH drugi. Główny bój: wyciskanie żołnierskie. ----------------
+     Drugi dzień push nie jest powtórką pierwszego. Tam sztanga leży
+     poziomo i pracuje środek klatki, tu idzie nad głowę i pracuje bark
+     przedni — inny kąt, inny główny bój, inna progresja do śledzenia. */
+  E: { name:'Push — barki', grp:'push', slots:[
+    {id:'E1', lab:'Główny bój', fixed:'Wyciskanie żołnierskie',
+     t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×5-6 RPE8'],
+     s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[5,6]]},
+    {id:'E2', lab:'Klatka — nacisk hantlami',
+     pool:['Wyciskanie hantlami płasko','Dipy','Wyciskanie hantli, skos'],
+     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
+    {id:'E3', lab:'Bark — bok',
+     pool:['Unoszenie bokiem na wyciągu','Unoszenie hantli bokiem','Unoszenie bokiem na maszynie'],
+     t:['3×15','3×15-20','2×15','3×15-20'],
+     s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
+    {id:'E4', lab:'Triceps — boczna i przyśrodkowa',
+     pool:['Prostowanie ramion wyciąg','Francuskie zza głowy'],
+     t:['3×12','3×10-12','2×12','3×10-12'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    {id:'E5', lab:'Klatka — rozciąganie',
+     pool:['Rozpiętki płasko','Brama dół→góra','Rozpiętki na maszynie'],
+     t:['2×15','3×12-15','2×15','2×12-15'],
+     s:[2,3,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]},
+    {id:'E6', lab:'Tułów — brzuch',
+     pool:['Unoszenie nóg w zwisie','Ab wheel','Allahy na wyciągu','Plank'],
+     t:['3×12','3×12-15','2×12','3×12-15'],
+     s:[3,3,2,3], rr:[[12,12],[12,15],[12,12],[12,15]]}
+  ]},
+
+  /* --- F: PULL drugi. Główny bój: martwy ciąg. --------------------------
+     Martwy ciąg trafia tu, a nie na nogi, z dwóch powodów. Po pierwsze
+     technicznie jest ciągnięciem: najciężej pracują prostowniki, czworoboczne
+     i najszersze, a nogi tylko startują ruch. Po drugie kalendarzowo —
+     w rotacji B, D, A, E, F dzień F wypada trzy dni po przysiadzie, więc
+     dwa najcięższe boje nie stoją obok siebie. Gdyby martwy ciąg został
+     na nogach, wypadałby w tej samej sesji co przysiad. */
+  F: { name:'Pull — martwy ciąg', grp:'pull', slots:[
+    {id:'F1', lab:'Główny bój', fixed:'Martwy ciąg klasyczny',
+     t:['3×5 RPE6','3×5 RPE7','2×5 RPE5','3×3-5 RPE8'],
+     s:[3,3,2,3], rr:[[5,5],[5,5],[5,5],[3,5]]},
+    {id:'F2', lab:'Ciąg poziomy',
+     pool:['Wiosłowanie sztangą','Wiosłowanie na maszynie','Wiosłowanie na wyciągu','Wiosłowanie hantlem'],
+     t:['3×10 RPE6','3×8-10 RPE7','2×10 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
+    {id:'F3', lab:'Ciąg pionowy',
+     pool:['Ściąganie drążka','Ściąganie wąsko podchwytem','Podciąganie'],
+     t:['3×10','3×10-12','2×10','3×8-10'],
+     s:[3,3,2,3], rr:[[10,10],[10,12],[10,10],[8,10]]},
+    {id:'F4', lab:'Tył barku / góra pleców',
+     pool:['Odwrotne rozpiętki','Face pull','Szrugsy z hantlami','Szrugsy ze sztangą'],
+     t:['3×15','3×15-20','2×15','3×15-20'],
+     s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
+    {id:'F5', lab:'Biceps',
+     pool:['Uginanie młotkowe','Uginanie na modlitewniku','Uginanie ramion','Uginanie na wyciągu'],
      t:['2×12','3×10-12','2×12','2×8-10'],
      s:[2,3,2,2], rr:[[12,12],[10,12],[12,12],[8,10]]},
-    {id:'D6', lab:'Ciąg pionowy — dodatkowy',
-     pool:['Ściąganie drążka','Ściąganie wąsko podchwytem'],
-     t:['2×8','2×10-12','2×8','2×10-12'],
-     s:[2,2,2,2], rr:[[8,8],[10,12],[8,8],[10,12]]}
+    /* Chwyt puszcza wcześniej niż plecy i to on ogranicza martwy ciąg,
+       nie siła. Dlatego stoi w tym samym dniu, na końcu. */
+    {id:'F6', lab:'Chwyt', pool:['Utrzymanie sztangi','Utrzymanie hantli'],
+     t:['2×30s','2×40s','1×30s','2×45s'],
+     s:[2,2,1,2], rr:[[30,30],[40,40],[30,30],[45,45]]}
   ]}
 };
+
 
 /* ============================================================
    ĆWICZENIA Z MASY WŁASNEJ
@@ -1216,16 +1358,23 @@ const LIB_MASA_WLASNA = {
                                    cue:'Leżąc na brzuchu unosisz ręce i nogi. Bez szarpania, dwie sekundy u góry.'}
 };
 
-/* KOLEJNOŚĆ DNI. Litery zostają przy swoich treningach (A to zawsze nogi
-   z przysiadem, B zawsze push), ale rotacja idzie push → pull → nogi → nogi.
-   Powód jest prosty i nie jest metodyczny: Filip nie chce zaczynać tygodnia
-   od nóg, a plan, którego się nie lubi, jest gorszy od trochę mniej
-   optymalnego, który się robi.
+/* KOLEJNOŚĆ DNI: push → pull → nogi → push → pull.
+
+   Do wersji 50 rotacja miała cztery dni i dwa z nich były nogami (A i C),
+   które wypadały jeden po drugim. To był powód, dla którego aplikacja
+   proponowała przysiad nazajutrz po martwym ciągu — i powód, dla którego
+   Filip te dni omijał.
+
+   Teraz nogi są raz w tygodniu. Nie dlatego, że raz to optimum — dla
+   samego przyrostu masy dwa razy jest lepsze — tylko dlatego, że od
+   września dochodzą poranne dwa kilometry i dużo chodzenia, a plan,
+   którego się nie robi, ma skuteczność zero.
 
    Litery celowo NIE zostały przenumerowane. Historia trzyma „B" przy każdym
    wykonanym treningu push — przestawienie liter zmieniłoby opis treningów
-   sprzed miesiąca i nikt by już nie wiedział, co naprawdę zrobił. */
-const DOMYSLNY_ORDER = ['B','D','A','C'];
+   sprzed miesiąca i nikt by już nie wiedział, co naprawdę zrobił. Dlatego
+   dochodzą nowe litery E i F, a C zostaje jako wycofany. */
+const DOMYSLNY_ORDER = ['B','D','A','E','F'];
 
 const DOMYSLNE_PHASES = [
   {n:'Reaktywacja',    rpe:6, skala:1,   d:'Tygodnie 1–2, raz na początku. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
@@ -1412,7 +1561,11 @@ function zastosujPlan(){
      inaczej podmiana na wariant 3-dniowy zostawiłaby w rotacji literę,
      dla której nie ma już treningu. Dni spoza listy dochodzą na koniec,
      żeby żaden nie wypadł po cichu. */
-  const klucze = Object.keys(PLAN);
+  /* Dni oznaczone `wycofany` zostają w PLAN-ie, żeby dało się odczytać
+     historię, ale nie wchodzą do rotacji i nie da się ich zaproponować.
+     Bez tego filtra wycofane C wróciłoby tu tylnymi drzwiami — jako
+     „dzień spoza listy", doklejany na koniec. */
+  const klucze = Object.keys(PLAN).filter(k => !(PLAN[k] || {}).wycofany);
   const chciana = (p.order || DOMYSLNY_ORDER).filter(k => klucze.includes(k));
   ORDER  = chciana.concat(klucze.filter(k => !chciana.includes(k)));
 }
@@ -1422,7 +1575,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '50';
+const WERSJA = '51';
 const WERSJA_DATA = '2026-08-27';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2119,8 +2272,11 @@ function lastFor(name, pomijajDeload){
 /* nazwa dnia odporna na uszkodzone dane z importu */
 function dayName2(d){ return PLAN[d] ? PLAN[d].name : 'nieznany dzień'; }
 
+/* Szuka po CAŁYM planie, także po dniach wycofanych z rotacji. Slot z dnia,
+   którego już się nie proponuje, dalej siedzi w historii — a bez niego
+   otwarcie starego treningu kończyło się pustym ekranem. */
 function slotById(id){
-  for(const k of ORDER){ const s = PLAN[k].slots.find(x=>x.id===id); if(s) return s; }
+  for(const k of Object.keys(PLAN)){ const s = (PLAN[k].slots||[]).find(x=>x.id===id); if(s) return s; }
   return null;
 }
 
@@ -2446,7 +2602,37 @@ function nadpisanieAktywne(name){
 /* ============================================================
    PROPOZYCJA OBCIĄŻENIA — podwójna progresja + autoregulacja RPE
    ============================================================ */
-/* Ile zdjąć po przerwie. null = przerwa na tyle krótka, że nic nie zmieniamy. */
+/* ILE DNI MIĘDZY DWOMA WYSTĄPIENIAMI TEGO SAMEGO ĆWICZENIA TO NORMA.
+
+   To nie jest kosmetyka, tylko poprawka błędu, który sam się nie pokazuje.
+   Przy czterech dniach w rotacji i czterech treningach w tygodniu każde
+   ćwiczenie wracało co siedem dni, więc próg „dziesięć dni to przerwa"
+   pasował. Po przejściu na pięć dni w rotacji ten sam trening wraca co
+   dziewięć — a jeśli raz wypadnie sesja, co jedenaście. Silnik czytał to
+   jako powrót po przerwie i zdejmował pięć procent. Za każdym razem.
+
+   Symulacja ośmiu tygodni wyłapała skutek: przysiad schodził z 20 na 17,5 kg
+   przy sesjach, które wszystkie wyszły. Nikt by tego nie zauważył patrząc
+   na aplikację — każda pojedyncza propozycja miała sensowne uzasadnienie.
+
+   Dlatego cała skala przesuwa się o tyle, o ile rotacja jest dłuższa
+   od tygodnia. Przy starym układzie przesunięcie wynosi zero i nic
+   się nie zmienia. */
+function normalnyOdstep(){
+  const od = przesun(today(), -28);
+  const n = (DB && DB.workouts || []).filter(x => x.date >= od).length;
+  const naTydzien = n >= 4 ? n / 4 : 4;
+  const dni = (ORDER && ORDER.length ? ORDER.length : 4) * 7 / naTydzien;
+  return Math.max(7, Math.min(14, Math.round(dni)));
+}
+
+/* Przerwa MIERZONA WZGLĘDEM ROTACJI, nie względem kalendarza. Zwraca liczbę
+   dni tak, jakby rotacja była tygodniowa — dzięki temu progi niżej zostają
+   proste i dają się sprawdzić bez znajomości planu. */
+function przerwaWzgledna(dni){ return dni - (normalnyOdstep() - 7); }
+
+/* Ile zdjąć po przerwie. null = przerwa na tyle krótka, że nic nie zmieniamy.
+   Funkcja jest czysta: dostaje liczbę dni i nic poza nią nie czyta. */
 function przerwaSkala(dni){
   if(dni < 10)  return null;
   if(dni < 15)  return {s:0.95, why:'Dziesięć dni to jeszcze nie utrata siły — pięć procent w dół wystarczy, żeby pierwsza seria nie zaskoczyła.'};
@@ -2537,7 +2723,7 @@ function suggestLoad(name, slot, phase, tydzien){
   const naprawde = lastFor(name, false) || last;
   const przerwa = Math.round((new Date(today()+'T00:00:00') -
                               new Date(naprawde.date+'T00:00:00')) / 864e5);
-  const pr = przerwaSkala(przerwa);
+  const pr = przerwaSkala(przerwaWzgledna(przerwa));
   if(pr){
     /* Ciężar bazowy bierzemy z TEJ SAMEJ sesji, od której liczymy przerwę.
        Wcześniej przerwa liczyła się od ostatniego treningu, a kilogramy
@@ -2993,60 +3179,91 @@ function odradzamDzis(){
    trzy palety znaczą trzy rodzaje pracy i po tygodniu rozpoznajesz dzień
    po kolorze, zanim przeczytasz literę. */
 const BARWY_DNI = {
-  'góra-push': {a:'#3ddc84', t:'rgba(61,220,132,.13)'},
-  'góra-pull': {a:'#7c5cff', t:'rgba(124,92,255,.15)'},
-  'nogi':      {a:'#ff8a3d', t:'rgba(255,138,61,.15)'}
+  push: {a:'#3ddc84', t:'rgba(61,220,132,.13)'},
+  pull: {a:'#7c5cff', t:'rgba(124,92,255,.15)'},
+  nogi: {a:'#ff8a3d', t:'rgba(255,138,61,.15)'}
 };
 function barwaDnia(d){
-  const P = PLAN[d] || {};
-  if(P.grp === 'nogi') return BARWY_DNI['nogi'];
-  /* push i pull rozróżniamy po nazwie dnia, bo grupa jest wspólna */
-  return /pull/i.test(P.name || '') ? BARWY_DNI['góra-pull'] : BARWY_DNI['góra-push'];
+  const g = (PLAN[d] || {}).grp;
+  return BARWY_DNI[g] || BARWY_DNI.push;
 }
 
-/* Mała sylwetka do karty dnia — te same kolory świeżości co duża mapa,
-   ale bez podpisów i bez tyłu. Ma być tłem, nie diagramem. */
+/* Mała sylwetka na kartę dnia — ta sama geometria co duża mapa, tylko
+   sam przód, bez podpisów i bez tyłu. Ma być tłem, nie diagramem, więc
+   nie ma podpowiedzi ani klikania; kolory są te same, co w skali świeżości,
+   żeby jedno miejsce nie mówiło czegoś innego niż drugie. */
 function sylwetkaMini(){
   const sw = swiezoscRegionow();
-  const f = (klucze) => {
-    const kolejnosc = ['swieze','schodzi','prawie','gotowe','nigdy'];
-    const stan = klucze.map(k => stopienSwiezosci(sw[k] == null ? 999 : sw[k]))
+  const kolejnosc = ['swieze','schodzi','prawie','gotowe','nigdy'];
+  const stan = k => {
+    const keys = Array.isArray(k) ? k : [k];
+    return keys.map(x => stopienSwiezosci(sw[x] == null ? 999 : sw[x]))
       .sort((a,b) => kolejnosc.indexOf(a) - kolejnosc.indexOf(b))[0];
-    return {swieze:'#e5484d', schodzi:'#ff8a3d', prawie:'#ffc53d',
-            gotowe:'#3ddc84', nigdy:'#1c2836'}[stan];
   };
-  return '<svg viewBox="0 0 130 200" class="sylw">'+
-    '<g stroke="#070b12" stroke-width="1.1">'+
-    '<ellipse cx="65" cy="20" rx="10" ry="12" fill="#22303f"/>'+
-    '<path d="M59 32 q6 4 12 0 l1 6 q-7 4 -14 0 z" fill="#22303f"/>'+
-    '<path d="M45 40 q20 -6 40 0 l-4 8 q-16 -5 -32 0 z" fill="'+f(['bark_przod'])+'"/>'+
-    '<path d="M45 41 q-14 3 -16 17 q-1 9 3 12 q6 -13 14 -19 z" fill="'+f(['bark_bok'])+'"/>'+
-    '<path d="M85 41 q14 3 16 17 q1 9 -3 12 q-6 -13 -14 -19 z" fill="'+f(['bark_bok'])+'"/>'+
-    '<path d="M46 50 q19 -5 38 0 q4 9 -1 14 q-18 6 -36 0 q-5 -5 -1 -14 z" '+
-      'fill="'+f(['klatka_gora','klatka_srodek','klatka_dol'])+'"/>'+
-    '<path d="M50 66 q15 5 30 0 q1 16 -3 24 q-12 5 -24 0 q-4 -8 -3 -24 z" '+
-      'fill="'+f(['brzuch','skosne','glebokie'])+'"/>'+
-    '<path d="M32 62 q-5 3 -5 12 q0 10 3 14 q5 -3 6 -12 q1 -9 -4 -14 z" '+
-      'fill="'+f(['biceps_dluga','biceps_krotka','ramienny'])+'"/>'+
-    '<path d="M98 62 q5 3 5 12 q0 10 -3 14 q-5 -3 -6 -12 q-1 -9 4 -14 z" '+
-      'fill="'+f(['triceps_dluga','triceps_bocz','triceps_przysr'])+'"/>'+
-    '<path d="M48 96 q8 4 14 0 q3 22 1 44 q-7 4 -13 0 q-4 -22 -2 -44 z" '+
-      'fill="'+f(['czworoglowe','udo_proste'])+'"/>'+
-    '<path d="M82 96 q-8 4 -14 0 q-3 22 -1 44 q7 4 13 0 q4 -22 2 -44 z" '+
-      'fill="'+f(['dwuglowe','dwuglowe_kol'])+'"/>'+
-    '<path d="M50 146 q-1 15 3 28 q5 3 8 0 q3 -14 1 -28 q-6 3 -12 0 z" '+
-      'fill="'+f(['lydki_stoj'])+'"/>'+
-    '<path d="M80 146 q1 15 -3 28 q-5 3 -8 0 q-3 -14 -1 -28 q6 3 12 0 z" '+
-      'fill="'+f(['lydki_sied'])+'"/>'+
-    '</g></svg>';
+  const sh = (k, body) => '<g class="m '+stan(k)+'">'+body+'</g>';
+  const hd = body => '<g class="hd">'+body+'</g>';
+  const nr = ++MAPA_NR;
+  const P = PRZOD(sh, hd);
+  return '<svg viewBox="38 12 94 244" class="sylw" xmlns="http://www.w3.org/2000/svg">'+
+    '<style>'+
+    '.pod path,.pod ellipse{fill:#22303f;stroke:#070b12;stroke-width:3.4;stroke-linejoin:round}'+
+    '.m path,.m ellipse{stroke:#070b12;stroke-width:.9;stroke-linejoin:round}'+
+    '.swieze path,.swieze ellipse{fill:#e5484d}'+
+    '.schodzi path,.schodzi ellipse{fill:#ff8a3d}'+
+    '.prawie path,.prawie ellipse{fill:#ffc53d}'+
+    '.gotowe path,.gotowe ellipse{fill:#3ddc84}'+
+    '.nigdy path,.nigdy ellipse{fill:#1c2836}'+
+    '.hd ellipse{fill:#1a2634}'+
+    '.szew{fill:none !important;stroke:#070b12;stroke-width:1}'+
+    '</style>'+
+    '<defs><clipPath id="mt'+nr+'">'+TORS(85)+'</clipPath>'+
+    '<clipPath id="mk'+nr+'">'+KONCZYNY(85)+'</clipPath></defs>'+
+    '<g class="pod">'+CIALO(85)+'</g>'+
+    '<g clip-path="url(#mt'+nr+')">'+P.tors+'</g>'+
+    '<g clip-path="url(#mk'+nr+')">'+P.konczyny+'</g>'+
+    '</svg>';
 }
-
-/* Ile z zaplanowanych dni tygodnia masz za sobą — segmenty zamiast liczby. */
 function pasekTygodnia(){
   const w = weekNo();
   const zrobione = new Set(DB.workouts.filter(x => inWeek(x.date, w)).map(x => x.day));
   return '<div class="segtyg">'+ ORDER.map(d =>
     '<i'+(zrobione.has(d) ? ' style="background:'+barwaDnia(d).a+'"' : '')+'></i>').join('') +'</div>';
+}
+
+
+/* ============================================================
+   SEKCJE ZWIJANE — jedna implementacja na całą aplikację
+   ============================================================ */
+const ZWIJKI_KEY = 'trening-zwijki';
+let ZWINIETE = (() => {
+  try { return JSON.parse(localStorage.getItem(ZWIJKI_KEY) || '{}') || {}; }
+  catch(e){ return {}; }
+})();
+function zwijOtwarta(id){ return !!ZWINIETE[id]; }
+function przelaczZwij(id){
+  ZWINIETE[id] = !ZWINIETE[id];
+  try { localStorage.setItem(ZWIJKI_KEY, JSON.stringify(ZWINIETE)); } catch(e){}
+  odswiezWidok();
+}
+/* `tresc` jest funkcją, a nie napisem, celowo: zwinięta sekcja nie ma
+   nawet liczyć swojej zawartości. Lista stu wpisów w Dzienniku budowała
+   się przy każdym przerysowaniu ekranu, żeby zaraz trafić do elementu
+   z `display:none`. */
+function zwijka(id, tytul, podtytul, licznik, tresc){
+  const otw = zwijOtwarta(id);
+  return '<div class="zwij'+(otw?' otw':'')+'">'+
+    '<button onclick="przelaczZwij(\''+id+'\')">'+
+      '<div style="min-width:0">'+
+        '<div class="zt">'+tytul+'</div>'+
+        (podtytul ? '<div class="zs">'+podtytul+'</div>' : '')+
+      '</div>'+
+      '<div class="zn">'+
+        (licznik != null ? '<span class="licz">'+licznik+'</span>' : '')+
+        '<span class="strz">▾</span>'+
+      '</div>'+
+    '</button>'+
+    (otw ? '<div class="zc">'+tresc()+'</div>' : '')+
+  '</div>';
 }
 
 function renderDzis(){
@@ -3091,7 +3308,11 @@ function renderDzis(){
      z dotychczasowych sesji, nie liczba z sufitu. */
   const b = barwaDnia(dzien);
   const ile = gp ? gp.cwiczenia.length : 0;
-  const serie = gp ? gp.cwiczenia.reduce((a, e) => a + ((e.sug && e.sug.sets) || 0), 0) : 0;
+  /* Zapisany plan trzyma liczbę serii w polu `serie`, a plan zbudowany
+     w locie — w `sug.sets`. Karta czytała tylko to drugie i przy planie
+     z pamięci pokazywała myślniki zamiast liczb, choć plan był kompletny. */
+  const serie = gp ? gp.cwiczenia.reduce((a, e) =>
+    a + (e.serie != null ? e.serie : ((e.sug && e.sug.sets) || 0)), 0) : 0;
   const minuty = serie ? Math.round((serie * 3 + 8) / 5) * 5 : 0;
   const kropka = !maOdp ? 'var(--dim)'
     : g.pkt >= 85 ? 'var(--acc)' : g.pkt >= 55 ? '#ffc53d' : '#e5484d';
@@ -3716,7 +3937,7 @@ function suggestNext(naJutro){
      dłuższej przerwie wypadały nogi — bo nogi zawsze czekały najdłużej.
      Filip wracał z wakacji i dostawał martwy ciąg na powitanie.
 
-     Teraz rotacja idzie po kolei (push → pull → nogi → nogi), a aplikacja
+     Teraz rotacja idzie po kolei (push → pull → nogi → push → pull), a aplikacja
      schodzi z niej TYLKO z konkretnego powodu: dzień jest już zrobiony
      w tym tygodniu, wczoraj szła ta sama partia, albo ta partia ma mocne
      zakwasy. Za każdym razem musi to napisać. */
@@ -3788,15 +4009,33 @@ function suggestNext(naJutro){
     {zalegle: false, zakwasy: false, doba: true},   /* wolno mimo zakwasów */
     {zalegle: false, zakwasy: false, doba: false}   /* ostatecznie: mimo 48 h */
   ];
+  /* JEDEN WARUNEK NIE JEST W ŻADNYM PASIE, bo nie podlega negocjacji.
+     Nogi nazajutrz po nogach to nie „mniej optymalny wybór", tylko sesja,
+     której nie da się wykonać: przysiad na obolałych czworogłowych kończy
+     się połową ciężaru i techniką, która boli tydzień dłużej.
+
+     Filip zgłosił to wprost — zrobił nogi w środę i dostał propozycję nóg
+     na czwartek. Wcześniejsza wersja odpuszczała 48 h w ostatnim pasie
+     i wtedy nogi wracały tylnymi drzwiami. Teraz, jeśli po odjęciu dnia
+     nóg nie zostaje nic, aplikacja proponuje wolne — a nie trening,
+     o którym sama napisała, że jest zły. */
+  const nogiWczoraj = yest.includes('nogi');
+  const dozwolone = kolejka.filter(d => !(nogiWczoraj && PLAN[d].grp === 'nogi'));
+  if(!dozwolone.length) return {day:null, rest:true, week:w, phase:p,
+    head:'Dziś wolne',
+    why:['Wczoraj były nogi, a jedyny dzień, który wypada po kolei, to znowu nogi.',
+         'Czworogłowe i dwugłowe potrzebują pełnych 48 godzin. Zrób spokojny bieg albo nic — jutro wraca push.'],
+    notes:[]};
+
   const pominiete = [];
   let day = null, luzniej = 0;
 
   for(let nr = 0; nr < PASY.length && !day; nr++){
     const pas = PASY[nr];
     pominiete.length = 0;
-    for(const d of kolejka){
-      if(pas.zalegle && !zalegly(d) && jestZaleglosc){
-        const najstarszy = kolejka.filter(zalegly).sort((a,b) => dniOd(b) - dniOd(a))[0];
+    for(const d of dozwolone){
+      if(pas.zalegle && !zalegly(d) && dozwolone.some(zalegly)){
+        const najstarszy = dozwolone.filter(zalegly).sort((a,b) => dniOd(b) - dniOd(a))[0];
         pominiete.push([d, 'robiłeś go '+dniOd(d)+' dni temu, a '+najstarszy+' czeka '+
           (dniOd(najstarszy) >= 999 ? 'od początku planu' : dniOd(najstarszy)+' dni')]);
         continue;
@@ -3804,13 +4043,13 @@ function suggestNext(naJutro){
       if(pas.doba && yest.includes(PLAN[d].grp)){
         pominiete.push([d, 'wczoraj szła ta sama partia']); continue;
       }
-      if(pas.zakwasy && bolace(PLAN[d].grp) && kolejka.some(x => x !== d && wolny(x))){
+      if(pas.zakwasy && bolace(PLAN[d].grp) && dozwolone.some(x => x !== d && wolny(x))){
         pominiete.push([d, 'mocne zakwasy w tej partii']); continue;
       }
       day = d; luzniej = nr; break;
     }
   }
-  if(!day){ day = kolejka[0]; luzniej = PASY.length - 1; }
+  if(!day){ day = dozwolone[0]; luzniej = PASY.length - 1; }
   clash = luzniej >= PASY.length - 1;   /* dzień po dniu ta sama partia */
   cand = kolejka;
 
@@ -3995,10 +4234,13 @@ function bezpiecznie(nazwa, f){
 function renderSub(){
   const w=weekNo(), p=phaseOf(tydzienPlanu());
   const bad = document.getElementById('hBadge'); if(bad) bad.textContent='T'+w;
+  /* NAGŁÓWEK NIE JEST MIEJSCEM NA NAZWĘ FAZY. „Budowa" stała tam codziennie
+     przez trzy tygodnie i nie zmieniała żadnej decyzji — Filip zgłosił to
+     wprost: „caly czas na glownej mam napis budowa nie wiem po co mi to".
+     Faza dalej rządzi ciężarami i seriami, tylko przestała zajmować
+     najcenniejsze miejsce na ekranie. Widać ją w Raporcie, przy tygodniu. */
   const sub = document.getElementById('hSub');
-  if(sub) sub.textContent = PHASES[p].n +
-    (przepadleTygodnie() > 0 ? ' · tydzień '+tydzienPlanu()+' planu' : '') +
-    ' · ' + dayName(today());
+  if(sub) sub.textContent = dayName(today()) + ', ' + plDate(today());
   if(SUB==='hub')  bezpiecznie('renderHub', renderHub);
   if(SUB==='pick') bezpiecznie('renderPick', renderPick);
   if(SUB==='sug')  bezpiecznie('renderSuggest', renderSuggest);
@@ -4067,71 +4309,77 @@ function kafelGotowosc(){
     '<div class="etyk">GOTOWOŚĆ</div></div>';
 }
 
-/* Na kafelku zostaje BIAŁKO, nie kalorie. Kalorie da się nadrobić czymkolwiek,
-   białko nie — i to ono decyduje, czy praca z siłowni się przekłada. Komplet
-   makro jest o jedno dotknięcie dalej. */
-function kafelBialka(){
-  const c = celBialka(), dzis = bialkoDnia();
-  const kolor = dzis >= c.min ? 'var(--ok)' : dzis >= c.min*0.6 ? 'var(--warn)' : 'var(--acc)';
+/* NA PIERŚCIENIU ZOSTAJĄ KALORIE, NIE BIAŁKO.
+
+   Przez trzy tygodnie stało tam samo białko, bo to ono decyduje, czy praca
+   z siłowni się przekłada. To dalej prawda — ale odkąd aplikacja liczy pełne
+   makro, białko przestało być jedyną liczbą, jaką ma. A kalorie odpowiadają
+   na pytanie, które Filip zadaje sobie codziennie: „zjadłem dziś dość?".
+   Białko nie zniknęło — jest pierwszym słupkiem pod spodem, z celem
+   i z brakującymi gramami. */
+function kafelKalorii(){
+  const cel = celeMakro(), m = makroDnia();
+  const kcal = Math.round(m.kcal);
+  /* Nad celem nie jest „źle" — jest po prostu inaczej niż zaplanowano.
+     Czerwień zostawiamy dla braku, bo to on realnie kosztuje. */
+  const kolor = kcal >= cel.kcal*0.9 ? 'var(--ok)'
+              : kcal >= cel.kcal*0.5 ? 'var(--warn)' : 'var(--acc)';
   return '<div class="kafel2" onclick="przelaczBialko()">'+
-    pierscien(dzis, c.min, kolor, '/'+c.min+' g')+
-    '<div class="etyk">BIAŁKO</div></div>';
+    pierscien(kcal, cel.kcal, kolor, '/'+cel.kcal+' kcal')+
+    '<div class="etyk">KALORIE</div></div>';
 }
 
-/* Pokrycie jako słupki: jeden słupek na region, wysokość to stosunek do normy.
-   Czerwony znaczy pod normą. Liczby są w Raporcie — tutaj chodzi o to, żeby
-   jednym spojrzeniem wiedzieć, czy coś stoi. */
-function kafelPokrycia(){
-  const cov = regionSets(14);
-  const klucze = Object.keys(REG);
-  const braki = [];
-  const slupki = klucze.map(k => {
-    const R = REG[k], v = cov[k] || 0;
-    const cel = R.min || R.max || 1;
-    const h = Math.max(6, Math.min(100, Math.round(v / cel * 70)));
-    let kolor = 'var(--ok)';
-    if(R.min && v < R.min){ kolor = 'var(--bad)'; braki.push(R.n); }
-    else if(R.max && v > R.max) kolor = '#b98cff';
-    return '<i style="height:'+h+'%;background:'+kolor+'"></i>';
+/* TRZY SŁUPKI ZAMIAST DWUDZIESTU OŚMIU.
+
+   W tym miejscu stało POKRYCIE — dwadzieścia osiem bezimiennych słupków,
+   z których nie dało się odczytać, który jest który ani co z tym zrobić.
+   Teraz stoją tu trzy, każdy podpisany, każdy z liczbą i z brakiem.
+   „Białko 96 / 150 g, brakuje 54" da się zamienić na decyzję przy lodówce.
+   „Czworogłowe 6,4 przy normie 5-14" — nie da się, i dlatego mieszka
+   w Mięśniach, gdzie jest sylwetka i kontekst. */
+function kafelMakro(){
+  const cel = celeMakro(), m = makroDnia();
+  const cele = {bialko: cel.b.min, wegle: cel.w.min, tluszcz: cel.t.min};
+  const wiersze = MAKRA.map(mk => {
+    const jest = Math.round(m[mk.k] || 0), c = cele[mk.k] || 0;
+    const proc = c > 0 ? Math.min(1, jest / c) : 0;
+    const brak = Math.max(0, c - jest);
+    return '<div class="mkw">'+
+      '<span class="mkn">'+mk.n+'</span>'+
+      '<span class="mkt"><i style="width:'+(proc*100).toFixed(0)+'%;background:'+mk.kolor+'"></i></span>'+
+      '<span class="mkl">'+jest+'<span class="mkc">/'+c+' g</span></span>'+
+    '</div>';
   }).join('');
-
-  return '<div class="tip" onclick="go(\'report\')" style="cursor:pointer;'+
+  const brakuje = MAKRA
+    .map(mk => [mk.n.toLowerCase(), Math.max(0, (cele[mk.k]||0) - Math.round(m[mk.k]||0))])
+    .filter(x => x[1] > 0);
+  return '<div class="tip" onclick="przelaczBialko()" style="cursor:pointer;'+
     '-webkit-tap-highlight-color:transparent">'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
-      '<div class="etyk" style="margin:0">POKRYCIE · 14 DNI</div>'+
-      '<div style="font-size:11px;font-weight:700;color:'+(braki.length?'var(--bad)':'var(--ok)')+'">'+
-        (braki.length ? braki.length+' pod normą' : 'wszystko w normie')+'</div>'+
-    '</div>'+
-    '<div class="slupki">'+slupki+'</div>'+
-    (braki.length ? '<div class="hm" style="margin-top:7px">'+esc(braki.slice(0,3).join(' · '))+
-      (braki.length>3 ? ' · +'+(braki.length-3) : '')+'</div>' : '')+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">'+
+      '<div class="etyk" style="margin:0">MAKRO NA DZIŚ</div>'+
+      '<div style="font-size:11px;font-weight:700;color:'+
+        (brakuje.length ? 'var(--dim)' : 'var(--ok)')+'">'+
+        (brakuje.length ? 'brakuje: '+esc(brakuje.map(x => x[0]+' '+x[1]+' g').join(' · '))
+                        : 'wszystko dowiezione')+'</div>'+
+    '</div>'+ wiersze +
+    (m.niepelne ? '<div class="note" style="margin-top:8px">Ten dzień ma wpisane samo '+
+      'białko — kalorie są policzone z tego, co znane, więc to dolna granica.</div>' : '')+
     '</div>';
 }
 
-/* Iskierka głównego boju — jedna linia zamiast akapitu o progresji. */
-function kafelBoju(){
-  const boje = ORDER.map(d => (PLAN[d].slots || []).filter(x => x.fixed).map(x => x.fixed)).flat();
-  let naj = null;
-  boje.forEach(n => {
-    const h = historia(n);
-    if(h.length >= 2 && (!naj || h.length > naj.h.length)) naj = {n, h};
-  });
-  if(!naj) return '';
-  const pkt = naj.h.slice().reverse().map(x => ({v: e1rm(bestSet(x.sets, naj.n), naj.n), d: x.date}));
-  const od = pkt[0].v, doo = pkt[pkt.length-1].v;
-  const zm = od > 0 ? Math.round((doo/od - 1) * 100) : 0;
-  return '<div class="tip" onclick="openHist(\''+esc(naj.n)+'\')" style="cursor:pointer;'+
-    '-webkit-tap-highlight-color:transparent">'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
-      '<div class="etyk" style="margin:0">'+esc(naj.n.toUpperCase())+' · 1RM</div>'+
-      '<div style="font-size:12px;font-weight:700;color:'+(zm>=0?'var(--ok)':'var(--bad)')+'">'+
-        (zm>=0?'+':'')+zm+'%</div>'+
-    '</div>'+
-    sparkline(pkt, 'var(--info)')+
-    '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim)">'+
-      '<span>'+fmtKg(od)+' kg</span><span>'+fmtKg(doo)+' kg</span></div>'+
-    '</div>';
-}
+/* Kafelki POKRYCIE i „główny bój" zostały USUNIĘTE w wersji 51.
+
+   Pokrycie było dwudziestoma ośmioma bezimiennymi słupkami — ładnymi,
+   ale nie do odczytania: nie dało się stwierdzić, który słupek to który
+   mięsień ani co z tym zrobić. Ta sama informacja z podpisami, normami
+   i sylwetką stoi w zakładce Mięśnie.
+
+   Wykres głównego boju wybierał bój, który akurat miał najwięcej historii,
+   i przez większość czasu pokazywał „+0%". Trendy wszystkich pięciu bojów
+   są w Raporcie → Mięśnie, obok siebie, gdzie da się je porównać.
+
+   Zamiast obu stoją teraz trzy słupki makro (`pasekMakro`) — trzy liczby,
+   które realnie zmieniają to, co Filip zrobi w ciągu najbliższej godziny. */
 
 function renderHub(){
   const w=weekNo(), p=phaseOf(tydzienPlanu());
@@ -4139,15 +4387,18 @@ function renderHub(){
   /* Różnica między kalendarzem a planem MUSI być widoczna. Cicha korekta
      jest gorsza od błędu: człowiek widzi „tydzień 3", plan robi „tydzień 2"
      i nie ma jak się dowiedzieć, że to nie pomyłka. */
+  /* Kafel fazy zniknął, ale JEDNA rzecz musi zostać: rozjazd między
+     kalendarzem a planem. To jedyny moment, w którym aplikacja robi coś,
+     czego użytkownik nie zobaczy w liczbach — i cicha korekta jest gorsza
+     od błędu. Więc pokazujemy ją tylko wtedy, gdy naprawdę zachodzi. */
   const tp = tydzienPlanu(), stracone = przepadleTygodnie();
-  document.getElementById('phaseTip').innerHTML='<b>'+PHASES[p].n+'</b> — '+PHASES[p].d+
-    (stracone > 0
-      ? '<div class="note" style="margin-top:6px">Kalendarz pokazuje tydzień '+w+
-        ', plan liczy <b>tydzień '+tp+'</b>. '+
-        (stracone===1?'Jeden tydzień':stracone+' tygodnie')+
-        ' bez treningu siłowego nie przesuwa fazy — nie było czego progresować. '+
-        'Wracasz tam, gdzie skończyłeś, a nie tam, gdzie byłbyś, gdybyś nie wyjeżdżał.</div>'
-      : '');
+  const fazaBox = stracone > 0
+    ? '<div class="tip"><b>Kalendarz mówi tydzień '+w+', plan liczy '+tp+'</b>'+
+      '<div class="hm" style="margin-top:4px">'+
+      (stracone===1?'Jeden tydzień':stracone+' tygodnie')+
+      ' bez siłowni nie przesuwa fazy — nie było czego progresować. '+
+      'Wracasz tam, gdzie skończyłeś.</div></div>'
+    : '';
   const s=suggestNext();
   /* BŁĄD, przez który cały ekran główny był pusty: usunąłem z HTML dwa
      kafelki (zastąpił je kafelek „Dziś"), ale kod nadal do nich pisał.
@@ -4177,7 +4428,7 @@ function renderHub(){
     ? '<div class="tip">'+czeka+' '+(czeka===1?'pytanie czeka':'pytania czekają')+
       ' na odpowiedź — dostaniesz ją w nocnej analizie.</div>' : '';
   const rec=DB.workouts.slice(-6).reverse();
-  document.getElementById('recent').innerHTML = rec.length ? rec.map(x=>{
+  const wiersze = () => rec.map(x=>{
     const wuN=wuCount(x);
     return '<div class="hist zw" style="cursor:pointer" onclick="openTrening(\''+x.id+'\')">'+
       '<div style="min-width:0">'+
@@ -4186,8 +4437,14 @@ function renderHub(){
       '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii · '+
         Math.round(vol(x)/1000*10)/10+'t'+(x.dur?' · '+x.dur+"'":'')+'</div></div>'+
       '<div class="pill">T'+weekNo(x.date)+'</div></div>';
-  }).join('')
-    : '<div class="empty">Nic tu jeszcze nie ma.<br>Zacznij od „Proponowany trening".</div>';
+  }).join('');
+  const ost = rec[0];
+  document.getElementById('recentBox').innerHTML = rec.length
+    ? zwijka('recent', 'Ostatnie treningi',
+        ost.day+' · '+esc(dayName2(ost.day))+' — '+plDate(ost.date),
+        DB.workouts.length, wiersze)
+    : '<div class="card"><div class="empty">Nic tu jeszcze nie ma.<br>'+
+      'Zacznij od „Rozpocznij trening".</div></div>';
   /* Kasowanie celowo nie ma tu przycisku. Krzyżyk siedział na ekranie
      głównym, kilka milimetrów od plakietki tygodnia, na liście przewijanej
      kciukiem — czyli w miejscu, gdzie trafia się w niego przypadkiem.
@@ -4268,14 +4525,21 @@ function renderHub(){
        kafelków albo niżej, gdzie nie zasłania rzeczy pilnych. */
     renderZapis() + renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume +
     renderDzis() +
-    '<div class="krata">' + kafelGotowosc() + kafelBialka() + '</div>' +
+    '<div class="krata">' + kafelGotowosc() + kafelKalorii() + '</div>' +
+    bezpieczneHtml('kafelMakro', kafelMakro) +
+    fazaBox +
     /* Rozwinięcie musi wyjść ZARAZ POD kafelkiem, który dotknąłeś. Wersja 40
        doklejała je na końcu ekranu — dotykało się pierścienia, a panel
        otwierał się kilka ekranów niżej i wyglądało to na brak reakcji. */
     (PORANNE_ROZW ? renderPoranne() : '') +
     (BIALKO_ROZW ? renderBialko() : '') +
-    planBox + bezpieczneHtml('kafelPokrycia', kafelPokrycia) +
-    bezpieczneHtml('kafelBoju', kafelBoju) +
+    /* POKRYCIE i wykres głównego boju wyprowadzone z ekranu głównego.
+       Pokrycie mieszka w Mięśniach — tam jest sylwetka, normy i podpisy,
+       a tu były dwadzieścia osiem bezimiennych słupków, z których nie dało
+       się odczytać, który jest który. Wykres 1RM mieszka w Raporcie,
+       razem z resztą trendów; na głównej pokazywał losowy bój i częściej
+       stał na „+0%" niż mówił cokolwiek. */
+    planBox +
     renderKolejne() +
     renderBraki() + coach + odpBox + czekaBox + renderPrzeloz() + syncBox;
 }
@@ -5095,7 +5359,22 @@ function raportSesji(w, opcje){
                      : 'Plan aplikacji, niesprawdzony przeze mnie'))
     : null;
 
-  let h = '<h2>Raport z sesji</h2>' + (czyjPlan
+  /* CZTERY LICZBY NA POCZĄTKU, ZANIM PADNIE JEDNO ZDANIE.
+     Filip o poprzedniej wersji: „mi sie tego nie bedzie chcialo czytac
+     po treningu". Po sesji człowiek jest spocony i chce wiedzieć cztery
+     rzeczy — ile serii, ile kilogramów, ile to trwało i czy było za ciężko.
+     Reszta raportu ma prawo istnieć dopiero pod tym. */
+  const obj = Math.round(vol(w));
+  let h = '<h2>Raport z sesji</h2>'+
+    '<div class="stat4">'+
+      '<div><b>'+setCount(w)+'</b><span>SERII</span></div>'+
+      '<div><b>'+(obj >= 1000 ? Math.round(obj/1000)+'t' : obj)+'</b><span>OBJĘTOŚĆ</span></div>'+
+      '<div><b>'+(w.dur || '—')+'</b><span>MINUT</span></div>'+
+      '<div><b class="'+(srRpe == null ? '' : srRpe <= celRpe + 0.5 ? 'ok'
+                       : srRpe <= celRpe + 1.5 ? 'warn' : 'bad')+'">'+
+        (srRpe == null ? '—' : fmtKg(Math.round(srRpe*10)/10))+
+        '</b><span>RPE / '+celRpe+'</span></div>'+
+    '</div>' + (czyjPlan
     ? '<div class="tip"><span class="autor '+(n.sprawdzony?'trener':'apka')+'">'+
       (n.sprawdzony?'TRENER':'APLIKACJA')+'</span> '+esc(czyjPlan)+'</div>' : '');
 
@@ -5110,29 +5389,46 @@ function raportSesji(w, opcje){
     const rp = r.filter(x => x.rpe != null).map(x => x.rpe);
     const maxRpe = rp.length ? Math.max(...rp) : null;
     const zaCiezko = maxRpe != null && maxRpe > celRpe + 1;
+    /* Docelowa liczba powtórzeń: bierzemy dolną granicę z etykiety celu,
+       bo to ona decyduje, czy seria się „domknęła". */
+    const celLb = parseInt((e.target || '').replace(/^[^×x]*[×x]\s*/, ''), 10);
+    const kafle = r.map(st => {
+      const stan = st.rpe != null && st.rpe >= 10 ? 'bad'
+                 : !celLb || st.r >= celLb ? 'ok'
+                 : st.r >= celLb - 1 ? '' : 'warn';
+      const tyt = fmtSet(st, e.name) + (st.rpe != null ? ' · RPE '+st.rpe : '');
+      return '<i class="'+stan+'" title="'+esc(tyt)+'">'+st.r+
+        (st.rpe != null ? '<u>'+st.rpe+'</u>' : '')+'</i>';
+    }).join('');
     return {name: e.name, cel: e.target || '—',
+      waga: r[0].w ? fmtKg(r[0].w)+' kg' : (L.bw ? 'masa własna' : ''),
+      kafle,
       zrobione: (r[0].w ? fmtKg(r[0].w)+' kg × ' : '') + powt.join('/'),
       rpe: rp.length ? rp.join('/') : '—', zaCiezko, naj, min, L};
   }).filter(Boolean);
 
+  /* KAŻDA SERIA JAKO KAFELEK, NIE JAKO LICZBA W ZDANIU.
+     „cel 3×8 · zrobione 60 kg × 8/8/6 · RPE 7/8/9" to jedna linijka, którą
+     trzeba przeczytać w całości, żeby się czegokolwiek dowiedzieć. Trzy
+     kwadraty z liczbą powtórzeń i kolorem od RPE mówią to samo bez czytania:
+     zielony — poszło, żółty — pod celem, czerwony — do upadku. */
   h += '<div class="card">'+ wiersze.map(x =>
-    '<div style="padding:9px 0;border-bottom:1px solid var(--line)">'+
-    '<div class="hd">'+esc(x.name)+'</div>'+
-    '<div class="hm">cel '+esc(x.cel)+' · zrobione '+esc(x.zrobione)+
-    ' · RPE <span class="'+(x.zaCiezko?'bad':'ok')+'">'+esc(x.rpe)+'</span></div></div>').join('')
-    +'</div>';
+    '<div class="cwr">'+
+      '<div class="cwn">'+esc(x.name)+
+        '<span>'+esc(x.cel)+(x.waga ? ' · '+esc(x.waga) : '')+'</span></div>'+
+      '<div class="serie">'+ x.kafle +'</div>'+
+    '</div>').join('') +'</div>';
 
   /* --- najważniejszy wniosek: czy trenowałeś w swojej fazie --- */
-  if(srRpe != null){
-    const stan = srRpe <= celRpe + 0.5 ? 'ok' : srRpe <= celRpe + 1.5 ? 'warn' : 'bad';
-    h += '<div class="tip '+stan+'"><b>Średnie RPE '+fmtKg(srRpe)+' przy celu fazy '+celRpe+'</b><br>'+
-      (stan === 'ok'
-        ? 'Trafiłeś w fazę. Tak ma wyglądać cała sesja.'
-        : doUpadku
-          ? doUpadku+' '+(doUpadku===1?'seria':'serie')+' na RPE 10, czyli do upadku. '+
-            'W tej fazie budujesz tolerancję na obciążenie, nie szukasz granicy — '+
-            'to właśnie po takich sesjach pod koniec odcina siłę.'
-          : 'Trochę ciężej, niż przewiduje faza. Następnym razem zejdź o stopień.')+
+  /* Liczba RPE stoi już w kaflach na górze, więc tutaj zostaje SAM WNIOSEK
+     i tylko wtedy, gdy jest jakiś. Sesja trafiona w fazę nie potrzebuje
+     akapitu o tym, że jest w porządku. */
+  if(srRpe != null && srRpe > celRpe + 0.5){
+    h += '<div class="tip '+(srRpe <= celRpe + 1.5 ? 'warn' : 'bad')+'">'+
+      (doUpadku
+        ? '<b>'+doUpadku+' '+(doUpadku===1?'seria':'serie')+' do upadku (RPE 10)</b><br>'+
+          'W tej fazie budujesz tolerancję na obciążenie, nie szukasz granicy.'
+        : '<b>Ciężej, niż przewiduje faza</b><br>Następnym razem zejdź o stopień.')+
       '</div>';
   }
 
@@ -5151,9 +5447,17 @@ function raportSesji(w, opcje){
     h += '<h2>Następnym razem</h2><div class="card">'+ zmiany.map(z =>
       '<div class="kv"><span class="k">'+esc(z.name)+'</span>'+
       '<span class="v '+(z.gora?'up':'down')+'">'+fmtKg(z.z)+' → '+fmtKg(z.na)+' kg</span></div>').join('')
-      +'<div class="note" style="margin-top:9px">Spadek nie jest cofnięciem — to szukanie '+
-      'ciężaru, przy którym domkniesz pełne serie. Stamtąd progresja rusza szybciej '+
-      'niż przy szarpaniu się ze zbyt dużym.</div></div>';
+      /* BŁĄD, KTÓRY TU SIEDZIAŁ: nota o spadku wyświetlała się także wtedy,
+         gdy WSZYSTKIE ciężary szły w górę — „spadek nie jest cofnięciem"
+         pod listą samych podwyżek. Tłumaczenie ma pasować do tego, co
+         naprawdę stoi wyżej. */
+      + (zmiany.some(z => !z.gora)
+        ? '<div class="note" style="margin-top:9px">Spadek nie jest cofnięciem — to szukanie '+
+          'ciężaru, przy którym domkniesz pełne serie. Stamtąd progresja rusza szybciej '+
+          'niż przy szarpaniu się ze zbyt dużym.</div>'
+        : '<div class="note" style="margin-top:9px">Zakres domknięty, więc ciężar idzie '+
+          'w górę o jeden krok. Nie więcej — mały krok domykasz od razu, duży '+
+          'zamienia następną sesję w sprawdzian.</div>')+'</div>';
   }
 
   /* --- co ta sesja realnie obrobiła, w rozbiciu na głowy --- */
@@ -6404,7 +6708,7 @@ function renderDaily(){
   });
   renderSteppery();
   const list=DB.daily.slice(-10).reverse();
-  document.getElementById('dailyList').innerHTML = list.length ? list.map(d=>{
+  const wierszeDni = () => list.map(d=>{
     /* Wpis z samym samopoczuciem i zakwasami wyświetlał się jako „—", bo lista
        pokazywała wyłącznie liczby z zegarka. Wyglądało to na pusty dzień do
        skasowania — a to były odpowiedzi z porannych pytań, na których liczy
@@ -6430,7 +6734,19 @@ function renderDaily(){
     return '<div class="hist zw"><div style="min-width:0"><div class="hd">'+plDate(d.date)+'</div>'+
       '<div class="hm">'+(bits.join(' · ')||'—')+(d.note?' · '+esc(d.note):'')+'</div></div>'+
       '<button class="sx" onclick="delDaily(\''+d.date+'\')">×</button></div>';
-  }).join('') : '<div class="empty">Brak wpisów.<br>Przepisz dziś dane z Garmina.</div>';
+  }).join('');
+  /* Dziesięć wpisów to pół ekranu, a realnie zagląda się do jednego:
+     tego, który się właśnie wpisało. Streszczenie w nagłówku mówi, czy
+     dzisiejszy dzień w ogóle jest — i to jest jedyne, po co się tu patrzy. */
+  const dzis = DB.daily.find(x => x.date === today());
+  const ost = list[0];
+  document.getElementById('dailyList').innerHTML = list.length
+    ? zwijka('dailyList', 'Ostatnie 10 dni',
+        dzis ? 'Dziś zapisane' : (ost ? 'Ostatni wpis: '+plDate(ost.date)+' — dziś jeszcze nic'
+                                      : 'Dziś jeszcze nic'),
+        DB.daily.length, wierszeDni)
+    : '<div class="card"><div class="empty">Brak wpisów.<br>'+
+      'Przepisz dziś dane z Garmina.</div></div>';
 }
 
 function saveDaily(){
@@ -6614,6 +6930,182 @@ function groupStatus(keys, cov){
   if(st.includes('over')) return 'over';
   return 'ok';
 }
+/* ============================================================
+   SYLWETKA — geometria
+
+   Poprzednia wersja była zlepkiem kilkunastu kształtów, z których każdy sam
+   musiał trafić w kontur ciała. Nie trafiał: w pachwinie zostawała szczelina,
+   mięśnie wyjeżdżały poza tułów, a głowa stała na patyku. Filip nazwał to
+   wprost — „kilka zlepionych kształtów".
+
+   Trzy zmiany, które to naprawiły:
+
+   1. WSPÓŁRZĘDNE BEZWZGLĘDNE zamiast względnych. Ścieżki względne czytało się
+      jak asembler i pięć z jedenastu miało zgubiony znak — wychodziły z nich
+      trójkąty przez pół ekranu. Teraz każdy punkt jest tam, gdzie go widać.
+
+   2. PARZYSTE KSZTAŁTY RYSUJEMY RAZ. Lewa strona jest źródłem prawdy, prawa
+      powstaje przez odbicie translate(2·cx,0) scale(-1,1). Moduł wyznacznika
+      tej macierzy wynosi 1, więc grubość obrysu się nie zmienia.
+
+   3. MIĘŚNIE SĄ PRZYCINANE DO CIAŁA (clipPath), i to dwiema osobnymi maskami:
+      tułów oraz kończyny. Dzięki temu kształty mięśni mogą być celowo ZA DUŻE
+      i zachodzić na siebie — maska obcina je po sylwetce. Ciało nie ma dziur,
+      kontur jest jeden, a poprawka jednego mięśnia nie psuje obrysu.
+      Dwie maski zamiast jednej, bo przy jednej elipsa bicepsa kładła się
+      na bok klatki, a czapka barku zjadała górę tułowia.
+
+   Figura stoi pionowo: czubek głowy y=14, stopy y=250, środek w `cx`.
+   ============================================================ */
+const par = (cx, b) =>
+  b + '<g transform="translate(' + (2*cx) + ',0) scale(-1,1)">' + b + '</g>';
+
+/* Obrys ciała. Ten sam zestaw ścieżek służy trzy razy: jako maska, jako
+   ciemne wypełnienie pod mięśniami i jako kontur rysowany na wierzchu.
+   Figura stoi w pionie: czubek głowy y=15, stopy y=250. */
+/* DWIE MASKI, NIE JEDNA.
+
+   Pierwsza wersja przycinała wszystkie mięśnie do JEDNEJ maski — całej
+   sylwetki. Efekt: elipsa bicepsa, celowo za duża, wychodziła poza ramię
+   i kładła się na bok klatki, a czapka naramiennego zjadała górę tułowia.
+   Wyglądało to jak przeciek koloru bez powodu.
+
+   Teraz maski są dwie: tułów (z głową, szyją i czapkami barków) oraz
+   kończyny (ramiona i nogi z dłońmi i stopami). Mięsień ramienia nie ma
+   jak dotknąć klatki, a mięsień klatki nie ma jak wejść na ramię. */
+const KONCZYNY = cx => {
+  const d = cx - 85;
+  const X = n => (n + d).toFixed(1);
+  const P = b => par(cx, b);
+  return ''+
+    /* NOGA: biodro → udo → kolano → łydka → kostka */
+    P('<path d="M'+X(65)+' 128 C'+X(62)+' 146 '+X(61.5)+' 172 '+X(64.5)+' 200'+
+      ' C'+X(65.5)+' 219 '+X(67.5)+' 232 '+X(68.5)+' 242'+
+      ' A5.6 5.6 0 0 0 '+X(79.7)+' 242'+
+      ' C'+X(80.5)+' 232 '+X(82)+' 219 '+X(83.2)+' 200'+
+      ' C'+X(85.5)+' 172 '+X(85.8)+' 146 '+X(85)+' 128 Z"/>')+
+    P('<ellipse cx="'+X(74.6)+'" cy="246" rx="6.4" ry="4.6"/>')+
+    /* RAMIĘ: bark → biceps → łokieć → przedramię → nadgarstek */
+    P('<path d="M'+X(65)+' 58 C'+X(56)+' 68 '+X(51)+' 79 '+X(49.6)+' 92'+
+      ' C'+X(47)+' 110 '+X(45.8)+' 126 '+X(45.8)+' 146'+
+      ' A5.4 5.4 0 0 0 '+X(56.6)+' 146'+
+      ' C'+X(56.8)+' 126 '+X(58.6)+' 110 '+X(62.4)+' 92'+
+      ' C'+X(65)+' 79 '+X(72)+' 68 '+X(78)+' 58 Z"/>')+
+    P('<ellipse cx="'+X(51.2)+'" cy="152" rx="5.4" ry="6.8"/>');
+};
+
+const TORS = cx => {
+  const d = cx - 85;
+  const X = n => (n + d).toFixed(1);
+  const P = b => par(cx, b);
+  return ''+
+    /* TUŁÓW: bark → pacha → talia → biodro */
+    '<path d="M'+X(63)+' 56 C'+X(60)+' 70 '+X(60)+' 80 '+X(62)+' 90'+
+      ' C'+X(65)+' 105 '+X(69)+' 116 '+X(71)+' 126'+
+      ' C'+X(72)+' 136 '+X(71.6)+' 143 '+X(71)+' 150'+
+      ' L'+X(99)+' 150'+
+      ' C'+X(98.4)+' 143 '+X(98)+' 136 '+X(99)+' 126'+
+      ' C'+X(101)+' 116 '+X(105)+' 105 '+X(108)+' 90'+
+      ' C'+X(110)+' 80 '+X(110)+' 70 '+X(107)+' 56 Z"/>'+
+    /* CZAPKA NARAMIENNEGO — wystaje poza tułów i nachodzi na ramię.
+       To ona daje ramionom szerokość: bez niej sylwetka jest rurą. */
+    P('<path d="M'+X(66)+' 55 C'+X(54)+' 56 '+X(46)+' 64 '+X(44)+' 78'+
+      ' C'+X(42.4)+' 89 '+X(44)+' 96 '+X(48.4)+' 100'+
+      ' C'+X(51)+' 85 '+X(57)+' 71 '+X(66)+' 63 Z"/>')+
+    /* SZYJA I GŁOWA */
+    '<path d="M'+X(76.6)+' 36 C'+X(81)+' 41 '+X(89)+' 41 '+X(93.4)+' 36'+
+      ' L'+X(95.4)+' 52 C'+X(88.5)+' 57 '+X(81.5)+' 57 '+X(74.6)+' 52 Z"/>'+
+    '<ellipse cx="'+X(85)+'" cy="28" rx="11.8" ry="14"/>';
+};
+
+/* ---------- PRZÓD ---------- */
+const PRZOD = (sh, hd) => {
+  const P = b => par(85, b);
+  return {tors: ''+
+  /* czworoboczny górny — jarzmo między szyją a barkiem, widoczne od przodu */
+  sh('plecy_gora',
+    '<path d="M74 40 C70 52 62 61 50 67 L120 67 C108 61 100 52 96 40'+
+      ' C90 47 80 47 74 40 Z"/>')+
+  /* naramienny boczny: pełna czapka na stawie, nie sierp */
+  sh('bark_bok', P('<ellipse cx="55" cy="80" rx="17" ry="23"/>'))+
+  /* naramienny przedni: wewnętrzna, widoczna od frontu część czapki */
+  sh('bark_przod',
+    '<path d="M59 57 C70 53 100 53 111 57 C112 68 108 77 101 81 L69 81'+
+      ' C62 77 58 68 59 57 Z"/>')+
+  sh('klatka_gora',
+    '<path d="M55 69 C70 65 100 65 115 69 L115 85 C100 81 70 81 55 85 Z"/>')+
+  sh('klatka_srodek',
+    '<path d="M55 83 C70 79 100 79 115 83 L115 103 C100 107 70 107 55 103 Z"/>'+
+    '<path d="M85 82 v24" class="szew"/>')+
+  sh('klatka_dol',
+    '<path d="M55 101 C70 105 100 105 115 101 L115 115 C100 118 70 118 55 115 Z"/>')+
+  sh('brzuch',
+    '<path d="M73 111 H97 C98 129 97 145 95 157 H75 C73 145 72 129 73 111 Z"/>'+
+    '<path d="M85 112 v44 M74.4 122 h21.2 M74.8 133 h20.4 M75.4 144 h19.2" class="szew"/>')+
+  sh(['skosne','glebokie'],
+    P('<path d="M54 107 H74 V159 H54 Z"/>')),
+
+  konczyny: ''+
+  /* Naramienny wchodzi też na maskę kończyn, bo w rzeczywistości przyczepia
+     się do kości ramiennej — a bez tego między czapką barku a bicepsem
+     zostawał ciemny klin w pasze. */
+  sh('bark_bok', P('<ellipse cx="55" cy="80" rx="17" ry="23"/>'))+
+  sh(['biceps_dluga','biceps_krotka','ramienny'],
+    P('<ellipse cx="54" cy="104" rx="13" ry="23" transform="rotate(-7 54 104)"/>'))+
+  sh('przedramie',
+    P('<ellipse cx="49" cy="141" rx="11" ry="23"/>'))+
+  sh(['czworoglowe','udo_proste'],
+    P('<ellipse cx="74" cy="171" rx="18" ry="37"/>'))+
+  sh('lydki_stoj',
+    P('<ellipse cx="73" cy="222" rx="14" ry="23"/>'))+
+  /* kolano zostaje neutralne — to nie mięsień, nie ma czego kolorować */
+  hd(P('<ellipse cx="74.4" cy="201" rx="7" ry="5"/>'))};
+};
+
+/* ---------- TYŁ ---------- */
+const TYL = (sh, hd) => {
+  const P = b => par(255, b);
+  return {tors: ''+
+  sh('plecy_gora',
+    '<path d="M244 40 C240 52 232 61 220 67 C226 76 232 82 238 85'+
+      ' C244 81 249 79 255 79 C261 79 266 81 272 85'+
+      ' C278 82 284 76 290 67 C278 61 270 52 266 40'+
+      ' C260 47 250 47 244 40 Z"/>')+
+  sh('bark_tyl', P('<ellipse cx="225" cy="80" rx="17" ry="23"/>'))+
+  /* najszerszy grzbietu: trójkąt od pachy do talii — on robi literę V */
+  sh('plecy_pion',
+    P('<path d="M218 73 L255 73 L255 122 C238 120 227 112 220 98'+
+      ' C215 90 214 81 218 73 Z"/>'))+
+  /* czworoboczny środkowy i równoległoboczne: pas wzdłuż kręgosłupa */
+  sh('plecy_poziom',
+    '<path d="M249 71 H261 V121 H249 Z"/>')+
+  sh('prostowniki',
+    '<path d="M243 118 H267 C268 128 267 136 265 142 H245 C243 136 242 128 243 118 Z"/>')+
+  sh(['posladki','posladki_sr'],
+    P('<ellipse cx="245" cy="146" rx="16" ry="14"/>')),
+
+  konczyny: ''+
+  sh('bark_tyl', P('<ellipse cx="225" cy="80" rx="17" ry="23"/>'))+
+  sh(['triceps_dluga','triceps_bocz','triceps_przysr'],
+    P('<ellipse cx="224" cy="104" rx="13" ry="23" transform="rotate(-7 224 104)"/>'))+
+  sh('przedramie',
+    P('<ellipse cx="219" cy="141" rx="11" ry="23"/>'))+
+  sh(['posladki','posladki_sr'],
+    P('<ellipse cx="245" cy="140" rx="16" ry="14"/>'))+
+  sh(['dwuglowe','dwuglowe_kol'],
+    P('<ellipse cx="244" cy="176" rx="17" ry="32"/>'))+
+  sh('lydki_sied',
+    P('<ellipse cx="243" cy="222" rx="14" ry="23"/>'))+
+  hd(P('<ellipse cx="244.4" cy="201" rx="7" ry="5"/>'))};
+};
+
+const CIALO = cx => KONCZYNY(cx) + TORS(cx);
+
+/* Numer kolejny rysunku. Mapa pojawia się i w Raporcie, i w podsumowaniu
+   sesji — dwa razy ten sam identyfikator maski w jednym dokumencie znaczy,
+   że druga sylwetka przycina się do maski pierwszej. */
+let MAPA_NR = 0;
+
 function bodyMap(cov, tryb){
   /* `tryb` = 'objetosc' (domyślnie) albo 'swiezosc'. Ta sama sylwetka,
      inne pytanie — więc i inna skala kolorów. */
@@ -6640,78 +7132,47 @@ function bodyMap(cov, tryb){
     return '<title>'+esc(n+': '+fmtKg(c)+' serii')+'</title>';
   };
   const sh=(k,body)=>'<g '+F(k)+'>'+T(k)+body+'</g>';
+  const hd=body=>'<g class="hd">'+body+'</g>';
 
-  return '<svg viewBox="0 0 340 272" class="bmap" xmlns="http://www.w3.org/2000/svg">'+
-  '<style>.m path,.m rect,.m ellipse{stroke:#070b12;stroke-width:1.2}'+
-  '.none path,.none rect,.none ellipse{fill:#1c2836}'+
-  '.low path,.low rect,.low ellipse{fill:#e5484d}'+
-  '.ok path,.ok rect,.ok ellipse{fill:#3ddc84}'+
-  '.over path,.over rect,.over ellipse{fill:#7c5cff}'+
+  const nr = ++MAPA_NR;
+  const P = PRZOD(sh, hd), Y = TYL(sh, hd);
+
+  return '<svg viewBox="0 0 340 274" class="bmap" xmlns="http://www.w3.org/2000/svg">'+
+  '<style>'+
+  /* Ciało rysujemy POD mięśniami grubą kreską. Po przycięciu zostaje z niej
+     zewnętrzna połowa, czyli rant sylwetki. Kontur rysowany NA WIERZCHU
+     pokazywałby krawędzie ramion przez tułów — tak wyglądała wersja,
+     którą Filip słusznie odrzucił. */
+  '.pod path,.pod ellipse{fill:#22303f;stroke:#070b12;stroke-width:3.4;stroke-linejoin:round}'+
+  '.m path,.m ellipse{stroke:#070b12;stroke-width:.9;stroke-linejoin:round}'+
+  /* skala objętości */
+  '.none path,.none ellipse{fill:#1c2836}'+
+  '.low path,.low ellipse{fill:#e5484d}'+
+  '.ok path,.ok ellipse{fill:#3ddc84}'+
+  '.over path,.over ellipse{fill:#7c5cff}'+
   /* skala świeżości */
-  '.swieze path,.swieze rect,.swieze ellipse{fill:#e5484d}'+
-  '.schodzi path,.schodzi rect,.schodzi ellipse{fill:#ff8a3d}'+
-  '.prawie path,.prawie rect,.prawie ellipse{fill:#ffc53d}'+
-  '.gotowe path,.gotowe rect,.gotowe ellipse{fill:#3ddc84}'+
-  '.nigdy path,.nigdy rect,.nigdy ellipse{fill:#1c2836}'+
-  '.hd{fill:#1c2836;stroke:#070b12;stroke-width:1.2}'+
-  '.lb{fill:#5d6b80;font-size:9px;font-weight:700;text-anchor:middle;letter-spacing:.6px}</style>'+
-
-  /* ---------- PRZÓD ----------
-     Prostokąty zamienione na kształty z zarysem mięśni. To nadal uproszczenie,
-     nie atlas — chodzi o to, żeby dało się rozpoznać partię bez czytania
-     podpisu, a nie o poprawność anatomiczną. Współrzędne zostały te same,
-     więc kolory i podpowiedzi działają bez zmian. */
-  '<text x="85" y="12" class="lb">PRZÓD</text>'+
-  '<ellipse cx="85" cy="32" rx="12" ry="14" class="hd"/>'+
-  '<path d="M79 44 q6 5 12 0 l1 7 q-7 4 -14 0 z" class="hd"/>'+
-  sh('bark_przod','<path d="M64 52 q21 -7 42 0 l-5 9 q-16 -5 -32 0 z"/>')+
-  sh('bark_bok','<path d="M64 53 q-16 3 -19 19 q-1 10 4 13 q7 -15 16 -21 z"/>'+
-               '<path d="M106 53 q16 3 19 19 q1 10 -4 13 q-7 -15 -16 -21 z"/>')+
-  sh('klatka_gora','<path d="M65 62 q20 -5 40 0 l-2 9 q-18 -5 -36 0 z"/>')+
-  sh('klatka_srodek','<path d="M63 72 q22 -5 44 0 q4 10 -1 15 q-21 6 -42 0 q-5 -5 -1 -15 z"/>'+
-                     '<path d="M85 70 v18" stroke="#070b12" stroke-width="1.4" fill="none"/>')+
-  sh('klatka_dol','<path d="M65 88 q20 6 40 0 q1 6 -3 10 q-17 5 -34 0 q-4 -4 -3 -10 z"/>')+
-  sh(['biceps_dluga','biceps_krotka','ramienny'],
-     '<path d="M50 74 q-6 3 -6 14 q0 12 4 16 q6 -3 7 -14 q1 -11 -5 -16 z"/>'+
-     '<path d="M120 74 q6 3 6 14 q0 12 -4 16 q-6 -3 -7 -14 q-1 -11 5 -16 z"/>')+
-  sh('przedramie','<path d="M45 106 q-3 13 0 25 q4 3 7 0 q3 -13 0 -25 q-4 -2 -7 0 z"/>'+
-                  '<path d="M125 106 q3 13 0 25 q-4 3 -7 0 q-3 -13 0 -25 q4 -2 7 0 z"/>')+
-  sh('brzuch','<path d="M70 100 q15 5 30 0 q1 18 -3 26 q-12 5 -24 0 q-4 -8 -3 -26 z"/>'+
-              '<path d="M85 102 v24 M72 110 h26 M73 119 h24" stroke="#070b12" stroke-width="1.1" fill="none"/>')+
-  sh(['skosne','glebokie'],'<path d="M66 100 q3 16 6 26 q-6 -1 -9 -8 q-2 -10 3 -18 z"/>'+
-                           '<path d="M104 100 q-3 16 -6 26 q6 -1 9 -8 q2 -10 -3 -18 z"/>')+
-  '<path d="M66 132 q19 6 38 0 l-1 12 q-18 5 -36 0 z" class="hd"/>'+
-  sh(['czworoglowe','udo_proste'],
-     '<path d="M66 148 q9 4 16 0 q3 26 1 52 q-8 4 -15 0 q-4 -26 -2 -52 z"/>'+
-     '<path d="M104 148 q-9 4 -16 0 q-3 26 -1 52 q8 4 15 0 q4 -26 2 -52 z"/>')+
-  '<ellipse cx="74" cy="205" rx="7" ry="5" class="hd"/>'+
-  '<ellipse cx="96" cy="205" rx="7" ry="5" class="hd"/>'+
-  sh('lydki_stoj','<path d="M67 211 q-1 18 3 33 q6 3 9 0 q3 -17 1 -33 q-7 3 -13 0 z"/>'+
-                  '<path d="M103 211 q1 18 -3 33 q-6 3 -9 0 q-3 -17 -1 -33 q7 3 13 0 z"/>')+
-  '<text x="85" y="264" class="lb">ŁYDKI — BRZUCHATY</text>'+
-
-  /* ---------- TYŁ ---------- */
-  '<text x="255" y="12" class="lb">TYŁ</text>'+
-  '<ellipse cx="255" cy="32" rx="12" ry="14" class="hd"/>'+
-  '<path d="M249 44 q6 5 12 0 l1 7 q-7 4 -14 0 z" class="hd"/>'+
-  sh('plecy_gora','<path d="M234 62 L255 46 L276 62 l-7 8 q-14 -6 -28 0 z"/>')+
-  sh('bark_tyl','<path d="M234 55 q-15 4 -18 19 q-1 10 4 13 q7 -15 16 -21 z"/>'+
-                '<path d="M276 55 q15 4 18 19 q1 10 -4 13 q-7 -15 -16 -21 z"/>')+
-  sh('plecy_pion','<path d="M235 70 q10 -3 15 1 l0 34 q-9 -3 -14 -10 q-3 -13 -1 -25 z"/>'+
-                  '<path d="M275 70 q-10 -3 -15 1 l0 34 q9 -3 14 -10 q3 -13 1 -25 z"/>')+
-  sh('plecy_poziom','<path d="M251 68 q4 -2 8 0 l0 38 q-4 2 -8 0 z"/>')+
-  sh(['triceps_dluga','triceps_bocz','triceps_przysr'],
-     '<path d="M220 76 q-6 3 -6 14 q0 12 4 16 q6 -3 7 -14 q1 -11 -5 -16 z"/>'+
-     '<path d="M290 76 q6 3 6 14 q0 12 -4 16 q-6 -3 -7 -14 q-1 -11 5 -16 z"/>')+
-  sh('prostowniki','<path d="M244 106 q11 4 22 0 q2 14 -2 24 q-9 4 -18 0 q-4 -10 -2 -24 z"/>')+
-  sh(['posladki','posladki_sr'],'<path d="M236 134 q10 -4 17 2 q2 12 -3 20 q-11 3 -16 -4 q-2 -10 2 -18 z"/>'+
-                                '<path d="M274 134 q-10 -4 -17 2 q-2 12 3 20 q11 3 16 -4 q2 -10 -2 -18 z"/>')+
-  sh(['dwuglowe','dwuglowe_kol'],
-     '<path d="M236 158 q9 4 16 0 q3 21 1 42 q-8 4 -15 0 q-4 -21 -2 -42 z"/>'+
-     '<path d="M274 158 q-9 4 -16 0 q-3 21 -1 42 q8 4 15 0 q4 -21 2 -42 z"/>')+
-  sh('lydki_sied','<path d="M237 208 q-1 18 3 33 q6 3 9 0 q3 -17 1 -33 q-7 3 -13 0 z"/>'+
-                  '<path d="M273 208 q1 18 -3 33 q-6 3 -9 0 q-3 -17 -1 -33 q7 3 13 0 z"/>')+
-  '<text x="255" y="264" class="lb">ŁYDKI — PŁASZCZKOWATY</text>'+
+  '.swieze path,.swieze ellipse{fill:#e5484d}'+
+  '.schodzi path,.schodzi ellipse{fill:#ff8a3d}'+
+  '.prawie path,.prawie ellipse{fill:#ffc53d}'+
+  '.gotowe path,.gotowe ellipse{fill:#3ddc84}'+
+  '.nigdy path,.nigdy ellipse{fill:#1c2836}'+
+  '.hd ellipse{fill:#1a2634}'+
+  '.szew{fill:none !important;stroke:#070b12;stroke-width:1}'+
+  '.lb{fill:#5d6b80;font-size:9px;font-weight:700;text-anchor:middle;letter-spacing:.6px}'+
+  '</style>'+
+  '<defs>'+
+    '<clipPath id="ft'+nr+'">'+TORS(85)+'</clipPath>'+
+    '<clipPath id="fk'+nr+'">'+KONCZYNY(85)+'</clipPath>'+
+    '<clipPath id="tt'+nr+'">'+TORS(255)+'</clipPath>'+
+    '<clipPath id="tk'+nr+'">'+KONCZYNY(255)+'</clipPath>'+
+  '</defs>'+
+  '<g class="pod">'+CIALO(85)+CIALO(255)+'</g>'+
+  '<g clip-path="url(#ft'+nr+')">'+P.tors+'</g>'+
+  '<g clip-path="url(#fk'+nr+')">'+P.konczyny+'</g>'+
+  '<g clip-path="url(#tt'+nr+')">'+Y.tors+'</g>'+
+  '<g clip-path="url(#tk'+nr+')">'+Y.konczyny+'</g>'+
+  '<text x="85" y="268" class="lb">PRZÓD</text>'+
+  '<text x="255" y="268" class="lb">TYŁ</text>'+
   '</svg>';
 }
 
@@ -6830,7 +7291,13 @@ function rozbicieGrup(cov){
 
 /* Którą skalę pokazuje sylwetka. Domyślnie świeżość — bo do niej sięga się
    przed treningiem, a do objętości raz w tygodniu przy przeglądzie. */
-let MAPA_TRYB = 'swiezosc';
+/* OBJĘTOŚĆ PIERWSZA, ŚWIEŻOŚĆ DRUGA.
+
+   Do wersji 50 domyślną skalą była świeżość, bo odpowiada na pytanie „czy
+   mogę dziś iść". Tyle że na to pytanie odpowiada już karta dnia na ekranie
+   głównym — a w zakładkę Mięśnie wchodzi się z pytaniem innym i rzadszym:
+   „czego w tym planie brakuje". To jest pytanie o objętość. */
+let MAPA_TRYB = 'objetosc';
 function przelaczMape(t){ MAPA_TRYB = t; odswiezWidok(); }
 
 function renderCoverage(){
@@ -6846,8 +7313,8 @@ function renderCoverage(){
   const swiezo = MAPA_TRYB === 'swiezosc';
   let out='<h2>'+(swiezo ? 'Co jest jeszcze obolałe' : 'Mapa partii (14 dni)')+'</h2>'+
     '<div class="segm">'+
-      '<button class="'+(swiezo?'on':'')+'" onclick="przelaczMape(\'swiezosc\')">Świeżość</button>'+
       '<button class="'+(swiezo?'':'on')+'" onclick="przelaczMape(\'objetosc\')">Objętość</button>'+
+      '<button class="'+(swiezo?'on':'')+'" onclick="przelaczMape(\'swiezosc\')">Świeżość</button>'+
     '</div>';
   out+='<div class="card" style="padding:10px 8px 4px">'+bodyMap(cov, MAPA_TRYB)+
     '<div class="lgnd">'+
@@ -6895,7 +7362,7 @@ function renderCoverage(){
    TRENDY — siła w bojach i waga
    ============================================================ */
 function renderTrendy(){
-  const BOJE=['Przysiad ze sztangą','Wyciskanie leżąc','Martwy ciąg klasyczny','Podciąganie'];
+  const BOJE=['Przysiad ze sztangą','Wyciskanie leżąc','Martwy ciąg klasyczny','Podciąganie','Wyciskanie żołnierskie'];
   let bloki='';
 
   BOJE.forEach(name=>{
@@ -7034,6 +7501,56 @@ let RAPORT_ROZW = false;
    decyzję. Wcześniej raport pojawiał się wyłącznie po sesji, więc w dniu,
    w którym najbardziej przydałaby się podpowiedź, ekran milczał.
    ============================================================ */
+/* ============================================================
+   WYKRES SŁUPKOWY Z LINIĄ ODNIESIENIA
+
+   Poprzednie dwa wykresy — objętość tydzień po tygodniu i siedem dni
+   jedzenia — były gołymi słupkami bez skali. Filip powiedział wprost:
+   „z niego za bardzo nic nie wynika" i miał rację. Słupek bez punktu
+   odniesienia mówi tylko, że jeden jest wyższy od drugiego; nie mówi,
+   czy którykolwiek jest DOBRY.
+
+   Dlatego każdy słupek ma teraz swoją liczbę nad głową, a przez wykres
+   biegnie przerywana linia celu (albo średniej, gdy celu nie ma). Dopiero
+   to zamienia obrazek w zdanie: „trzy z siedmiu dni pod kreską".
+   ============================================================ */
+function wykresSlupkowy(o){
+  const pkt = (o.punkty || []).filter(Boolean);
+  if(!pkt.length) return '';
+  const W = 300, H = 96, DOL = 26, GORA = 14;
+  const cel = o.cel || 0;
+  const maks = Math.max(cel * 1.05, ...pkt.map(x => x.v)) || 1;
+  const szer = W / pkt.length;
+  const grub = Math.min(26, szer * 0.56);
+  const yOf = v => GORA + (H - GORA - DOL) * (1 - v / maks);
+
+  const slupki = pkt.map((x, i) => {
+    const cx = szer * (i + 0.5);
+    const y = x.v > 0 ? yOf(x.v) : H - DOL - 1.5;
+    const wys = Math.max(1.5, H - DOL - y);
+    const kol = x.kolor || (cel && x.v >= cel ? 'var(--acc)'
+                          : x.v > 0 ? 'var(--warn)' : 'var(--line)');
+    return '<rect x="'+(cx - grub/2).toFixed(1)+'" y="'+y.toFixed(1)+'" '+
+      'width="'+grub.toFixed(1)+'" height="'+wys.toFixed(1)+'" rx="3" fill="'+kol+'"/>'+
+      (x.v > 0 ? '<text x="'+cx.toFixed(1)+'" y="'+(y - 3.5).toFixed(1)+'" '+
+        'class="wl">'+esc(x.etyk || String(Math.round(x.v)))+'</text>' : '')+
+      '<text x="'+cx.toFixed(1)+'" y="'+(H - DOL + 12)+'" class="wo">'+esc(x.opis || '')+'</text>';
+  }).join('');
+
+  const yc = yOf(cel);
+  const linia = cel > 0
+    ? '<line x1="0" y1="'+yc.toFixed(1)+'" x2="'+W+'" y2="'+yc.toFixed(1)+'" '+
+      'stroke="var(--info)" stroke-width="1" stroke-dasharray="4 3" opacity=".8"/>'+
+      '<text x="'+(W-2)+'" y="'+(yc - 3).toFixed(1)+'" class="wc">'+esc(o.celOpis || '')+'</text>'
+    : '';
+
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="wyk">'+
+    '<style>.wl{fill:var(--txt);font-size:8.5px;font-weight:700;text-anchor:middle}'+
+    '.wo{fill:var(--dim);font-size:8px;text-anchor:middle}'+
+    '.wc{fill:var(--info);font-size:8px;text-anchor:end;font-weight:700}</style>'+
+    linia + slupki + '</svg>';
+}
+
 function raportDnia(){
   const d = today();
   const dzisiejszy = DB.workouts.find(x => x.date === d);
@@ -7077,8 +7594,8 @@ function raportDnia(){
   if(wolne || przel){
     h += '<div class="note" style="margin-top:8px">Plan czeka nietknięty. '+
       'Przerwa krótsza niż dziesięć dni nie rusza ciężarów — wrócisz do tych samych liczb.</div>';
-  } else if(luka != null && luka >= 10){
-    const pr = przerwaSkala(luka);
+  } else if(luka != null && przerwaSkala(przerwaWzgledna(luka))){
+    const pr = przerwaSkala(przerwaWzgledna(luka));
     h += '<div class="note" style="margin-top:8px">Przy następnej sesji ciężary zejdą o '+
       Math.round((1-pr.s)*100)+'%. ' + esc(pr.why) + '</div>';
   } else if(maDane && g.pkt < 70){
@@ -7087,23 +7604,15 @@ function raportDnia(){
   }
   h += '</div>';
 
-  /* co czeka */
-  const gp = planDoPokazania();
-  if(gp) h += '<div class="tip"><b>Czeka: dzień ' + gp.dzien + '</b>'+
-    (gp.cwiczenia ? ' · ' + gp.cwiczenia.length + ' ćwiczeń' : '') +
-    (gp.zalegly ? ' · przełożony ' + gp.zalegly + ' dni temu' : '') + '</div>';
+  /* CO CZEKA — wycięte. To była trzecia kopia tej samej informacji: karta
+     dnia na ekranie głównym mówi ją dużą czcionką, kafelek planu powtarza
+     poniżej, a Raport dokładał trzeci raz. Raport ma mówić, co BYŁO,
+     a nie co będzie.
 
-  /* czego brakuje — najostrzejszy sygnał w dniu bez treningu */
-  const cov = regionSets(14);
-  const chude = Object.entries(REG)
-    .filter(([k,R]) => R.min > 0 && (cov[k] || 0) < R.min)
-    .sort((a,b) => (cov[a[0]]||0)/a[1].min - (cov[b[0]]||0)/b[1].min);
-  if(chude.length)
-    h += '<div class="tip warn"><b>' + chude.length + ' '+
-      (chude.length === 1 ? 'partia' : chude.length < 5 ? 'partie' : 'partii')+
-      ' pod normą (14 dni)</b><div class="hm" style="margin-top:4px">'+
-      chude.slice(0,5).map(([k,R]) => esc(R.n)+' '+fmtKg(cov[k]||0)+'/'+R.min).join(' · ')+
-      (chude.length > 5 ? ' · +'+(chude.length-5) : '')+'</div></div>';
+     PARTIE POD NORMĄ — też wycięte, ale z innego powodu. Sama liczba
+     („4 partie pod normą") nie da się na nic zamienić, dopóki nie wiadomo
+     KTÓRE i o ile. To wie zakładka Mięśnie, bo tam są podpisy, normy
+     i sylwetka. Tutaj był tylko niepokój bez instrukcji. */
 
   return h;
 }
@@ -7165,7 +7674,8 @@ function renderReport(){
 
   if(sek === 'tydzien') h+='<h2>Ten tydzień</h2>'+
     '<div class="stat4">'+
-      '<div><b class="'+(curDays>=4?'ok':curDays>=2?'':'bad')+'">'+curDays+'</b><span>DNI / 4</span></div>'+
+      '<div><b class="'+(curDays>=ORDER.length-1?'ok':curDays>=2?'':'bad')+'">'+curDays+
+        '</b><span>DNI / '+ORDER.length+'</span></div>'+
       '<div><b>'+serieRazem+'</b><span>SERII</span></div>'+
       '<div><b>'+(cv >= 1000 ? Math.round(cv/1000)+'t' : Math.round(cv))+'</b><span>OBJĘTOŚĆ</span></div>'+
       '<div><b class="'+(rpeTyg==null?'':rpeTyg<=sufitFazy(p)?'ok':'warn')+'">'+
@@ -7176,7 +7686,7 @@ function renderReport(){
         '% wobec poprzedniego tygodnia'+(rCur.length?' · biegi '+rCur.length+'/2':'')+'</div>'
       : '');
 
-  const KEYLIFTS=['Przysiad ze sztangą','Wyciskanie leżąc','Martwy ciąg klasyczny','Podciąganie'];
+  const KEYLIFTS=['Przysiad ze sztangą','Wyciskanie leżąc','Martwy ciąg klasyczny','Podciąganie','Wyciskanie żołnierskie'];
   const rows=KEYLIFTS.map(name=>{
     const c=bestIn(cur,name), pr=bestIn(prev,name);
     if(!c) return null;
@@ -7253,16 +7763,26 @@ function renderReport(){
     const ww=DB.workouts.filter(x=>inWeek(x.date,i));
     if(ww.length) weeks.push([i,ww.length,Math.round(ww.reduce((a,x)=>a+vol(x),0))]);
   }
-  if(weeks.length>1){
-    const mx=Math.max(...weeks.map(x=>x[2]))||1;
-    const maks = Math.max(...weeks.map(x => x[2]));
-    if(sek === 'tydzien') h+='<h2>Objętość tydzień po tygodniu</h2><div class="card">'+
-      '<div class="tygslupki">'+ weeks.map(([i,n,v]) =>
-        '<div><i style="height:'+(maks>0 ? Math.max(3, Math.round(v/maks*100)) : 3)+'%'+
-        (i===w ? ';background:var(--ok)' : '')+'"></i>'+
-        '<u>T'+i+'</u></div>').join('') +'</div>'+
-      '<div class="hm" style="margin-top:8px">'+
-        weeks.map(([i,n,v]) => 'T'+i+' '+(v>=1000?Math.round(v/1000)+'t':Math.round(v)+' kg')).join(' · ')+
+  if(weeks.length>1 && sek === 'tydzien'){
+    /* Linią odniesienia jest ŚREDNIA z zamkniętych tygodni, nie maksimum.
+       Bieżący tydzień prawie zawsze jest niepełny, więc porównywanie go
+       z rekordem mówiłoby tylko tyle, że jest środa. Średnia odpowiada
+       na pytanie, które ma sens: robię tyle co zwykle, czy mniej? */
+    const zamkniete = weeks.filter(([i]) => i !== w).map(x => x[2]);
+    const sr = zamkniete.length
+      ? Math.round(zamkniete.reduce((a,b)=>a+b,0) / zamkniete.length) : 0;
+    const fmtT = v => v >= 1000 ? Math.round(v/1000)+'t' : Math.round(v)+'';
+    h += '<h2>Objętość tydzień po tygodniu</h2><div class="card">'+
+      wykresSlupkowy({
+        punkty: weeks.map(([i,n,v]) => ({
+          v, etyk: fmtT(v), opis: 'T'+i,
+          kolor: i === w ? 'var(--info)' : (sr && v >= sr ? 'var(--acc)' : 'var(--warn)')})),
+        cel: sr, celOpis: sr ? 'średnia '+fmtT(sr) : ''
+      })+
+      '<div class="hm" style="margin-top:6px">'+
+        (sr ? 'Przerywana linia to średnia z zamkniętych tygodni. '+
+              'Niebieski słupek to tydzień w toku — jeszcze niepełny.'
+            : 'Za mało zamkniętych tygodni na średnią.')+
       '</div></div>';
   }
   /* Sekcja „Jedzenie" bez historii to jeden rząd liczb — a najciekawsze przy
@@ -7276,17 +7796,29 @@ function renderReport(){
       const w2 = (DB.daily || []).find(x => x.date === d) || {};
       dni7.push([d, w2.bialko || 0, w2.kcal || 0]);
     }
-    if(dni7.some(x => x[1] > 0)){
-      const maks = Math.max(cB.min, ...dni7.map(x => x[1]));
+    if(dni7.some(x => x[1] > 0 || x[2] > 0)){
+      /* DWA WYKRESY, NIE JEDEN. Poprzednia wersja rysowała same słupki
+         białka bez skali i bez liczb — nie dało się z niej odczytać ani ile
+         zjadłeś, ani czy to dużo. Teraz: kalorie wobec celu i białko wobec
+         celu, obok siebie, z liczbą na każdym słupku i z przerywaną kreską
+         tam, gdzie jest cel. Trzy dni pod kreską widać wtedy od razu. */
+      const dzien = d => ['nd','pn','wt','śr','cz','pt','sb'][new Date(d+'T00:00:00').getDay()];
+      const ileB = dni7.filter(x => x[1] >= cB.min).length;
+      const ileK = dni7.filter(x => x[2] >= cm2.kcal * 0.9).length;
       h += '<h2>Ostatnie 7 dni</h2><div class="card">'+
-        '<div class="tygslupki" style="height:80px">'+
-          dni7.map(([d, b]) =>
-            '<div><i style="height:'+(maks ? Math.max(3, Math.round(b/maks*100)) : 3)+'%;'+
-            'background:'+(b >= cB.min ? 'var(--ok)' : b > 0 ? 'var(--warn)' : 'var(--line)')+
-            '"></i><u>'+plDate(d).split(' ')[0]+'</u></div>').join('')+
-        '</div>'+
-        '<div class="hm" style="margin-top:8px">Zielony = cel białka ('+cB.min+' g) dowieziony. '+
-        'Szary = brak wpisu.</div></div>';
+        '<div class="etyk">KALORIE</div>'+
+        wykresSlupkowy({
+          punkty: dni7.map(([d, b, k]) => ({v: k, opis: dzien(d),
+            etyk: k >= 1000 ? (k/1000).toFixed(1).replace('.', ',') : String(k)})),
+          cel: cm2.kcal, celOpis: 'cel '+cm2.kcal
+        })+
+        '<div class="etyk" style="margin-top:12px">BIAŁKO (G)</div>'+
+        wykresSlupkowy({
+          punkty: dni7.map(([d, b]) => ({v: b, opis: dzien(d)})),
+          cel: cB.min, celOpis: 'cel '+cB.min+' g'
+        })+
+        '<div class="hm" style="margin-top:8px">Kalorie dowiezione w '+ileK+' z 7 dni, '+
+        'białko w '+ileB+'. Szary słupek to dzień bez wpisu, nie dzień bez jedzenia.</div></div>';
     }
     h += listaPosilkow();
   }
@@ -7306,7 +7838,20 @@ function renderReport(){
      cialo:    'Mapa mięśni potrzebuje choć jednego treningu.',
      jedzenie: 'Nic jeszcze nie zapisane.<br>Białko dopisujesz na ekranie Trening.'}[sek]+
     '</div>';
-  if(sek === 'teraz' && DB.raport){
+  /* RAPORT OD TRENERA MA TERMIN WAŻNOŚCI. Przez trzy tygodnie w zakładce
+     wisiał tekst z 5 sierpnia i wyglądał na najnowszą rzecz, jaką aplikacja
+     ma do powiedzenia — a odnosił się do treningów sprzed miesiąca
+     i do planu, którego już nie ma. Powyżej dziesięciu dni chowamy go
+     za jedno dotknięcie i mówimy wprost, ile ma lat. */
+  const wiekRaportu = DB.coach && DB.coach.date
+    ? Math.round((new Date(today()) - new Date(DB.coach.date)) / 864e5) : null;
+  const raportStary = wiekRaportu != null && wiekRaportu >= 10;
+  if(sek === 'teraz' && DB.raport && raportStary){
+    h += zwijka('starRap', 'Raport od trenera sprzed '+wiekRaportu+' dni',
+      'Dotyczy treningów z '+plDate(DB.coach.date)+' i poprzedniego planu',
+      null, () => '<div class="mdbox">'+md(DB.raport)+'</div>');
+  }
+  if(sek === 'teraz' && DB.raport && !raportStary){
     /* Raport potrafi mieć cztery tysiące znaków. Cały naraz to ściana, przez
        którą przewija się do końca i nie czyta nic — a najważniejsze zdania
        stoją zawsze na górze, zaraz za kaflami. Domyślnie pokazujemy tę część,
@@ -7315,8 +7860,7 @@ function renderReport(){
     const ciecie = znajdzCiecie(pelny);
     /* Raport ode mnie bywa sprzed kilku dni, a wyglądał na dzisiejszy —
        i to on wprowadzał w błąd w dni bez treningu. Teraz podaje swój wiek. */
-    const wiekR = DB.coach && DB.coach.date
-      ? Math.round((new Date(today()) - new Date(DB.coach.date)) / 864e5) : null;
+    const wiekR = wiekRaportu;
     h += '<h2>Od trenera</h2>' + (wiekR != null && wiekR >= 1
       ? '<div class="tip '+(wiekR >= 3 ? 'warn' : '')+'">Ten raport jest sprzed '+
         wiekR+' '+(wiekR === 1 ? 'dnia' : 'dni')+' — dotyczy treningu z '+
@@ -7408,23 +7952,44 @@ function renderData(){
   document.getElementById('setGryf').value = DB.settings.gryf || '';
   document.getElementById('setWzrost').value = DB.settings.wzrost || '';
   document.getElementById('setRest').value=DB.settings.rest;
-  const tv=DB.workouts.reduce((a,x)=>a+vol(x),0);
-  document.getElementById('stats').innerHTML=
-    kv('Treningi razem',DB.workouts.length)+
-    kv('Serie razem',DB.workouts.reduce((a,x)=>a+setCount(x),0))+
-    kv('Objętość razem',Math.round(tv).toLocaleString('pl')+' kg')+
-    kv('Biegi',DB.runs.length)+
-    kv('Wpisy dzienne',DB.daily.length)+
-    kv('Pomiary obwodów',DB.measures.length)+
-    kv('Pierwszy trening',DB.workouts.length?plDate(DB.workouts[0].date):'—')+
-    kv('Rozmiar danych',Math.round(JSON.stringify(DB).length/1024)+' kB')+
-    kv('Wersja aplikacji','<b style="font-size:17px">'+WERSJA+'</b> · '+plDate(WERSJA_DATA));
+  /* STATYSTYKI NA KAFELKACH, NIE NA LIŚCIE.
+     Dziewięć wierszy „etykieta : wartość" to dziewięć linijek do przeczytania
+     po kolei. Cztery duże liczby widzi się naraz — a to jedyne, po co się tu
+     zagląda: ile tego w ogóle jest. Reszta (rozmiar danych, data pierwszego
+     treningu, wersja) to metryczka, więc idzie drobnym drukiem pod spodem. */
+  const tv = DB.workouts.reduce((a,x)=>a+vol(x),0);
+  const tony = tv >= 1000 ? Math.round(tv/1000) + 't' : Math.round(tv);
+  const kaf = (w, e) => '<div><b>'+w+'</b><span>'+e+'</span></div>';
+  document.getElementById('stats').innerHTML =
+    '<div class="stat4">'+
+      kaf(DB.workouts.length, 'TRENINGÓW')+
+      kaf(DB.workouts.reduce((a,x)=>a+setCount(x),0), 'SERII')+
+      kaf(tony, 'OBJĘTOŚĆ')+
+      kaf(DB.runs.length, 'AKTYWNOŚCI')+
+    '</div>'+
+    '<div class="hm" style="margin:-4px 0 14px">'+
+      (DB.workouts.length ? 'Pierwszy trening '+plDate(DB.workouts[0].date)+' · ' : '')+
+      DB.daily.length+' wpisów dziennych · '+
+      Math.round(JSON.stringify(DB).length/1024)+' kB danych · '+
+      'wersja <b>'+WERSJA+'</b> z '+plDate(WERSJA_DATA)+
+    '</div>';
 
+  /* Pięćdziesiąt checkboxów na liście, którą przewija się raz na pół roku,
+     gdy w klubie zepsuje się maszyna. Zwinięte, a w nagłówku to, co
+     naprawdę trzeba wiedzieć: ile rzeczy jest odznaczonych. */
   const pooled=[...new Set(ORDER.flatMap(k=>PLAN[k].slots.flatMap(s=>s.pool||[])))].sort();
-  document.getElementById('skipList').innerHTML = pooled.map(n=>
+  const odznaczone = pooled.filter(isSkipped);
+  const wierszeSprzetu = () => pooled.map(n=>
     '<label class="skrow"><span>'+esc(n)+'</span>'+
     '<input type="checkbox" '+(isSkipped(n)?'checked':'')+' onchange="toggleSkip(\''+esc(n).replace(/'/g,"\\'")+'\');renderData()"></label>'
   ).join('');
+  document.getElementById('skipList').innerHTML =
+    zwijka('skipList', 'Sprzęt niedostępny',
+      odznaczone.length
+        ? 'Pomijane: '+esc(odznaczone.slice(0,2).join(', '))+
+          (odznaczone.length > 2 ? ' i '+(odznaczone.length-2)+' więcej' : '')
+        : 'Wszystko dostępne — odznacz to, czego nie masz jak zrobić',
+      odznaczone.length || null, wierszeSprzetu);
 }
 
 function saveSettings(){
