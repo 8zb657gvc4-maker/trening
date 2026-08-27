@@ -1575,7 +1575,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '51';
+const WERSJA = '53';
 const WERSJA_DATA = '2026-08-27';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3204,7 +3204,7 @@ function sylwetkaMini(){
   const hd = body => '<g class="hd">'+body+'</g>';
   const nr = ++MAPA_NR;
   const P = PRZOD(sh, hd);
-  return '<svg viewBox="38 12 94 244" class="sylw" xmlns="http://www.w3.org/2000/svg">'+
+  return '<svg viewBox="38 8 94 252" class="sylw" xmlns="http://www.w3.org/2000/svg">'+
     '<style>'+
     '.pod path,.pod ellipse{fill:#22303f;stroke:#070b12;stroke-width:3.4;stroke-linejoin:round}'+
     '.m path,.m ellipse{stroke:#070b12;stroke-width:.9;stroke-linejoin:round}'+
@@ -3284,6 +3284,35 @@ function renderDzis(){
     return '<div class="tip"><b>Dzień wolny</b><div class="hm" style="margin-top:3px">'+
       'Plan czeka na Twój następny dzień treningowy.</div>'+
       '<button class="btn ghost sm" style="margin-top:9px" onclick="openSuggest()">I tak pokaż plan</button></div>';
+
+  /* DZIEŃ WOLNY DOSTAJE TAKĄ SAMĄ KARTĘ JAK DZIEŃ TRENINGOWY.
+     Wcześniej był jednym zdaniem drobnym drukiem i wyglądał jak awaria
+     albo jak brak planu. To jest pełnoprawna pozycja w tygodniu — ma
+     wyglądać na decyzję, bo nią jest. Plan zostaje pod jednym dotknięciem:
+     aplikacja proponuje odpoczynek, nie zabrania treningu. */
+  if(s.rest && !gp){
+    const dalej = s.blok ? (suggestNext(true) || {}) : {};
+    return '<div class="dzien" style="--dzien-a:#4a9eff;--dzien-t:rgba(74,158,255,.13)">'+
+      '<div class="gora">'+ sylwetkaMini() +
+        '<div class="tresc">'+
+          '<div class="hm" style="letter-spacing:1.4px;font-size:9.5px">PLAN NA DZIŚ</div>'+
+          '<div class="nazwa" style="color:#4a9eff">'+esc(s.head || 'Dziś wolne')+'</div>'+
+          '<div class="hm" style="margin-top:10px;line-height:1.45">'+
+            esc((s.why || [])[0] || '')+'</div>'+
+          pasekTygodnia()+
+        '</div>'+
+      '</div>'+
+      '<div class="dol">'+
+        ((s.why || [])[1]
+          ? '<div class="note" style="margin-bottom:10px">'+esc(s.why[1])+'</div>' : '')+
+        (dalej.day
+          ? '<div class="hm" style="margin-bottom:10px">Jutro: '+dalej.day+' — '+
+            esc(dayName2(dalej.day))+'</div>' : '')+
+        '<button class="start" onclick="dzienWolny(\'plan\')">Zapisz dzień wolny</button>'+
+        '<button class="btn ghost sm" style="width:100%;margin-top:7px" '+
+          'onclick="openPick()">Idę mimo to — pokaż dni</button>'+
+      '</div></div>';
+  }
 
   const dzien = gp ? gp.dzien : s.day;
   if(!dzien) return '<div class="tip"><b>Dziś odpoczynek</b><div class="hm" style="margin-top:3px">'+
@@ -3488,7 +3517,11 @@ const POWODY = {
   upal:     {n:'Upał / duchota', opis:'Warunki, w których trening i tak nie wyjdzie'},
   czas:     {n:'Brak czasu',     opis:'Życie'},
   bol:      {n:'Coś boli',       opis:'Nie zakwasy — ból'},
-  choroba:  {n:'Choroba',        opis:'Infekcja, gorszy stan'}
+  choroba:  {n:'Choroba',        opis:'Infekcja, gorszy stan'},
+  /* Powód „z planu" różni się od reszty tym, że nie jest odstępstwem.
+     Bez niego wolne po trzech dniach z rzędu zapisywałoby się jako
+     „bez powodu" i w raporcie wyglądało jak opuszczony trening. */
+  plan:     {n:'Z planu',        opis:'Zaplanowana przerwa po bloku treningowym'}
 };
 
 /* „Dzień wolny" to nie to samo co przełożenie. Przełożenie mówi: zrobię to
@@ -4019,6 +4052,32 @@ function suggestNext(naJutro){
      i wtedy nogi wracały tylnymi drzwiami. Teraz, jeśli po odjęciu dnia
      nóg nie zostaje nic, aplikacja proponuje wolne — a nie trening,
      o którym sama napisała, że jest zły. */
+  /* DZIEŃ WOLNY JEST CZĘŚCIĄ PLANU, NIE JEGO BRAKIEM.
+
+     Tydzień, o który Filip poprosił, wygląda tak: push, pull, nogi, WOLNE,
+     push, pull, WOLNE. Aplikacja znała pierwsze pięć pozycji i nie znała
+     dwóch pozostałych — po trzech dniach z rzędu proponowała czwarty, a on
+     musiał sam wiedzieć, że dziś nie idzie. Zgłosił to wprost: „dzisiaj
+     powinno byc wolne wiec trzeba tez dodac tam taki kafelek".
+
+     Liczymy dni KALENDARZOWE pod rząd, nie sesje. Trzy dni z rzędu to koniec
+     bloku; przy treningach co drugi dzień ta zasada nie odezwie się nigdy,
+     bo ciągu nie ma. To propozycja, nie blokada — plan zostaje pod ręką. */
+  const podRzad = (() => {
+    let n = 0;
+    for(let i = 1; i <= 6; i++){
+      const d = przesun(ref, -i);
+      if(DB.workouts.some(x => x.date === d)) n++; else break;
+    }
+    return n;
+  })();
+  if(podRzad >= 3) return {day:null, rest:true, week:w, phase:p, blok:true,
+    head:'Dziś wolne',
+    why:['Trzy dni treningu z rzędu — to koniec bloku, nie przypadek.',
+         'Tak wygląda tydzień, o który prosiłeś: push, pull, nogi, wolne, push, pull, wolne. '+
+         'Jutro rusza druga połowa.'],
+    notes:[]};
+
   const nogiWczoraj = yest.includes('nogi');
   const dozwolone = kolejka.filter(d => !(nogiWczoraj && PLAN[d].grp === 'nogi'));
   if(!dozwolone.length) return {day:null, rest:true, week:w, phase:p,
@@ -6085,8 +6144,18 @@ function aiWyluskajJson(tekst){
 }
 
 async function aiJedzenie(opis, zdjecieBase64){
+  /* Gdy jest i zdjęcie, i opis, mówimy modelowi wprost, do czego służy które.
+     Bez tego traktował zdjęcie jako całą prawdę i ignorował opis — a to opis
+     jest pewniejszy w tym, CO to jest. */
+  const tekstZdjecia = opis
+    ? 'Na zdjęciu jest: ' + opis + '. Rozpoznanie masz ode mnie i jest pewne — '+
+      'ze zdjęcia oszacuj przede wszystkim WIELKOŚĆ PORCJI w gramach '+
+      '(punkty odniesienia: talerz ok. 26 cm, sztućce, szklanka). '+
+      'Jeśli zdjęcie przeczy opisowi, trzymaj się opisu.'
+    : 'Co jest na tym talerzu i ile ma makroskładników? Oszacuj wielkość porcji '+
+      'w gramach, korzystając z rozmiaru talerza i sztućców.';
   const tresc = zdjecieBase64
-    ? [{type: 'text', text: opis || 'Co to za posiłek i ile ma białka?'},
+    ? [{type: 'text', text: tekstZdjecia},
        {type: 'image_url', image_url: {url: zdjecieBase64}}]
     : (opis || '');
   const odp = await aiZapytaj(
@@ -6493,16 +6562,51 @@ function zatwierdzJedzenie(){
              w.opis || 'Posiłek');
   JEDZENIE_PROPOZYCJA = null;
   const el = document.getElementById('jedzenieIn'); if(el) el.value = '';
+  JEDZENIE_ZDJECIE = null;
   toast('Dopisane');
 }
+
+/* ZDJĘCIE I OPIS RAZEM, NIE ZAMIAST SIEBIE.
+
+   Poprzednia wersja traktowała je jak dwie osobne drogi: albo zdjęcie, albo
+   tekst. Kiedy model nie rozpoznał talerza, aplikacja mówiła „wpisz ręcznie"
+   i WYRZUCAŁA zdjęcie — a wtedy wpisany opis szedł do modelu bez obrazka,
+   czyli bez jedynej informacji o WIELKOŚCI PORCJI.
+
+   To było odwrócenie ról. Modele dobrze rozpoznają, ile czegoś jest na
+   talerzu, a słabo, co dokładnie to jest — zwłaszcza w polskiej kuchni,
+   gdzie schabowy i kotlet z indyka wyglądają tak samo. Człowiek wie, co je,
+   i nie wie, ile to waży. Najlepszy wynik daje więc jedno i drugie naraz:
+   zdjęcie od Filipa na porcję, słowo od Filipa na rozpoznanie.
+
+   Zdjęcie żyje wyłącznie w pamięci — nie trafia do DB ani do localStorage. */
+let JEDZENIE_ZDJECIE = null;
+
+function zapomnijZdjecie(){ JEDZENIE_ZDJECIE = null; jedzenieBox(''); }
 
 async function policzJedzenie(){
   const el = document.getElementById('jedzenieIn');
   const tekst = el ? el.value.trim() : '';
-  if(!tekst){ toast('Napisz, co zjadłeś'); return; }
+  if(!tekst && !JEDZENIE_ZDJECIE){ toast('Napisz, co zjadłeś'); return; }
   jedzenieBox('<div class="note" style="margin-top:9px">Liczę…</div>');
-  try { pokazPropozycjeJedzenia(await aiJedzenie(tekst)); }
-  catch(e){ jedzenieBox('<div class="tip bad" style="margin-top:9px">'+esc(e.message)+'</div>'); }
+  try {
+    pokazPropozycjeJedzenia(await aiJedzenie(tekst, JEDZENIE_ZDJECIE));
+  } catch(e){ bladJedzenia(e); }
+}
+
+/* Komunikat błędu ma prowadzić do następnego kroku, a nie kończyć rozmowę.
+   „Nie rozpoznałem, wpisz ręcznie" to ślepy zaułek; „dopisz, co to jest,
+   zdjęcie zostaje" to instrukcja, po której druga próba zwykle wychodzi. */
+function bladJedzenia(e){
+  jedzenieBox('<div class="tip bad" style="margin-top:9px"><b>'+esc(e.message)+'</b>'+
+    (JEDZENIE_ZDJECIE
+      ? '<div class="hm" style="margin-top:5px">Zdjęcie mam dalej. Dopisz w polu wyżej, '+
+        'co to jest — choćby dwa słowa — i dotknij „Policz". Ze zdjęciem plus opisem '+
+        'model trafia znacznie częściej niż z samym zdjęciem.</div>'+
+        '<button class="btn ghost sm" style="margin-top:8px" onclick="zapomnijZdjecie()">'+
+        'Odrzuć zdjęcie</button>'
+      : '')+
+    '</div>');
 }
 
 /* Zdjęcie idzie do modelu i NIE jest nigdzie zapisywane — zostaje sam wynik.
@@ -6514,17 +6618,18 @@ async function policzJedzenieZdjecie(ev){
   ev.target.value = '';
   if(!plik) return;
   jedzenieBox('<div class="note" style="margin-top:9px">Przetwarzam zdjęcie…</div>');
+  const el = document.getElementById('jedzenieIn');
+  const opis = el ? el.value.trim() : '';
   try {
-    const maly = await zmniejszZdjecie(plik, 800);
-    const w = await aiJedzenie('Co jest na tym talerzu i ile ma makroskładników?', maly);
+    JEDZENIE_ZDJECIE = await zmniejszZdjecie(plik, 800);
+    const w = await aiJedzenie(opis, JEDZENIE_ZDJECIE);
     /* Ze zdjęcia nie ma pewności nigdy — modele dobrze rozpoznają CO jest
        na talerzu, a słabo ILE tego jest, i to porcja odpowiada za większość
-       błędu. Etykieta „wysoka" ze zdjęcia nie ma pokrycia. */
-    if(w.pewnosc === 'wysoka') w.pewnosc = 'srednia';
+       błędu. Etykieta „wysoka" ze zdjęcia nie ma pokrycia — chyba że Filip
+       dopisał, co to jest; wtedy zostaje średnia zamiast niskiej. */
+    if(w.pewnosc === 'wysoka') w.pewnosc = opis ? 'srednia' : 'niska';
     pokazPropozycjeJedzenia(w);
-  } catch(e){
-    jedzenieBox('<div class="tip bad" style="margin-top:9px">'+esc(e.message)+'</div>');
-  }
+  } catch(e){ bladJedzenia(e); }
 }
 
 function zmniejszZdjecie(plik, maxBok){
@@ -6603,7 +6708,12 @@ function renderBialko(){
             '<button class="btn sm" onclick="policzJedzenie()">Policz</button>'+
           '</div>'+
           '<button class="btn ghost sm" style="margin-top:7px;width:100%" '+
-            'onclick="document.getElementById(\'jedzenieFoto\').click()">Albo ze zdjęcia talerza</button>'+
+            'onclick="document.getElementById(\'jedzenieFoto\').click()">'+
+            (JEDZENIE_ZDJECIE ? 'Zmień zdjęcie' : 'Dodaj zdjęcie talerza')+'</button>'+
+          '<div class="note" style="margin-top:5px">'+
+            (JEDZENIE_ZDJECIE ? 'Zdjęcie gotowe. Dopisz wyżej, co to jest.'
+                              : 'Zdjęcie plus opis myli się rzadziej niż samo zdjęcie.')+
+          '</div>'+
           /* BEZ `capture`. Na iPhonie ten atrybut znaczy „tylko aparat, teraz"
              i wycina galerię — a posiłek zwykle fotografuje się przy stole,
              a wpisuje pół godziny później. Bez niego iOS pokazuje normalny
@@ -6960,38 +7070,51 @@ function groupStatus(keys, cov){
 const par = (cx, b) =>
   b + '<g transform="translate(' + (2*cx) + ',0) scale(-1,1)">' + b + '</g>';
 
-/* Obrys ciała. Ten sam zestaw ścieżek służy trzy razy: jako maska, jako
-   ciemne wypełnienie pod mięśniami i jako kontur rysowany na wierzchu.
-   Figura stoi w pionie: czubek głowy y=15, stopy y=250. */
 /* DWIE MASKI, NIE JEDNA.
 
-   Pierwsza wersja przycinała wszystkie mięśnie do JEDNEJ maski — całej
-   sylwetki. Efekt: elipsa bicepsa, celowo za duża, wychodziła poza ramię
-   i kładła się na bok klatki, a czapka naramiennego zjadała górę tułowia.
-   Wyglądało to jak przeciek koloru bez powodu.
+   Przy jednej masce — całej sylwetce — elipsa bicepsa, celowo za duża,
+   wychodziła poza ramię i kładła się na bok klatki, a czapka naramiennego
+   zjadała górę tułowia. Teraz maski są dwie: tułów (z głową, szyją
+   i czapkami barków) oraz kończyny (ramiona i nogi z dłońmi i stopami).
+   Mięsień ramienia nie ma jak dotknąć klatki i odwrotnie.
 
-   Teraz maski są dwie: tułów (z głową, szyją i czapkami barków) oraz
-   kończyny (ramiona i nogi z dłońmi i stopami). Mięsień ramienia nie ma
-   jak dotknąć klatki, a mięsień klatki nie ma jak wejść na ramię. */
+   PROPORCJE wzięte z rysunku, który Filip przysłał: figura ma ~9 długości
+   głowy, nogi to 46% wzrostu (nie 43, jak w poprzedniej wersji — dlatego
+   wyglądała przysadziście), talia jest o jedną trzecią węższa od barków,
+   a ramiona odchodzą lekko od tułowia zamiast leżeć wzdłuż niego.
+   Głowa, dłonie i stopy zostają ciemne — na rysunku też są, i dobrze:
+   to nie są miejsca, w których cokolwiek trenujemy. */
 const KONCZYNY = cx => {
   const d = cx - 85;
   const X = n => (n + d).toFixed(1);
   const P = b => par(cx, b);
   return ''+
     /* NOGA: biodro → udo → kolano → łydka → kostka */
-    P('<path d="M'+X(65)+' 128 C'+X(62)+' 146 '+X(61.5)+' 172 '+X(64.5)+' 200'+
-      ' C'+X(65.5)+' 219 '+X(67.5)+' 232 '+X(68.5)+' 242'+
-      ' A5.6 5.6 0 0 0 '+X(79.7)+' 242'+
-      ' C'+X(80.5)+' 232 '+X(82)+' 219 '+X(83.2)+' 200'+
-      ' C'+X(85.5)+' 172 '+X(85.8)+' 146 '+X(85)+' 128 Z"/>')+
-    P('<ellipse cx="'+X(74.6)+'" cy="246" rx="6.4" ry="4.6"/>')+
-    /* RAMIĘ: bark → biceps → łokieć → przedramię → nadgarstek */
-    P('<path d="M'+X(65)+' 58 C'+X(56)+' 68 '+X(51)+' 79 '+X(49.6)+' 92'+
-      ' C'+X(47)+' 110 '+X(45.8)+' 126 '+X(45.8)+' 146'+
-      ' A5.4 5.4 0 0 0 '+X(56.6)+' 146'+
-      ' C'+X(56.8)+' 126 '+X(58.6)+' 110 '+X(62.4)+' 92'+
-      ' C'+X(65)+' 79 '+X(72)+' 68 '+X(78)+' 58 Z"/>')+
-    P('<ellipse cx="'+X(51.2)+'" cy="152" rx="5.4" ry="6.8"/>');
+    P('<path d="M'+X(65)+' 122 C'+X(61.6)+' 143 '+X(61)+' 174 '+X(64.4)+' 205'+
+      ' C'+X(65.6)+' 224 '+X(67.6)+' 236 '+X(68.6)+' 245'+
+      ' A5.4 5.4 0 0 0 '+X(79.4)+' 245'+
+      ' C'+X(80.4)+' 236 '+X(82.4)+' 224 '+X(83.6)+' 205'+
+      ' C'+X(86.4)+' 174 '+X(86.6)+' 143 '+X(85)+' 122 Z"/>')+
+    /* STOPA — wydłużona ku przodowi, nie owalna łapka */
+    P('<path d="M'+X(69.4)+' 243 C'+X(68.6)+' 249 '+X(69.6)+' 254 '+X(74)+' 254'+
+      ' C'+X(78.6)+' 254 '+X(80.4)+' 250 '+X(80)+' 243 Z"/>')+
+    /* RAMIĘ: bark → biceps → łokieć → przedramię → nadgarstek.
+       Odchyla się od tułowia mocniej niż wcześniej — przy ramionach
+       przyklejonych do boku nie widać ani talii, ani szerokości barków. */
+    P('<path d="M'+X(64.5)+' 55 C'+X(56)+' 66 '+X(51.4)+' 79 '+X(49.8)+' 94'+
+      ' C'+X(47.8)+' 112 '+X(46.8)+' 128 '+X(46.6)+' 144'+
+      ' A5.4 5.4 0 0 0 '+X(57.4)+' 144'+
+      ' C'+X(57.6)+' 128 '+X(59)+' 112 '+X(62)+' 94'+
+      ' C'+X(64.2)+' 79 '+X(70.6)+' 66 '+X(77.4)+' 55 Z"/>')+
+    /* DŁOŃ z zaznaczonymi palcami — owal wyglądał jak rękawica */
+    P('<path d="M'+X(46.8)+' 142 C'+X(44.2)+' 144 '+X(43.2)+' 149 '+X(44)+' 155'+
+      ' C'+X(44.5)+' 158.6 '+X(45.7)+' 160.2 '+X(47)+' 159.8'+
+      ' C'+X(48)+' 159.4 '+X(48.4)+' 157.6 '+X(48.2)+' 154.2'+
+      ' C'+X(49.2)+' 158 '+X(50.1)+' 159.8 '+X(51.3)+' 159.8'+
+      ' C'+X(52.5)+' 159.8 '+X(53.2)+' 158 '+X(53.4)+' 153.8'+
+      ' C'+X(54.2)+' 157.2 '+X(55.1)+' 158.8 '+X(56.1)+' 158.4'+
+      ' C'+X(57.3)+' 158 '+X(57.8)+' 155.4 '+X(57.5)+' 149.8'+
+      ' C'+X(57.2)+' 145.2 '+X(56.8)+' 142.6 '+X(56.3)+' 141.8 Z"/>');
 };
 
 const TORS = cx => {
@@ -6999,23 +7122,26 @@ const TORS = cx => {
   const X = n => (n + d).toFixed(1);
   const P = b => par(cx, b);
   return ''+
-    /* TUŁÓW: bark → pacha → talia → biodro */
-    '<path d="M'+X(63)+' 56 C'+X(60)+' 70 '+X(60)+' 80 '+X(62)+' 90'+
-      ' C'+X(65)+' 105 '+X(69)+' 116 '+X(71)+' 126'+
-      ' C'+X(72)+' 136 '+X(71.6)+' 143 '+X(71)+' 150'+
-      ' L'+X(99)+' 150'+
-      ' C'+X(98.4)+' 143 '+X(98)+' 136 '+X(99)+' 126'+
-      ' C'+X(101)+' 116 '+X(105)+' 105 '+X(108)+' 90'+
-      ' C'+X(110)+' 80 '+X(110)+' 70 '+X(107)+' 56 Z"/>'+
+    /* TUŁÓW: bark → pacha → talia → biodro.
+       Talia w y=116 ma 26 jednostek przy barkach 46 — stosunek 0,57,
+       czyli mocniejsza litera V niż poprzednio (0,64). */
+    '<path d="M'+X(62)+' 54 C'+X(58.6)+' 68 '+X(58.6)+' 79 '+X(60.8)+' 90'+
+      ' C'+X(64)+' 104 '+X(69.4)+' 110 '+X(72)+' 116'+
+      ' C'+X(73.4)+' 125 '+X(72.6)+' 133 '+X(71.6)+' 141'+
+      ' L'+X(98.4)+' 141'+
+      ' C'+X(97.4)+' 133 '+X(96.6)+' 125 '+X(98)+' 116'+
+      ' C'+X(100.6)+' 110 '+X(106)+' 104 '+X(109.2)+' 90'+
+      ' C'+X(111.4)+' 79 '+X(111.4)+' 68 '+X(108)+' 54 Z"/>'+
     /* CZAPKA NARAMIENNEGO — wystaje poza tułów i nachodzi na ramię.
        To ona daje ramionom szerokość: bez niej sylwetka jest rurą. */
-    P('<path d="M'+X(66)+' 55 C'+X(54)+' 56 '+X(46)+' 64 '+X(44)+' 78'+
-      ' C'+X(42.4)+' 89 '+X(44)+' 96 '+X(48.4)+' 100'+
-      ' C'+X(51)+' 85 '+X(57)+' 71 '+X(66)+' 63 Z"/>')+
-    /* SZYJA I GŁOWA */
-    '<path d="M'+X(76.6)+' 36 C'+X(81)+' 41 '+X(89)+' 41 '+X(93.4)+' 36'+
-      ' L'+X(95.4)+' 52 C'+X(88.5)+' 57 '+X(81.5)+' 57 '+X(74.6)+' 52 Z"/>'+
-    '<ellipse cx="'+X(85)+'" cy="28" rx="11.8" ry="14"/>';
+    P('<path d="M'+X(64.5)+' 53.5 C'+X(54)+' 55 '+X(46.6)+' 63 '+X(45)+' 76'+
+      ' C'+X(43.8)+' 86 '+X(45.6)+' 92.6 '+X(49.8)+' 96'+
+      ' C'+X(51.8)+' 82 '+X(57)+' 68.6 '+X(64.5)+' 61 Z"/>')+
+    /* SZYJA I GŁOWA — głowa mniejsza niż w poprzedniej wersji, bo to ona
+       decydowała, że figura wyglądała na przysadzistą. */
+    '<path d="M'+X(76.6)+' 31 C'+X(80.8)+' 37 '+X(89.2)+' 37 '+X(93.4)+' 31'+
+      ' L'+X(96)+' 50 C'+X(89)+' 56 '+X(81)+' 56 '+X(74)+' 50 Z"/>'+
+    '<ellipse cx="'+X(85)+'" cy="24" rx="10.8" ry="13"/>';
 };
 
 /* ---------- PRZÓD ---------- */
@@ -7024,42 +7150,41 @@ const PRZOD = (sh, hd) => {
   return {tors: ''+
   /* czworoboczny górny — jarzmo między szyją a barkiem, widoczne od przodu */
   sh('plecy_gora',
-    '<path d="M74 40 C70 52 62 61 50 67 L120 67 C108 61 100 52 96 40'+
-      ' C90 47 80 47 74 40 Z"/>')+
+    '<path d="M75 37 C71 48 62 57 48 64 L122 64 C108 57 99 48 95 37'+
+      ' C90 44 80 44 75 37 Z"/>')+
   /* naramienny boczny: pełna czapka na stawie, nie sierp */
-  sh('bark_bok', P('<ellipse cx="55" cy="80" rx="17" ry="23"/>'))+
+  sh('bark_bok', P('<ellipse cx="55" cy="78" rx="16" ry="22"/>'))+
   /* naramienny przedni: wewnętrzna, widoczna od frontu część czapki */
   sh('bark_przod',
-    '<path d="M59 57 C70 53 100 53 111 57 C112 68 108 77 101 81 L69 81'+
-      ' C62 77 58 68 59 57 Z"/>')+
+    '<path d="M57 55 C69 51 101 51 113 55 C114 66 110 75 103 79 L67 79'+
+      ' C60 75 56 66 57 55 Z"/>')+
   sh('klatka_gora',
-    '<path d="M55 69 C70 65 100 65 115 69 L115 85 C100 81 70 81 55 85 Z"/>')+
+    '<path d="M53 66 C69 62 101 62 117 66 L117 81 C101 77 69 77 53 81 Z"/>')+
   sh('klatka_srodek',
-    '<path d="M55 83 C70 79 100 79 115 83 L115 103 C100 107 70 107 55 103 Z"/>'+
-    '<path d="M85 82 v24" class="szew"/>')+
+    '<path d="M53 79 C69 75 101 75 117 79 L117 98 C101 102 69 102 53 98 Z"/>'+
+    '<path d="M85 78 v23" class="szew"/>')+
   sh('klatka_dol',
-    '<path d="M55 101 C70 105 100 105 115 101 L115 115 C100 118 70 118 55 115 Z"/>')+
+    '<path d="M53 96 C69 100 101 100 117 96 L117 109 C101 112 69 112 53 109 Z"/>')+
   sh('brzuch',
-    '<path d="M73 111 H97 C98 129 97 145 95 157 H75 C73 145 72 129 73 111 Z"/>'+
-    '<path d="M85 112 v44 M74.4 122 h21.2 M74.8 133 h20.4 M75.4 144 h19.2" class="szew"/>')+
+    '<path d="M74 105 H96 C97 120 96 134 94 147 H76 C74 134 73 120 74 105 Z"/>'+
+    '<path d="M85 106 v40 M75.4 116 h19.2 M75.8 126 h18.4 M76.4 136 h17.2" class="szew"/>')+
   sh(['skosne','glebokie'],
-    P('<path d="M54 107 H74 V159 H54 Z"/>')),
+    P('<path d="M52 101 H75 V150 H52 Z"/>')),
 
   konczyny: ''+
-  /* Naramienny wchodzi też na maskę kończyn, bo w rzeczywistości przyczepia
-     się do kości ramiennej — a bez tego między czapką barku a bicepsem
-     zostawał ciemny klin w pasze. */
-  sh('bark_bok', P('<ellipse cx="55" cy="80" rx="17" ry="23"/>'))+
+  /* Naramienny wchodzi też na maskę kończyn, bo przyczepia się do kości
+     ramiennej — bez tego między czapką barku a bicepsem zostawał klin. */
+  sh('bark_bok', P('<ellipse cx="55" cy="78" rx="16" ry="22"/>'))+
   sh(['biceps_dluga','biceps_krotka','ramienny'],
-    P('<ellipse cx="54" cy="104" rx="13" ry="23" transform="rotate(-7 54 104)"/>'))+
+    P('<ellipse cx="54" cy="103" rx="13" ry="23" transform="rotate(-7 54 103)"/>'))+
   sh('przedramie',
-    P('<ellipse cx="49" cy="141" rx="11" ry="23"/>'))+
+    P('<ellipse cx="50" cy="138" rx="11" ry="22"/>'))+
   sh(['czworoglowe','udo_proste'],
-    P('<ellipse cx="74" cy="171" rx="18" ry="37"/>'))+
+    P('<ellipse cx="74" cy="166" rx="18" ry="40"/>'))+
   sh('lydki_stoj',
-    P('<ellipse cx="73" cy="222" rx="14" ry="23"/>'))+
+    P('<ellipse cx="73" cy="224" rx="14" ry="24"/>'))+
   /* kolano zostaje neutralne — to nie mięsień, nie ma czego kolorować */
-  hd(P('<ellipse cx="74.4" cy="201" rx="7" ry="5"/>'))};
+  hd(P('<ellipse cx="74.4" cy="205" rx="7" ry="5"/>'))};
 };
 
 /* ---------- TYŁ ---------- */
@@ -7067,36 +7192,36 @@ const TYL = (sh, hd) => {
   const P = b => par(255, b);
   return {tors: ''+
   sh('plecy_gora',
-    '<path d="M244 40 C240 52 232 61 220 67 C226 76 232 82 238 85'+
-      ' C244 81 249 79 255 79 C261 79 266 81 272 85'+
-      ' C278 82 284 76 290 67 C278 61 270 52 266 40'+
-      ' C260 47 250 47 244 40 Z"/>')+
-  sh('bark_tyl', P('<ellipse cx="225" cy="80" rx="17" ry="23"/>'))+
+    '<path d="M245 37 C241 48 232 57 218 64 C224 74 231 81 238 84'+
+      ' C244 80 249 78 255 78 C261 78 266 80 272 84'+
+      ' C279 81 286 74 292 64 C278 57 269 48 265 37'+
+      ' C260 44 250 44 245 37 Z"/>')+
+  sh('bark_tyl', P('<ellipse cx="225" cy="78" rx="16" ry="22"/>'))+
   /* najszerszy grzbietu: trójkąt od pachy do talii — on robi literę V */
   sh('plecy_pion',
-    P('<path d="M218 73 L255 73 L255 122 C238 120 227 112 220 98'+
-      ' C215 90 214 81 218 73 Z"/>'))+
+    P('<path d="M216 71 L255 71 L255 116 C237 114 226 106 219 93'+
+      ' C214 85 213 78 216 71 Z"/>'))+
   /* czworoboczny środkowy i równoległoboczne: pas wzdłuż kręgosłupa */
   sh('plecy_poziom',
-    '<path d="M249 71 H261 V121 H249 Z"/>')+
+    '<path d="M249 68 H261 V115 H249 Z"/>')+
   sh('prostowniki',
-    '<path d="M243 118 H267 C268 128 267 136 265 142 H245 C243 136 242 128 243 118 Z"/>')+
+    '<path d="M243 112 H267 C268 122 267 130 265 136 H245 C243 130 242 122 243 112 Z"/>')+
   sh(['posladki','posladki_sr'],
-    P('<ellipse cx="245" cy="146" rx="16" ry="14"/>')),
+    P('<ellipse cx="245" cy="138" rx="16" ry="14"/>')),
 
   konczyny: ''+
-  sh('bark_tyl', P('<ellipse cx="225" cy="80" rx="17" ry="23"/>'))+
+  sh('bark_tyl', P('<ellipse cx="225" cy="78" rx="16" ry="22"/>'))+
   sh(['triceps_dluga','triceps_bocz','triceps_przysr'],
-    P('<ellipse cx="224" cy="104" rx="13" ry="23" transform="rotate(-7 224 104)"/>'))+
+    P('<ellipse cx="224" cy="103" rx="13" ry="23" transform="rotate(-7 224 103)"/>'))+
   sh('przedramie',
-    P('<ellipse cx="219" cy="141" rx="11" ry="23"/>'))+
+    P('<ellipse cx="220" cy="138" rx="11" ry="22"/>'))+
   sh(['posladki','posladki_sr'],
-    P('<ellipse cx="245" cy="140" rx="16" ry="14"/>'))+
+    P('<ellipse cx="245" cy="133" rx="16" ry="14"/>'))+
   sh(['dwuglowe','dwuglowe_kol'],
-    P('<ellipse cx="244" cy="176" rx="17" ry="32"/>'))+
+    P('<ellipse cx="244" cy="172" rx="17" ry="35"/>'))+
   sh('lydki_sied',
-    P('<ellipse cx="243" cy="222" rx="14" ry="23"/>'))+
-  hd(P('<ellipse cx="244.4" cy="201" rx="7" ry="5"/>'))};
+    P('<ellipse cx="243" cy="224" rx="14" ry="24"/>'))+
+  hd(P('<ellipse cx="244.4" cy="205" rx="7" ry="5"/>'))};
 };
 
 const CIALO = cx => KONCZYNY(cx) + TORS(cx);
@@ -7137,7 +7262,7 @@ function bodyMap(cov, tryb){
   const nr = ++MAPA_NR;
   const P = PRZOD(sh, hd), Y = TYL(sh, hd);
 
-  return '<svg viewBox="0 0 340 274" class="bmap" xmlns="http://www.w3.org/2000/svg">'+
+  return '<svg viewBox="0 0 340 282" class="bmap" xmlns="http://www.w3.org/2000/svg">'+
   '<style>'+
   /* Ciało rysujemy POD mięśniami grubą kreską. Po przycięciu zostaje z niej
      zewnętrzna połowa, czyli rant sylwetki. Kontur rysowany NA WIERZCHU
@@ -7171,8 +7296,8 @@ function bodyMap(cov, tryb){
   '<g clip-path="url(#fk'+nr+')">'+P.konczyny+'</g>'+
   '<g clip-path="url(#tt'+nr+')">'+Y.tors+'</g>'+
   '<g clip-path="url(#tk'+nr+')">'+Y.konczyny+'</g>'+
-  '<text x="85" y="268" class="lb">PRZÓD</text>'+
-  '<text x="255" y="268" class="lb">TYŁ</text>'+
+  '<text x="85" y="276" class="lb">PRZÓD</text>'+
+  '<text x="255" y="276" class="lb">TYŁ</text>'+
   '</svg>';
 }
 
