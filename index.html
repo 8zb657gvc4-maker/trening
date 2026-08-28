@@ -73,6 +73,12 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;color:in
 input,select{font-family:inherit;font-size:16px;background:var(--card2);color:var(--txt);
   border:1px solid var(--line);border-radius:10px;padding:11px;width:100%}
 input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px}
+/* iOS Safari nadaje polu daty własną, szeroką miarę i potrafi zignorować
+   `width:100%` — kafelek z datą wyjeżdżał w Dzienniku poza kartę o kilkanaście
+   pikseli. `appearance:none` odbiera mu tę miarę, `min-width:0` pozwala mu się
+   skurczyć w układzie elastycznym, a `max-width` domyka sprawę. */
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;
+  min-width:0;max-width:100%}
 
 header{flex:0 0 auto;z-index:50;background:var(--bg);
   border-bottom:1px solid var(--line);
@@ -217,8 +223,14 @@ h2:first-child{margin-top:0}
 
 /* Kafelek-stepper: duża liczba, dwa szerokie przyciski. Cel dotykowy ma
    44 px wysokości, bo tyle wynosi minimum, przy którym nie trafia się obok. */
-.steppery{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.stp{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:12px}
+/* `minmax(0,1fr)`, nie `1fr`. Domyślnie kolumna siatki nie kurczy się poniżej
+   szerokości swojej zawartości, więc długa etykieta („TĘTNO SPOCZ.") rozpychała
+   kolumnę i kafelki wyjeżdżały poza kartę. Na Macu tego nie widać, bo litery są
+   węższe — na iPhonie wystawało kilkanaście pikseli. */
+.steppery{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px}
+.stp{min-width:0}
+.stp .nag{overflow-wrap:anywhere}
+.stp{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:12px;min-width:0}
 .stp .nag{font-size:10px;font-weight:800;letter-spacing:.9px;color:var(--dim);
   text-transform:uppercase}
 .stp .val{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;margin-top:7px;
@@ -311,7 +323,7 @@ h2:first-child{margin-top:0}
 /* Sylwetka na karcie dnia jest TŁEM. Pełne nasycenie modelu wielokątowego
    przykrywało nazwę treningu, więc trzymamy ją przygaszoną i po prawej. */
 .dzien .sylw{position:absolute;right:10px;top:-6px;height:180px;width:auto;
-  opacity:.5}
+  opacity:.72}
 .dzien .tresc{position:absolute;left:15px;top:14px;right:112px}
 .dzien .nazwa{font-size:25px;font-weight:800;letter-spacing:-1px;margin-top:3px;
   line-height:1.1}
@@ -1600,7 +1612,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '56';
+const WERSJA = '57';
 const WERSJA_DATA = '2026-08-28';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3213,32 +3225,55 @@ function barwaDnia(d){
   return BARWY_DNI[g] || BARWY_DNI.push;
 }
 
-/* Mała sylwetka na kartę dnia — ta sama geometria co duża mapa, tylko
-   sam przód, bez podpisów i bez tyłu. Ma być tłem, nie diagramem, więc
-   nie ma podpowiedzi ani klikania; kolory są te same, co w skali świeżości,
-   żeby jedno miejsce nie mówiło czegoś innego niż drugie. */
-function sylwetkaMini(){
-  const sw = swiezoscRegionow();
-  const kolejnosc = ['swieze','schodzi','prawie','gotowe','nigdy'];
+/* SYLWETKA NA KARCIE DNIA POKAZUJE, CO DZIŚ RUSZYSZ.
+
+   Wcześniej świeciła świeżością — czyli tym, co jeszcze boli po poprzednich
+   treningach. To ta sama informacja, którą daje mapa w Raporcie, tylko mniejsza
+   i bez legendy, więc dublowała ją zamiast czegoś dodać. Filip poprosił wprost:
+   na głównej ma być DZIŚ, w Raporcie to, co już zrobione.
+
+   Kolor bierzemy z akcentu dnia (`--dzien-a`), który karta i tak ustawia —
+   dzięki temu sylwetka jest tego samego koloru co dzień w rotacji i nie
+   wprowadza trzeciej skali barw do aplikacji.
+
+   Dwa stopnie, nie pięć: mięsień główny slotu (waga ≥ 0,7) i pomocniczy
+   (≥ 0,3). Więcej odcieni w figurze wielkości kciuka i tak się nie rozróżni. */
+function planowaneRegiony(dzien, cwiczenia){
+  const out = {};
+  const dodaj = n => Object.entries((LIB[n] || {}).mus || {}).forEach(([r, w]) => {
+    out[r] = Math.max(out[r] || 0, w);
+  });
+  if(Array.isArray(cwiczenia) && cwiczenia.length){
+    /* Gdy plan na dziś jest gotowy, liczymy z ĆWICZEŃ, które w nim stoją —
+       a nie z całej puli dnia. Slot z pulą pięciu wariantów obciąża różne
+       mięśnie zależnie od tego, który wypadł. */
+    cwiczenia.forEach(dodaj);
+    return out;
+  }
+  const d = PLAN[dzien];
+  if(!d) return out;
+  (d.slots || []).forEach(sl => (sl.fixed ? [sl.fixed] : (sl.pool || [])).forEach(dodaj));
+  return out;
+}
+
+function sylwetkaMini(dzien, cwiczenia){
+  const plan = planowaneRegiony(dzien, cwiczenia);
   const stan = k => {
     const keys = Array.isArray(k) ? k : [k];
-    return keys.map(x => stopienSwiezosci(sw[x] == null ? 999 : sw[x]))
-      .sort((a,b) => kolejnosc.indexOf(a) - kolejnosc.indexOf(b))[0];
+    const w = Math.max(...keys.map(x => plan[x] || 0));
+    return w >= 0.7 ? 'gl' : w >= 0.3 ? 'pob' : 'nic';
   };
-  const sh = (k, body) => '<g class="m '+stan(k)+'">'+body+'</g>';
+  const sh = (k, body) => '<g class="'+stan(k)+'">'+body+'</g>';
   const hd = body => '<g class="hd">'+body+'</g>';
-  /* Klasa `sylw`, nie `bmap`: `bmap` rozciąga rysunek na całą szerokość
-     rodzica, co przy pionowej figurze 100 × 200 zrobiło z tła plakat na pół
-     ekranu. Tu wysokość rządzi szerokością, nie odwrotnie. */
-  return '<svg viewBox="0 0 100 200" class="sylw mini" xmlns="http://www.w3.org/2000/svg">'+
+  /* Klasa `sylw-mini`, nie `mini`: `mini` jest już zajęte przez kafelek
+     z tłem i ramką, więc sylwetka dostawała pod spód jasny prostokąt. */
+  return '<svg viewBox="0 0 100 200" class="sylw sylw-mini" xmlns="http://www.w3.org/2000/svg">'+
   '<style>'+
-  '.mini polygon{stroke:#0b1220;stroke-width:.6;stroke-linejoin:round}'+
-  '.mini .swieze polygon{fill:#e5484d}'+
-  '.mini .schodzi polygon{fill:#ff8a3d}'+
-  '.mini .prawie polygon{fill:#ffc53d}'+
-  '.mini .gotowe polygon{fill:#3ddc84}'+
-  '.mini .nigdy polygon{fill:#1c2836}'+
-  '.mini .hd polygon{fill:#26313f}'+
+  '.sylw-mini polygon{stroke:#0b1220;stroke-width:.6;stroke-linejoin:round}'+
+  '.sylw-mini .gl polygon{fill:var(--dzien-a,#3ddc84)}'+
+  '.sylw-mini .pob polygon{fill:var(--dzien-a,#3ddc84);opacity:.42}'+
+  '.sylw-mini .nic polygon{fill:#1e2937}'+
+  '.sylw-mini .hd polygon{fill:#26313f}'+
   '</style>'+
   SYL_FIGURA(SYL_PRZOD, sh, hd)+
   '</svg>';
@@ -3312,8 +3347,10 @@ function renderDzis(){
      aplikacja proponuje odpoczynek, nie zabrania treningu. */
   if(s.rest && !gp){
     const dalej = s.blok ? (suggestNext(true) || {}) : {};
+    /* Dzień wolny: nic dziś nie ruszasz, więc sylwetka jest cała szara.
+       To nie jest brak danych — to jest odpowiedź. */
     return '<div class="dzien" style="--dzien-a:#4a9eff;--dzien-t:rgba(74,158,255,.13)">'+
-      '<div class="gora">'+ sylwetkaMini() +
+      '<div class="gora">'+ sylwetkaMini(null) +
         '<div class="tresc">'+
           '<div class="hm" style="letter-spacing:1.4px;font-size:9.5px">PLAN NA DZIŚ</div>'+
           '<div class="nazwa" style="color:#4a9eff">'+esc(s.head || 'Dziś wolne')+'</div>'+
@@ -3367,7 +3404,8 @@ function renderDzis(){
     : g.pkt >= 85 ? 'var(--acc)' : g.pkt >= 55 ? '#ffc53d' : '#e5484d';
 
   return '<div class="dzien" style="--dzien-a:'+b.a+';--dzien-t:'+b.t+'">'+
-    '<div class="gora">'+ sylwetkaMini() +
+    '<div class="gora">'+
+      sylwetkaMini(dzien, gp && gp.cwiczenia.map(e => e.name)) +
       '<div class="tresc">'+
         '<div class="hm" style="letter-spacing:1.4px;font-size:9.5px">'+
           'DZIEŃ '+dzien+
