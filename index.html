@@ -308,7 +308,10 @@ h2:first-child{margin-top:0}
   border:1px solid var(--dzien-a);background:var(--card)}
 .dzien .gora{position:relative;height:168px;
   background:linear-gradient(135deg,var(--dzien-t),transparent 68%)}
-.dzien .sylw{position:absolute;right:6px;top:-4px;height:176px;opacity:.92}
+/* Sylwetka na karcie dnia jest TŁEM. Pełne nasycenie modelu wielokątowego
+   przykrywało nazwę treningu, więc trzymamy ją przygaszoną i po prawej. */
+.dzien .sylw{position:absolute;right:10px;top:-6px;height:180px;width:auto;
+  opacity:.5}
 .dzien .tresc{position:absolute;left:15px;top:14px;right:112px}
 .dzien .nazwa{font-size:25px;font-weight:800;letter-spacing:-1px;margin-top:3px;
   line-height:1.1}
@@ -1597,8 +1600,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '54';
-const WERSJA_DATA = '2026-08-27';
+const WERSJA = '55';
+const WERSJA_DATA = '2026-08-28';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 let DB = null, SES = null, SUB = 'hub';
@@ -3224,26 +3227,21 @@ function sylwetkaMini(){
   };
   const sh = (k, body) => '<g class="m '+stan(k)+'">'+body+'</g>';
   const hd = body => '<g class="hd">'+body+'</g>';
-  const nr = ++MAPA_NR;
-  const P = PRZOD(sh, hd);
-  return '<svg viewBox="38 8 94 252" class="sylw" xmlns="http://www.w3.org/2000/svg">'+
-    '<style>'+
-    '.pod path,.pod ellipse{fill:#22303f;stroke:#070b12;stroke-width:3.4;stroke-linejoin:round}'+
-    '.m path,.m ellipse{stroke:#070b12;stroke-width:.9;stroke-linejoin:round}'+
-    '.swieze path,.swieze ellipse{fill:#e5484d}'+
-    '.schodzi path,.schodzi ellipse{fill:#ff8a3d}'+
-    '.prawie path,.prawie ellipse{fill:#ffc53d}'+
-    '.gotowe path,.gotowe ellipse{fill:#3ddc84}'+
-    '.nigdy path,.nigdy ellipse{fill:#1c2836}'+
-    '.hd ellipse{fill:#1a2634}'+
-    '.szew{fill:none !important;stroke:#070b12;stroke-width:1}'+
-    '</style>'+
-    '<defs><clipPath id="mt'+nr+'">'+TORS(85)+'</clipPath>'+
-    '<clipPath id="mk'+nr+'">'+KONCZYNY(85)+'</clipPath></defs>'+
-    '<g class="pod">'+CIALO(85)+'</g>'+
-    '<g clip-path="url(#mt'+nr+')">'+P.tors+'</g>'+
-    '<g clip-path="url(#mk'+nr+')">'+P.konczyny+'</g>'+
-    '</svg>';
+  /* Klasa `sylw`, nie `bmap`: `bmap` rozciąga rysunek na całą szerokość
+     rodzica, co przy pionowej figurze 100 × 200 zrobiło z tła plakat na pół
+     ekranu. Tu wysokość rządzi szerokością, nie odwrotnie. */
+  return '<svg viewBox="0 0 100 200" class="sylw mini" xmlns="http://www.w3.org/2000/svg">'+
+  '<style>'+
+  '.mini polygon{stroke:#0b1220;stroke-width:.6;stroke-linejoin:round}'+
+  '.mini .swieze polygon{fill:#e5484d}'+
+  '.mini .schodzi polygon{fill:#ff8a3d}'+
+  '.mini .prawie polygon{fill:#ffc53d}'+
+  '.mini .gotowe polygon{fill:#3ddc84}'+
+  '.mini .nigdy polygon{fill:#1c2836}'+
+  '.mini .hd polygon{fill:#26313f}'+
+  '</style>'+
+  SYL_FIGURA(SYL_PRZOD, sh, hd)+
+  '</svg>';
 }
 function pasekTygodnia(){
   const w = weekNo();
@@ -7142,193 +7140,144 @@ function groupStatus(keys, cov){
 /* ============================================================
    SYLWETKA — geometria
 
-   Poprzednia wersja była zlepkiem kilkunastu kształtów, z których każdy sam
-   musiał trafić w kontur ciała. Nie trafiał: w pachwinie zostawała szczelina,
-   mięśnie wyjeżdżały poza tułów, a głowa stała na patyku. Filip nazwał to
-   wprost — „kilka zlepionych kształtów".
+   Poprzednia wersja była rysowana ręcznie: kilkanaście elips i ścieżek,
+   z których każda sama musiała trafić w kontur ciała. Nie trafiała.
+   Dwie maski przycinające, obrys rysowany pod spodem i parzyste kształty
+   odbijane macierzą — cała ta maszyneria istniała po to, żeby ukryć,
+   że kształty do siebie nie pasują. Filip nazwał efekt „koślawym"
+   i miał rację: to była proteza, nie sylwetka.
 
-   Trzy zmiany, które to naprawiły:
+   Teraz geometria pochodzi z gotowego modelu anatomicznego
+   (`body-highlighter`, licencja MIT, © 2020 GV79) — niskopoligonowa
+   figura przód/tył, w której każdy mięsień jest osobnym wielokątem,
+   a wszystkie razem TWORZĄ kontur ciała. Nie ma czego przycinać, bo nie
+   ma nic, co wystaje: znikły obie maski, obrys pod spodem i odbicia.
 
-   1. WSPÓŁRZĘDNE BEZWZGLĘDNE zamiast względnych. Ścieżki względne czytało się
-      jak asembler i pięć z jedenastu miało zgubiony znak — wychodziły z nich
-      trójkąty przez pół ekranu. Teraz każdy punkt jest tam, gdzie go widać.
+   Rysujemy to samo, co dotąd — nasze 28 regionów. Model ma ich mniej,
+   więc kilka naszych regionów dzieli jeden wielokąt: trzy części klatki
+   to jedna „klatka", trzy głowy tricepsa to jeden triceps. Kolor takiego
+   kształtu bierze się jak dotąd z najgorszej głowy, a rozbicie na głowy
+   jest pod mapą, w rozwinięciu grupy.
 
-   2. PARZYSTE KSZTAŁTY RYSUJEMY RAZ. Lewa strona jest źródłem prawdy, prawa
-      powstaje przez odbicie translate(2·cx,0) scale(-1,1). Moduł wyznacznika
-      tej macierzy wynosi 1, więc grubość obrysu się nie zmienia.
+   Głowa, szyja, kolana i przywodziciele zostają szare. Szary znaczy
+   „nie mierzymy", nie „zaniedbane" — kolan i głowy nie trenujemy,
+   a przywodzicieli nie mamy wśród regionów.
 
-   3. MIĘŚNIE SĄ PRZYCINANE DO CIAŁA (clipPath), i to dwiema osobnymi maskami:
-      tułów oraz kończyny. Dzięki temu kształty mięśni mogą być celowo ZA DUŻE
-      i zachodzić na siebie — maska obcina je po sylwetce. Ciało nie ma dziur,
-      kontur jest jeden, a poprawka jednego mięśnia nie psuje obrysu.
-      Dwie maski zamiast jednej, bo przy jednej elipsa bicepsa kładła się
-      na bok klatki, a czapka barku zjadała górę tułowia.
-
-   Figura stoi pionowo: czubek głowy y=14, stopy y=250, środek w `cx`.
+   Układ współrzędnych modelu: jedna figura w prostokącie 100 × 220.
    ============================================================ */
-const par = (cx, b) =>
-  b + '<g transform="translate(' + (2*cx) + ',0) scale(-1,1)">' + b + '</g>';
 
-/* DWIE MASKI, NIE JEDNA.
-
-   Przy jednej masce — całej sylwetce — elipsa bicepsa, celowo za duża,
-   wychodziła poza ramię i kładła się na bok klatki, a czapka naramiennego
-   zjadała górę tułowia. Teraz maski są dwie: tułów (z głową, szyją
-   i czapkami barków) oraz kończyny (ramiona i nogi z dłońmi i stopami).
-   Mięsień ramienia nie ma jak dotknąć klatki i odwrotnie.
-
-   PROPORCJE wzięte z rysunku, który Filip przysłał: figura ma ~9 długości
-   głowy, nogi to 46% wzrostu (nie 43, jak w poprzedniej wersji — dlatego
-   wyglądała przysadziście), talia jest o jedną trzecią węższa od barków,
-   a ramiona odchodzą lekko od tułowia zamiast leżeć wzdłuż niego.
-   Głowa, dłonie i stopy zostają ciemne — na rysunku też są, i dobrze:
-   to nie są miejsca, w których cokolwiek trenujemy. */
-const KONCZYNY = cx => {
-  const d = cx - 85;
-  const X = n => (n + d).toFixed(1);
-  const P = b => par(cx, b);
-  return ''+
-    /* NOGA: biodro → udo → kolano → łydka → kostka */
-    P('<path d="M'+X(65)+' 122 C'+X(61.6)+' 143 '+X(61)+' 174 '+X(64.4)+' 205'+
-      ' C'+X(65.6)+' 224 '+X(67.6)+' 236 '+X(68.6)+' 245'+
-      ' A5.4 5.4 0 0 0 '+X(79.4)+' 245'+
-      ' C'+X(80.4)+' 236 '+X(82.4)+' 224 '+X(83.6)+' 205'+
-      ' C'+X(86.4)+' 174 '+X(86.6)+' 143 '+X(85)+' 122 Z"/>')+
-    /* STOPA — wydłużona ku przodowi, nie owalna łapka */
-    P('<path d="M'+X(69.4)+' 243 C'+X(68.6)+' 249 '+X(69.6)+' 254 '+X(74)+' 254'+
-      ' C'+X(78.6)+' 254 '+X(80.4)+' 250 '+X(80)+' 243 Z"/>')+
-    /* RAMIĘ: bark → biceps → łokieć → przedramię → nadgarstek.
-       Odchyla się od tułowia mocniej niż wcześniej — przy ramionach
-       przyklejonych do boku nie widać ani talii, ani szerokości barków. */
-    P('<path d="M'+X(64.5)+' 55 C'+X(56)+' 66 '+X(51.4)+' 79 '+X(49.8)+' 94'+
-      ' C'+X(47.8)+' 112 '+X(46.8)+' 128 '+X(46.6)+' 144'+
-      ' A5.4 5.4 0 0 0 '+X(57.4)+' 144'+
-      ' C'+X(57.6)+' 128 '+X(59)+' 112 '+X(62)+' 94'+
-      ' C'+X(64.2)+' 79 '+X(70.6)+' 66 '+X(77.4)+' 55 Z"/>')+
-    /* DŁOŃ z zaznaczonymi palcami — owal wyglądał jak rękawica */
-    P('<path d="M'+X(46.8)+' 142 C'+X(44.2)+' 144 '+X(43.2)+' 149 '+X(44)+' 155'+
-      ' C'+X(44.5)+' 158.6 '+X(45.7)+' 160.2 '+X(47)+' 159.8'+
-      ' C'+X(48)+' 159.4 '+X(48.4)+' 157.6 '+X(48.2)+' 154.2'+
-      ' C'+X(49.2)+' 158 '+X(50.1)+' 159.8 '+X(51.3)+' 159.8'+
-      ' C'+X(52.5)+' 159.8 '+X(53.2)+' 158 '+X(53.4)+' 153.8'+
-      ' C'+X(54.2)+' 157.2 '+X(55.1)+' 158.8 '+X(56.1)+' 158.4'+
-      ' C'+X(57.3)+' 158 '+X(57.8)+' 155.4 '+X(57.5)+' 149.8'+
-      ' C'+X(57.2)+' 145.2 '+X(56.8)+' 142.6 '+X(56.3)+' 141.8 Z"/>');
+const SYL_PRZOD = {
+  CHEST: ["51.8 41.6 51 55.1 58 58 67.8 55.5 70.6 47.3 62 41.6",
+    "29.8 46.5 31.4 55.5 40.8 58 48.2 55.1 47.8 42 37.6 42"],
+  OBLIQUES: ["68.6 63.3 67.3 57.1 58.8 59.6 60 64.1 60.4 83.3 65.7 78.8 66.5 69.8",
+    "33.9 78.4 33.1 71.8 31 63.3 32.2 57.1 40.8 59.2 39.2 63.3 39.2 83.7"],
+  ABS: ["56.3 59.2 58 64.1 58.4 78 58.4 92.7 56.3 98.4 55.1 104.1 51.4 107.8 51 84.5 50.6 67.3 51 57.1",
+    "43.7 58.8 48.6 57.1 49 67.3 48.6 84.5 48.2 107.3 44.5 103.7 40.8 91.4 40.8 78.4 41.2 64.5"],
+  BICEPS: ["16.7 68.2 18 71.4 22.9 66.1 29 53.9 27.8 49.4 20.4 55.9",
+    "71.4 49.4 70.2 54.7 76.3 66.1 81.6 71.8 82.9 69 78.8 55.5"],
+  TRICEPS: ["69.4 55.5 69.4 61.6 75.9 72.7 77.6 70.2 75.5 67.3",
+    "22.4 69.4 29.8 55.5 29.8 60.8 22.9 73.1"],
+  NECK: ["55.5 23.7 50.6 33.5 50.6 39.2 61.6 40 70.6 44.9 69.4 36.7 63.3 35.1 58.4 30.6",
+    "29 44.9 30.2 37.1 36.3 35.1 41.2 30.2 44.5 24.5 49 33.9 48.6 39.2 38 39.6"],
+  FRONT_DELTOIDS: ["78.4 53.1 79.6 47.8 79.2 41.2 75.9 38 71 36.3 72.2 42.9 71.4 47.3",
+    "28.2 47.3 21.2 53.1 20 47.8 20.4 40.8 24.5 37.1 28.6 37.1 26.9 43.3"],
+  HEAD: ["42.4 2.9 40 11.8 42 19.6 46.1 23.3 49.8 25.3 54.7 22.4 57.6 19.2 59.2 10.2 57.1 2.4 49.8 0"],
+  ABDUCTORS: ["52.7 110.2 54.3 124.9 60 110.2 62 100 64.9 94.3 60 92.7 56.7 104.5",
+    "47.8 110.6 44.9 125.3 42 115.9 40.4 113.1 39.6 107.3 38 102.4 34.7 93.9 39.6 92.2 41.6 99.2 43.7 105.3"],
+  QUADRICEPS: ["34.7 98.8 37.1 108.2 37.1 127.8 34.3 137.1 31 132.7 29.4 120 28.2 111.4 29.4 100.8 32.2 94.7",
+    "63.3 105.7 64.5 100 66.9 94.7 70.2 101.2 71 111.8 68.2 133.1 65.3 137.6 62.4 128.6 62 111.4",
+    "38.8 129.4 38.4 112.2 41.2 118.4 44.5 129.4 42.9 135.1 40 146.1 36.3 146.5 35.5 140",
+    "59.6 145.7 55.5 129 60.8 113.9 61.2 130.2 64.1 139.6 62.9 146.5",
+    "32.7 138.4 26.5 145.7 25.7 136.7 25.7 127.3 26.9 114.3 29.4 133.5",
+    "71.8 113.1 73.9 124.1 73.9 140.4 72.7 145.7 66.5 138.4 70.2 133.5"],
+  KNEES: ["33.9 140 34.7 143.3 35.5 147.3 36.3 151 35.1 156.7 29.8 156.7 27.3 152.7 27.3 147.3 30.2 144.1",
+    "65.7 140 72.2 147.8 72.2 152.2 69.8 157.1 64.9 156.7 62.9 151"],
+  CALVES: ["71.4 160.4 73.5 153.5 76.7 161.2 79.6 167.8 78.4 187.8 79.6 195.5 74.7 195.5",
+    "24.9 194.7 27.8 164.9 28.2 160.4 26.1 154.3 24.9 157.6 22.4 161.6 20.8 167.8 22 188.2 20.8 195.5",
+    "72.7 195.1 69.8 159.2 65.3 158.4 64.1 162.4 64.1 165.3 65.7 177.1",
+    "35.5 158.4 35.9 162.4 35.9 166.9 35.1 172.2 35.1 176.7 32.2 182 30.6 187.3 26.9 194.7 27.3 187.8 28.2 180.4 28.6 175.5 29 169.8 29.8 164.1 30.2 158.8"],
+  FOREARM: ["6.1 88.6 10.2 75.1 14.7 70.2 16.3 74.3 19.2 73.5 4.5 97.6 0 100",
+    "84.5 69.8 83.3 73.5 80 73.1 95.1 98.4 100 100.4 93.5 89.4 89.8 76.3",
+    "77.6 72.2 77.6 77.6 80.4 84.1 85.3 89.8 92.2 101.2 94.7 99.6",
+    "6.9 101.2 13.5 90.6 18.8 84.1 21.6 77.1 21.2 71.8 4.9 98.8"],
 };
 
-const TORS = cx => {
-  const d = cx - 85;
-  const X = n => (n + d).toFixed(1);
-  const P = b => par(cx, b);
-  return ''+
-    /* TUŁÓW: bark → pacha → talia → biodro.
-       Talia w y=116 ma 26 jednostek przy barkach 46 — stosunek 0,57,
-       czyli mocniejsza litera V niż poprzednio (0,64). */
-    '<path d="M'+X(62)+' 54 C'+X(58.6)+' 68 '+X(58.6)+' 79 '+X(60.8)+' 90'+
-      ' C'+X(64)+' 104 '+X(69.4)+' 110 '+X(72)+' 116'+
-      ' C'+X(73.4)+' 125 '+X(72.6)+' 133 '+X(71.6)+' 141'+
-      ' L'+X(98.4)+' 141'+
-      ' C'+X(97.4)+' 133 '+X(96.6)+' 125 '+X(98)+' 116'+
-      ' C'+X(100.6)+' 110 '+X(106)+' 104 '+X(109.2)+' 90'+
-      ' C'+X(111.4)+' 79 '+X(111.4)+' 68 '+X(108)+' 54 Z"/>'+
-    /* CZAPKA NARAMIENNEGO — wystaje poza tułów i nachodzi na ramię.
-       To ona daje ramionom szerokość: bez niej sylwetka jest rurą. */
-    P('<path d="M'+X(64.5)+' 53.5 C'+X(54)+' 55 '+X(46.6)+' 63 '+X(45)+' 76'+
-      ' C'+X(43.8)+' 86 '+X(45.6)+' 92.6 '+X(49.8)+' 96'+
-      ' C'+X(51.8)+' 82 '+X(57)+' 68.6 '+X(64.5)+' 61 Z"/>')+
-    /* SZYJA I GŁOWA — głowa mniejsza niż w poprzedniej wersji, bo to ona
-       decydowała, że figura wyglądała na przysadzistą. */
-    '<path d="M'+X(76.6)+' 31 C'+X(80.8)+' 37 '+X(89.2)+' 37 '+X(93.4)+' 31'+
-      ' L'+X(96)+' 50 C'+X(89)+' 56 '+X(81)+' 56 '+X(74)+' 50 Z"/>'+
-    '<ellipse cx="'+X(85)+'" cy="24" rx="10.8" ry="13"/>';
+const SYL_TYL = {
+  HEAD: ["50.6 0 46 0.9 40.9 5.5 40.4 12.8 45.1 20 55.7 20 59.1 13.6 59.6 4.7 55.7 1.3"],
+  TRAPEZIUS: ["44.7 21.7 47.7 21.7 47.2 38.3 47.7 64.7 38.3 53.2 35.3 40.9 31.1 36.6 39.1 33.2 43.8 27.2",
+    "52.3 21.7 55.7 21.7 56.6 27.2 60.9 32.8 68.9 36.6 64.7 40.4 61.7 53.2 52.3 64.7 53.2 38.3"],
+  BACK_DELTOIDS: ["29.4 37 23 39.1 17.4 44.3 18.3 53.6 24.3 49.4 27.2 46.4",
+    "71.1 37 78.3 39.6 82.6 44.7 81.7 53.6 74.9 48.9 72.3 45.1"],
+  UPPER_BACK: ["31.1 38.7 28.1 48.9 28.5 55.3 34 75.3 47.2 71.1 47.2 66.4 36.6 54 33.6 41.3",
+    "68.9 38.7 71.9 49.4 71.5 56.2 66 75.3 52.8 71.1 52.8 66.4 63.4 54.5 66.4 41.7"],
+  TRICEPS: ["26.8 49.8 17.9 55.7 14.5 72.3 16.6 81.7 21.7 63.8 26.8 55.7",
+    "73.6 50.2 82.1 55.7 86 73.2 83.4 82.1 77.9 63 73.2 55.7",
+    "26.8 58.3 26.8 68.5 23 75.3 19.1 77.4 22.6 65.5",
+    "72.8 58.3 77 64.7 80.4 77.4 76.6 75.3 72.8 68.9"],
+  LOWER_BACK: ["47.7 72.8 34.5 77 35.3 83.4 49.4 102.1 46.8 83",
+    "52.3 72.8 65.5 77 64.7 83.4 50.6 102.1 53.2 83.8"],
+  FOREARM: ["86.4 75.7 91.1 83.4 93.2 94 100 106.4 96.2 104.3 88.1 89.4 84.3 83.8",
+    "13.6 75.7 8.9 83.8 6.8 93.6 0 106.4 3.8 104.3 12.3 88.5 15.7 83",
+    "81.3 79.6 77.4 77.9 79.1 84.7 91.1 103.8 93.2 108.9 94.5 104.7",
+    "18.7 79.6 22.1 77.9 20.9 84.3 9.4 103 6.8 108.5 5.1 104.7"],
+  GLUTEAL: ["44.7 99.6 30.2 108.5 29.8 118.7 31.5 126 47.2 121.3 49.4 114.9",
+    "55.3 99.1 51.1 114.5 52.3 120.9 68.1 126 69.8 119.1 69.4 108.5"],
+  ABDUCTOR: ["48.1 123 44.7 123 41.3 125.5 45.1 144.3 48.5 135.7 48.9 129.4",
+    "51.9 122.6 55.7 123.4 59.1 126 54.9 144.3 51.9 136.2 51.1 129.4"],
+  HAMSTRING: ["28.9 122.1 31.1 129.4 36.6 126 35.3 135.3 34.5 150.2 29.4 158.3 28.9 146.8 27.7 141.3 27.2 131.5",
+    "71.5 121.7 69.4 128.9 63.8 126 65.5 136.6 66.4 150.2 71.1 158.3 71.5 147.7 72.8 142.1 73.6 131.9",
+    "38.7 125.5 44.3 146 40.4 166.8 36.2 152.8 37 135.3",
+    "61.7 125.5 63.4 136.2 64.3 153.2 60 166.8 56.2 146.4"],
+  KNEES: ["34.5 153.2 31.1 159.1 33.6 166.4 37.4 162.6",
+    "66.4 153.6 63 163 66.8 166.4 69.4 159.1"],
+  CALVES: ["29.4 160.4 28.5 167.2 24.7 179.6 23.8 192.8 25.5 197 28.5 193.2 29.8 180 31.9 171.1 31.9 166.8",
+    "37.4 165.1 35.3 167.7 33.2 171.9 31.1 180.4 30.2 191.9 34 200 38.7 190.6 39.1 168.9",
+    "63 165.1 61.3 168.5 61.7 190.6 66.4 199.6 70.6 191.9 68.9 179.6 66.8 170.2",
+    "70.6 160.4 72.3 168.5 75.7 179.1 76.6 192.8 74.5 196.6 72.3 193.6 70.6 179.6 68.1 168.1"],
+  LEFT_SOLEUS: ["28.5 195.7 30.2 195.7 33.6 201.7 30.6 220 28.5 213.6 26.8 198.3"],
+  RIGHT_SOLEUS: ["69.8 195.7 71.9 195.7 73.6 198.3 71.9 213.2 70.2 219.6 67.2 202.1"],
 };
 
-/* ---------- PRZÓD ---------- */
-const PRZOD = (sh, hd) => {
-  const P = b => par(85, b);
-  return {tors: ''+
-  /* czworoboczny górny — jarzmo między szyją a barkiem, widoczne od przodu */
-  sh('plecy_gora',
-    '<path d="M75 37 C71 48 62 57 48 64 L122 64 C108 57 99 48 95 37'+
-      ' C90 44 80 44 75 37 Z"/>')+
-  /* naramienny boczny: pełna czapka na stawie, nie sierp */
-  sh('bark_bok', P('<ellipse cx="55" cy="78" rx="16" ry="22"/>'))+
-  /* naramienny przedni: wewnętrzna, widoczna od frontu część czapki */
-  sh('bark_przod',
-    '<path d="M57 55 C69 51 101 51 113 55 C114 66 110 75 103 79 L67 79'+
-      ' C60 75 56 66 57 55 Z"/>')+
-  sh('klatka_gora',
-    '<path d="M53 66 C69 62 101 62 117 66 L117 81 C101 77 69 77 53 81 Z"/>')+
-  sh('klatka_srodek',
-    '<path d="M53 79 C69 75 101 75 117 79 L117 98 C101 102 69 102 53 98 Z"/>'+
-    '<path d="M85 78 v23" class="szew"/>')+
-  sh('klatka_dol',
-    '<path d="M53 96 C69 100 101 100 117 96 L117 109 C101 112 69 112 53 109 Z"/>')+
-  sh('brzuch',
-    '<path d="M74 105 H96 C97 120 96 134 94 147 H76 C74 134 73 120 74 105 Z"/>'+
-    '<path d="M85 106 v40 M75.4 116 h19.2 M75.8 126 h18.4 M76.4 136 h17.2" class="szew"/>')+
-  sh(['skosne','glebokie'],
-    P('<path d="M52 101 H75 V150 H52 Z"/>')),
-
-  konczyny: ''+
-  /* Naramienny wchodzi też na maskę kończyn, bo przyczepia się do kości
-     ramiennej — bez tego między czapką barku a bicepsem zostawał klin. */
-  sh('bark_bok', P('<ellipse cx="55" cy="78" rx="16" ry="22"/>'))+
-  sh(['biceps_dluga','biceps_krotka','ramienny'],
-    P('<ellipse cx="54" cy="103" rx="13" ry="23" transform="rotate(-7 54 103)"/>'))+
-  sh('przedramie',
-    P('<ellipse cx="50" cy="138" rx="11" ry="22"/>'))+
-  sh(['czworoglowe','udo_proste'],
-    P('<ellipse cx="74" cy="166" rx="18" ry="40"/>'))+
-  sh('lydki_stoj',
-    P('<ellipse cx="73" cy="224" rx="14" ry="24"/>'))+
-  /* kolano zostaje neutralne — to nie mięsień, nie ma czego kolorować */
-  hd(P('<ellipse cx="74.4" cy="205" rx="7" ry="5"/>'))};
+/* Które nasze regiony pokrywa dany wielokąt modelu. `null` znaczy
+   „nie mierzymy tego" — kształt zostaje szary i bez podpowiedzi. */
+const SYL_MAPA = {
+  CHEST:          ['klatka_gora','klatka_srodek','klatka_dol'],
+  ABS:            ['brzuch'],
+  OBLIQUES:       ['skosne','glebokie'],
+  FRONT_DELTOIDS: ['bark_przod','bark_bok'],
+  BACK_DELTOIDS:  ['bark_tyl','bark_bok'],
+  BICEPS:         ['biceps_dluga','biceps_krotka','ramienny'],
+  TRICEPS:        ['triceps_dluga','triceps_bocz','triceps_przysr'],
+  FOREARM:        ['przedramie'],
+  TRAPEZIUS:      ['plecy_gora'],
+  UPPER_BACK:     ['plecy_pion','plecy_poziom'],
+  LOWER_BACK:     ['prostowniki'],
+  GLUTEAL:        ['posladki'],
+  ABDUCTORS:      ['posladki_sr'],
+  QUADRICEPS:     ['czworoglowe','udo_proste'],
+  HAMSTRING:      ['dwuglowe','dwuglowe_kol'],
+  CALVES:         ['lydki_stoj'],
+  LEFT_SOLEUS:    ['lydki_sied'],
+  RIGHT_SOLEUS:   ['lydki_sied'],
+  HEAD:           null,
+  NECK:           null,
+  KNEES:          null,
+  ABDUCTOR:       null,
 };
 
-/* ---------- TYŁ ---------- */
-const TYL = (sh, hd) => {
-  const P = b => par(255, b);
-  return {tors: ''+
-  sh('plecy_gora',
-    '<path d="M245 37 C241 48 232 57 218 64 C224 74 231 81 238 84'+
-      ' C244 80 249 78 255 78 C261 78 266 80 272 84'+
-      ' C279 81 286 74 292 64 C278 57 269 48 265 37'+
-      ' C260 44 250 44 245 37 Z"/>')+
-  sh('bark_tyl', P('<ellipse cx="225" cy="78" rx="16" ry="22"/>'))+
-  /* najszerszy grzbietu: trójkąt od pachy do talii — on robi literę V */
-  sh('plecy_pion',
-    P('<path d="M216 71 L255 71 L255 116 C237 114 226 106 219 93'+
-      ' C214 85 213 78 216 71 Z"/>'))+
-  /* czworoboczny środkowy i równoległoboczne: pas wzdłuż kręgosłupa */
-  sh('plecy_poziom',
-    '<path d="M249 68 H261 V115 H249 Z"/>')+
-  sh('prostowniki',
-    '<path d="M243 112 H267 C268 122 267 130 265 136 H245 C243 130 242 122 243 112 Z"/>')+
-  sh(['posladki','posladki_sr'],
-    P('<ellipse cx="245" cy="138" rx="16" ry="14"/>')),
+/* Jedna figura: wielokąty w kolejności z modelu, każdy opakowany w `sh`
+   (kolor i podpowiedź) albo w `hd` (szary, niemierzony). */
+const SYL_FIGURA = (dane, sh, hd) => Object.entries(dane).map(([nazwa, punkty]) => {
+  const wielokaty = punkty.map(p => '<polygon points="' + p + '"/>').join('');
+  const reg = SYL_MAPA[nazwa];
+  if(!reg) return hd(wielokaty);
+  return sh(reg.length === 1 ? reg[0] : reg, wielokaty);
+}).join('');
 
-  konczyny: ''+
-  sh('bark_tyl', P('<ellipse cx="225" cy="78" rx="16" ry="22"/>'))+
-  sh(['triceps_dluga','triceps_bocz','triceps_przysr'],
-    P('<ellipse cx="224" cy="103" rx="13" ry="23" transform="rotate(-7 224 103)"/>'))+
-  sh('przedramie',
-    P('<ellipse cx="220" cy="138" rx="11" ry="22"/>'))+
-  sh(['posladki','posladki_sr'],
-    P('<ellipse cx="245" cy="133" rx="16" ry="14"/>'))+
-  sh(['dwuglowe','dwuglowe_kol'],
-    P('<ellipse cx="244" cy="172" rx="17" ry="35"/>'))+
-  sh('lydki_sied',
-    P('<ellipse cx="243" cy="224" rx="14" ry="24"/>'))+
-  hd(P('<ellipse cx="244.4" cy="205" rx="7" ry="5"/>'))};
-};
-
-const CIALO = cx => KONCZYNY(cx) + TORS(cx);
-
-/* Numer kolejny rysunku. Mapa pojawia się i w Raporcie, i w podsumowaniu
-   sesji — dwa razy ten sam identyfikator maski w jednym dokumencie znaczy,
-   że druga sylwetka przycina się do maski pierwszej. */
-let MAPA_NR = 0;
+/* Numer rysunku był potrzebny, dopóki sylwetka miała maski przycinające:
+   dwa razy ten sam identyfikator maski w jednym dokumencie znaczył, że druga
+   sylwetka przycina się do maski pierwszej. Model wielokątowy nie ma masek,
+   więc mapa może się pojawić na stronie dowolną liczbę razy. */
 
 function bodyMap(cov, tryb){
   /* `tryb` = 'objetosc' (domyślnie) albo 'swiezosc'. Ta sama sylwetka,
@@ -7358,45 +7307,28 @@ function bodyMap(cov, tryb){
   const sh=(k,body)=>'<g '+F(k)+'>'+T(k)+body+'</g>';
   const hd=body=>'<g class="hd">'+body+'</g>';
 
-  const nr = ++MAPA_NR;
-  const P = PRZOD(sh, hd), Y = TYL(sh, hd);
-
-  return '<svg viewBox="0 0 340 282" class="bmap" xmlns="http://www.w3.org/2000/svg">'+
+  return '<svg viewBox="0 0 220 246" class="bmap" xmlns="http://www.w3.org/2000/svg">'+
   '<style>'+
-  /* Ciało rysujemy POD mięśniami grubą kreską. Po przycięciu zostaje z niej
-     zewnętrzna połowa, czyli rant sylwetki. Kontur rysowany NA WIERZCHU
-     pokazywałby krawędzie ramion przez tułów — tak wyglądała wersja,
-     którą Filip słusznie odrzucił. */
-  '.pod path,.pod ellipse{fill:#22303f;stroke:#070b12;stroke-width:3.4;stroke-linejoin:round}'+
-  '.m path,.m ellipse{stroke:#070b12;stroke-width:.9;stroke-linejoin:round}'+
+  '.m polygon,.hd polygon{stroke:#070b12;stroke-width:.7;stroke-linejoin:round}'+
   /* skala objętości */
-  '.none path,.none ellipse{fill:#1c2836}'+
-  '.low path,.low ellipse{fill:#e5484d}'+
-  '.ok path,.ok ellipse{fill:#3ddc84}'+
-  '.over path,.over ellipse{fill:#7c5cff}'+
+  '.none polygon{fill:#1c2836}'+
+  '.low polygon{fill:#e5484d}'+
+  '.ok polygon{fill:#3ddc84}'+
+  '.over polygon{fill:#7c5cff}'+
   /* skala świeżości */
-  '.swieze path,.swieze ellipse{fill:#e5484d}'+
-  '.schodzi path,.schodzi ellipse{fill:#ff8a3d}'+
-  '.prawie path,.prawie ellipse{fill:#ffc53d}'+
-  '.gotowe path,.gotowe ellipse{fill:#3ddc84}'+
-  '.nigdy path,.nigdy ellipse{fill:#1c2836}'+
-  '.hd ellipse{fill:#1a2634}'+
-  '.szew{fill:none !important;stroke:#070b12;stroke-width:1}'+
+  '.swieze polygon{fill:#e5484d}'+
+  '.schodzi polygon{fill:#ff8a3d}'+
+  '.prawie polygon{fill:#ffc53d}'+
+  '.gotowe polygon{fill:#3ddc84}'+
+  '.nigdy polygon{fill:#1c2836}'+
+  /* niemierzone: głowa, szyja, kolana, przywodziciele */
+  '.hd polygon{fill:#26313f}'+
   '.lb{fill:#5d6b80;font-size:9px;font-weight:700;text-anchor:middle;letter-spacing:.6px}'+
   '</style>'+
-  '<defs>'+
-    '<clipPath id="ft'+nr+'">'+TORS(85)+'</clipPath>'+
-    '<clipPath id="fk'+nr+'">'+KONCZYNY(85)+'</clipPath>'+
-    '<clipPath id="tt'+nr+'">'+TORS(255)+'</clipPath>'+
-    '<clipPath id="tk'+nr+'">'+KONCZYNY(255)+'</clipPath>'+
-  '</defs>'+
-  '<g class="pod">'+CIALO(85)+CIALO(255)+'</g>'+
-  '<g clip-path="url(#ft'+nr+')">'+P.tors+'</g>'+
-  '<g clip-path="url(#fk'+nr+')">'+P.konczyny+'</g>'+
-  '<g clip-path="url(#tt'+nr+')">'+Y.tors+'</g>'+
-  '<g clip-path="url(#tk'+nr+')">'+Y.konczyny+'</g>'+
-  '<text x="85" y="276" class="lb">PRZÓD</text>'+
-  '<text x="255" y="276" class="lb">TYŁ</text>'+
+  '<g transform="translate(5,6)">'+SYL_FIGURA(SYL_PRZOD, sh, hd)+'</g>'+
+  '<g transform="translate(115,6)">'+SYL_FIGURA(SYL_TYL, sh, hd)+'</g>'+
+  '<text x="55" y="240" class="lb">PRZÓD</text>'+
+  '<text x="165" y="240" class="lb">TYŁ</text>'+
   '</svg>';
 }
 
