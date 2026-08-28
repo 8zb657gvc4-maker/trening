@@ -1600,7 +1600,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '55';
+const WERSJA = '56';
 const WERSJA_DATA = '2026-08-28';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -6203,23 +6203,62 @@ function aiWyluskajJson(tekst){
 
    Koszt: dwa zapytania na zdjęcie zamiast jednego. Przy limicie 200 dziennie
    i kilku posiłkach to bez znaczenia. */
+/* PROMPT NAPISANY JAK POLECENIE, NIE JAK SPECYFIKACJA.
+
+   Pierwsza wersja miała formę listy wymagań („Format: krótko. Punkty
+   odniesienia: talerz 26 cm. Bez wstępu."). Gemma potraktowała to jak tekst
+   do streszczenia i odpisała moją własną specyfikacją, po angielsku, zanim
+   doszła do jedzenia — a limit tokenów skończył się, zanim padły gramy.
+   Model dostaje więc jedno zdanie polecenia i wzór odpowiedzi. Wzór działa
+   lepiej niż każdy opis formatu, bo nie ma czego streszczać.
+
+   Limit podniesiony z 250 na 500: opis talerza z czterema składnikami
+   i gramami to około 60 tokenów, ale modele rozumujące zużywają część
+   limitu na myślenie na głos i przy 250 urywały się w połowie listy. */
 async function aiOpiszZdjecie(zdjecieBase64, opis){
-  const polecenie = opis
-    ? 'Na zdjęciu jest: ' + opis + '. CO to jest, wiesz ode mnie i to jest pewne. '+
-      'Twoje jedyne zadanie to napisać, ILE tego jest. Oszacuj wagę każdego '+
-      'składnika w gramach, korzystając z punktów odniesienia: talerz ma około '+
-      '26 cm, widelec 20 cm, szklanka 250 ml. Odpowiedz jednym zdaniem po polsku, '+
-      'samą listą składników z gramami.'
-    : 'Wypisz po polsku, co jest na tym talerzu i ile tego jest. Przy każdym '+
-      'składniku podaj szacowaną wagę w gramach — punkty odniesienia: talerz '+
-      'około 26 cm, widelec 20 cm, szklanka 250 ml. Bez wstępu, sama lista.';
-  const odp = await aiZapytaj(
-    [{role: 'system', content: 'Opisujesz zdjęcia jedzenia po polsku. Krótko i konkretnie, '+
-                               'samymi składnikami i gramami. Nie zmyślaj tego, czego nie widać.'},
-     {role: 'user', content: [{type: 'text', text: polecenie},
+  const polecenie =
+    (opis ? 'To zdjęcie mojego posiłku. Wiem, co to jest: ' + opis + '. '+
+            'Nie zgaduj składników — oszacuj tylko, ILE tego jest.\n'
+          : 'To zdjęcie mojego posiłku. Napisz, co na nim jest i ile tego jest.\n') +
+    'Odpowiedz PO POLSKU, jedną linią, w tej postaci:\n' +
+    'ryż 200 g, pierś z kurczaka 150 g, surówka 80 g\n' +
+    'Nic poza tą linią. Wielkość oceń po talerzu (ok. 26 cm), sztućcach '+
+    'i pudełku. Nie powtarzaj tego polecenia.';
+  return await aiZapytaj(
+    [{role: 'user', content: [{type: 'text', text: polecenie},
                               {type: 'image_url', image_url: {url: zdjecieBase64}}]}],
-    {tryb: 'obraz', max_tokens: 250, timeout: 40000});
-  return odp;
+    {tryb: 'obraz', max_tokens: 900, timeout: 45000});
+}
+
+/* MODEL ROZUMUJĄCY MYŚLI NA GŁOS — ODPOWIEDŹ JEST W ŚRODKU, NIE NA KOŃCU.
+
+   Gemma odsyła dwa tysiące znaków rozumowania po angielsku: rozpoznaje
+   pudełko, zastanawia się nad porcjami, tłumaczy nazwy na polski, wypisuje
+   gotową linię, po czym jeszcze raz sprawdza sama siebie i poprawia
+   szacunki. Przy limicie tokenów urywa się w połowie zdania.
+
+   „Weź ostatnią linię" dawało więc urwany strzęp („ryż 180 g"), a „weź
+   całość" wysyłałoby do liczenia makro dwie strony wahań, w których ta sama
+   potrawa pada z trzema różnymi wagami. Bierzemy OSTATNIĄ KOMPLETNĄ linię
+   z co najmniej dwoma składnikami w gramach — to jest ta poprawiona,
+   a nie pierwsza. Gdy takiej nie ma, oddajemy całość i niech model tekstowy
+   radzi sobie sam; lepsze to niż odmowa. */
+function wyluskajPorcje(tekst){
+  const linie = String(tekst || '').split('\n')
+    .map(l => l.replace(/^[\s*•\-–>#]+/, '').trim())
+    .filter(Boolean);
+  const zGramami = l => (l.match(/[0-9]+\s*(g|gram|ml)\b/gi) || []).length;
+  const dobre = linie.filter(l => zGramami(l) >= 2 && l.length < 220
+                                  && !/^(format|task|constraint|input|language)/i.test(l));
+  if(!dobre.length) return String(tekst || '').trim().slice(0, 1200);
+
+  /* Model lubi opatrzyć wynik etykietą i wziąć go w odwrotne apostrofy:
+     „Final Selection:* `ryż 200 g, ...`". Treść w apostrofach jest tym,
+     co model uznał za odpowiedź — bierzemy ją, a nie całą linię z ozdobami. */
+  let l = dobre[dobre.length - 1];
+  const wApostrofach = l.match(/`([^`]+)`/);
+  if(wApostrofach && /[0-9]/.test(wApostrofach[1])) l = wApostrofach[1];
+  return l.replace(/^[^:]{0,30}:\*?\s*/, '').replace(/[`*]/g, '').trim();
 }
 
 async function aiJedzenie(opis, zdjecieBase64){
@@ -6227,13 +6266,14 @@ async function aiJedzenie(opis, zdjecieBase64){
 
   if(zdjecieBase64){
     const odp = await aiOpiszZdjecie(zdjecieBase64, opis);
-    zeZdjecia = (odp.tresc || '').trim();
+    const surowe = (odp.tresc || '').trim();
+    zeZdjecia = wyluskajPorcje(surowe);
     aiZapisz({co: 'jedzenie-zdjecie', pytanie: (opis || '[samo zdjęcie]').slice(0, 120),
               odpowiedz: zeZdjecia.slice(0, 200), model: odp.model});
 
     /* Mocny model obrazowy potrafi oddać gotowy JSON od razu — wtedy nie ma
        po co pytać drugi raz. Sprawdzamy odpowiedź, nie nazwę modelu. */
-    const odRazu = aiWyluskajJson(zeZdjecia);
+    const odRazu = aiWyluskajJson(surowe);
     if(odRazu && typeof odRazu.bialko === 'number') return domknijMakro(odRazu);
 
     if(!zeZdjecia)
