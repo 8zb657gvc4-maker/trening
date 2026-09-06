@@ -713,7 +713,11 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 
 <!-- ================= DZIENNIK ================= -->
 <div class="view" id="v-daily">
-  <div class="tip">Otwórz Garmin Connect, spójrz na podsumowanie dnia i przepisz pięć liczb. Wszystko jest opcjonalne.</div>
+  <div class="tip">Sen, tętno, HRV i Body Battery wchodzą tu same z zegarka.
+    Jeśli dopiero wstałeś, dotknij „Pobierz z zegarka" — dane o śnie pojawiają się
+    w Garmin Connect dopiero po tym, jak zegarek zsynchronizuje się po przebudzeniu.
+    <button class="btn ghost sm" style="margin-top:9px;width:100%"
+            onclick="garminTeraz()">Pobierz z zegarka</button></div>
   <div class="card">
     <div class="fld" style="margin-bottom:12px">
       <label>Data</label><input type="date" id="dDate" onchange="renderDaily()">
@@ -1612,8 +1616,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '57';
-const WERSJA_DATA = '2026-08-28';
+const WERSJA = '59';
+const WERSJA_DATA = '2026-09-06';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 let DB = null, SES = null, SUB = 'hub';
@@ -1765,6 +1769,61 @@ async function srvPush(cicho){
     SRV.blad = 'brak połączenia';
     srvSave(); if(!cicho) toast('Brak połączenia z serwerem'); return false;
   }
+}
+
+/* POBRANIE Z ZEGARKA NA ŻĄDANIE.
+
+   Worker pobiera z Garmina o 6:00, 8:00 i 10:00. Filip wstał o 13:00 i zobaczył
+   Body Battery sprzed trzech godzin — czyli stan z czasu, gdy jeszcze spał.
+   Nie było w tym błędu: dane po prostu były starsze niż on. Brakowało drogi
+   „pobierz TERAZ", bo cały układ zakładał, że poranek jest o poranku.
+
+   Zegarek wysyła sen i HRV do Garmin Connect dopiero po synchronizacji
+   po przebudzeniu, więc pobranie sprzed tej synchronizacji nie ma szans ich
+   zobaczyć — i nigdy nie zobaczy, choćby powtarzać co godzinę. Jedyne, co
+   naprawdę pomaga, to pobranie PO tym, jak wstaniesz. */
+async function garminTeraz(cicho){
+  if(!srvGotowy()){ if(!cicho) toast('Najpierw ustaw serwer w zakładce Dane'); return false; }
+  if(!cicho) toast('Pytam zegarek…');
+  try{
+    const r = await fetch(srvUrl('garmin/teraz'),
+                          {headers:srvNaglowki({'Accept':'application/json'})});
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok || j.blad) throw new Error(j.blad || ('błąd '+r.status));
+    /* Worker zapisał świeże dane u siebie; do telefonu wchodzą tą samą drogą
+       co zawsze, więc nie ma tu drugiego miejsca, które dopisuje do Dziennika. */
+    await srvPull(true);
+    odswiezWidok();
+    /* Komunikat mówi o TYM, po co się tu przyszło — czy dzisiejszy wpis jest
+       już pełny — a nie o tym, czy zapytanie się powiodło. Powiodło się
+       zawsze; pytanie brzmi, czy zegarek zdążył wysłać sen. */
+    if(!cicho) toast(brakujeDanychZZegarka()
+      ? 'Zegarek nie wysłał jeszcze snu — otwórz Garmin Connect i zsynchronizuj'
+      : 'Pobrane z zegarka');
+    return true;
+  }catch(e){
+    if(!cicho) toast('Garmin: ' + e.message);
+    return false;
+  }
+}
+
+/* Czy dzisiejszy wpis ma jeszcze puste pola z zegarka. */
+function brakujeDanychZZegarka(){
+  const d = (DB.daily || []).find(x => x.date === today());
+  return !d || d.sleep == null || d.hrv == null || d.rhr == null;
+}
+
+/* Przy otwarciu aplikacji próbujemy RAZ, i tylko gdy naprawdę czegoś brakuje.
+   Odstęp trzymamy w localStorage, żeby wielokrotne otwieranie aplikacji
+   w ciągu godziny nie zamieniło się w odpytywanie Garmina co minutę. */
+const GARMIN_PROBA = 'trening-garmin-proba';
+async function garminPoOtwarciu(){
+  if(!srvGotowy() || !brakujeDanychZZegarka()) return;
+  let ost = 0;
+  try{ ost = parseInt(localStorage.getItem(GARMIN_PROBA) || '0', 10) || 0; }catch(e){}
+  if(Date.now() - ost < 45*60*1000) return;      /* nie częściej niż raz na 45 minut */
+  try{ localStorage.setItem(GARMIN_PROBA, String(Date.now())); }catch(e){}
+  await garminTeraz(true);
 }
 
 /* pobranie tego, co przysłał trener: raport, plan, odpowiedzi na pytania */
@@ -2351,9 +2410,38 @@ function historia(name){
    ani razu nie przebił najlepszego z nich. Trzy sesje to minimum, przy
    dwóch każdy gorszy dzień wyglądałby jak zastój.
    ============================================================ */
+/* DWA POWODY, DLA KTÓRYCH SPADEK NIE JEST ZASTOJEM.
+
+   6 września aplikacja napisała: „Wyciskanie leżąc: trzy sesje bez poprawy,
+   najlepszy wynik o 14% wyżej niż ostatni. Zejdź o 10% albo zamień wariant."
+   Obie rady były złe, bo spadku nie zrobił Filip:
+
+   1. Między 26 sierpnia a 6 września była JEDENASTODNIOWA przerwa, po której
+      aplikacja SAMA zeszła z 60 kg na 50 kg. Ostrzeganie przed spadkiem,
+      który się samemu zaleciło, i doradzanie kolejnych 10% w dół, to pętla.
+   2. Najcięższa seria poszła na RPE 6 — z zapasem trzech–czterech powtórzeń.
+      `e1rm` nie zna RPE, więc widzi mniejszą liczbę i nazywa to regresem,
+      choć to była po prostu lekka sesja.
+
+   Zastój ma znaczyć „stoisz, mimo że się starasz". Sesja po długiej przerwie
+   i sesja zrobiona z zapasem nie mówią nic o tym, czy stoisz. */
 function zastoj(name){
   const h=historia(name).slice(0,3);
   if(h.length<3) return null;
+
+  /* Przerwa dłuższa niż dziesięć dni to ten sam próg, przy którym aplikacja
+     obniża ciężary. Po niej pierwsza sesja jest punktem wyjścia, nie wynikiem. */
+  const dni = (a,b) => Math.round((new Date(a+'T00:00:00') - new Date(b+'T00:00:00'))/864e5);
+  if(dni(h[0].date, h[1].date) > 10) return null;
+
+  /* Trzy sesje rozciągnięte na dwa miesiące to nie jest wzorzec treningowy,
+     tylko rzadki dziennik — nie ma z czego wnioskować o zastoju. */
+  if(dni(h[0].date, h[2].date) > 42) return null;
+
+  /* Najcięższa seria z zapasem (RPE ≤ 7) nie jest próbą maksimum. */
+  const rpeOstatniej = (bestSet(h[0].sets, name) || {}).rpe;
+  if(rpeOstatniej != null && rpeOstatniej <= 7) return null;
+
   const v=h.map(x=>e1rm(bestSet(x.sets,name),name));
   const najlepszy=Math.max(...v);
   /* najnowszy wynik nie jest najlepszy z trójki i nie ma poprawy w czasie */
@@ -4003,7 +4091,20 @@ function suggestNext(naJutro){
   /* `naJutro` pozwala zaplanować sesję z wyprzedzeniem, zaraz po zakończeniu
      dzisiejszej — inaczej funkcja zawsze odpowiadałaby „dziś już trenowałeś". */
   const ref = przesun(today(), naJutro ? 1 : 0);
-  const w = weekNo(ref), p = phaseOf(tydzienPlanu(ref));
+  /* JEDEN LICZNIK TYGODNI, NIE DWA.
+
+     Było tu `weekNo(ref)` — tydzień KALENDARZA — a faza liczyła się
+     z `tydzienPlanu(ref)`, czyli z tygodni, w których naprawdę był trening.
+     Ta sama liczba szła potem trzema drogami: do `buildDay` (a stamtąd do
+     `serieSlotu`, gdzie decyduje o dodatkowej serii w ostatnim tygodniu fazy),
+     do zapisanego planu jako `nastepny.tydzien`, i do tego, co widzi człowiek.
+
+     `startSession` robił to poprawnie — buduje dzień z `tydzienPlanu()`. Więc
+     plan zapisany na jutro i sesja wystartowana z tego samego dnia mogły się
+     różnić liczbą serii, bo jeden liczył tydzień 6, a drugi 4. Dziś akurat
+     obie liczby wypadają na końcu swojej fazy i wynik wychodzi ten sam —
+     zgadzają się przez przypadek, nie dlatego, że są tą samą liczbą. */
+  const w = tydzienPlanu(ref), p = phaseOf(w);
   const doneWeek = DB.workouts.filter(x=>inWeek(x.date,w));
   const doneDays = doneWeek.map(x=>x.day);
   const todayDone = DB.workouts.filter(x=>x.date===ref);
@@ -8455,6 +8556,9 @@ if(typeof window !== 'undefined' && window.addEventListener){
 
 wczytajObwod();
 if(srvGotowy()) setTimeout(()=>srvPull(true), 800);
+/* Po ściągnięciu tego, co jest, sprawdzamy jeszcze, czy zegarek nie ma
+   czegoś świeższego — ale tylko gdy w dzisiejszym wpisie są dziury. */
+if(srvGotowy()) setTimeout(garminPoOtwarciu, 2500);
 
 /* Sprawdzenie wersji po numerze, a nie po service workerze.
    Poprzednia wersja polegała wyłącznie na zdarzeniu `controllerchange`,
