@@ -1617,7 +1617,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '60';
+const WERSJA = '61';
 const WERSJA_DATA = '2026-09-07';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2105,6 +2105,7 @@ function renderKopie(){
 }
 
 function save(){
+  ZAPIS_NR++;          /* unieważnia pamięć podręczną braków w regionach */
   try{ localStorage.setItem(KEY, JSON.stringify(DB)); kopiaZrob(); ZAPIS_PADL = false; }
   catch(e){
     /* Najgorszy możliwy moment: właśnie skończyłeś trening, a on nie ma
@@ -3160,6 +3161,40 @@ function gotowoscDnia(dzien, g){
   return Math.max(0, pkt - karaSportu(dzien).pkt);
 }
 
+/* ILE CZEGO BRAKUJE — jedna miara dla obu dróg skracania.
+
+   `dostosuj()` skraca dzień budowany w locie, `zetnij()` skraca plan zapisany
+   na dziś. Obie muszą wybierać tak samo, inaczej karta planu pokaże co innego
+   niż wystartowana sesja. */
+/* Liczone RAZ na zapis, nie przy każdym budowaniu dnia.
+
+   `regionSets(14)` przechodzi po całej historii treningów, a `dostosuj()`
+   woła się przy każdym renderze karty dnia i sesji. Bez pamięci podręcznej
+   test wydajnościowy na dwóch latach historii zaczął migotać: raz 2,4 s,
+   raz 3,0 s przy progu 3 s. Na telefonie byłoby wolniej niż w teście.
+
+   Klucz to numer zapisu — każde `save()` go podbija, więc dopisanie serii
+   unieważnia wynik natychmiast, a samo przewijanie ekranów nie liczy nic
+   drugi raz. */
+let ZAPIS_NR = 0;
+let BRAKI_PAMIEC = null;
+function brakiRegionow(){
+  const klucz = today() + '|' + ZAPIS_NR;
+  if(BRAKI_PAMIEC && BRAKI_PAMIEC.klucz === klucz) return BRAKI_PAMIEC.v;
+  const cov = regionSets(14);
+  const brak = {};
+  Object.keys(REG).forEach(r => {
+    const min = REG[r].min || 0;
+    if(min > 0 && (cov[r] || 0) < min) brak[r] = (min - (cov[r] || 0)) / min;
+  });
+  BRAKI_PAMIEC = {klucz, v: brak};
+  return brak;
+}
+function potrzebaCwiczenia(nazwa, brak){
+  return Object.entries((LIB[nazwa] || {}).mus || {})
+    .reduce((a, [r, w]) => a + w * (brak[r] || 0), 0);
+}
+
 function zastosujGotowosc(n){
   if(!n || !n.cwiczenia || n.data !== today()) return n;
   const dz = DB.daily.find(x => x.date === today()) || {};
@@ -3173,7 +3208,7 @@ function zastosujGotowosc(n){
   if(pkt >= 95) return n;
 
   const skala = pkt >= 80 ? 0.95 : pkt >= 60 ? 0.9 : 0.8;
-  const ile   = pkt >= 80 ? n.cwiczenia.length : pkt >= 60 ? 4 : 3;
+  const ile   = pkt >= 80 ? n.cwiczenia.length : pkt >= 60 ? 5 : pkt >= 45 ? 4 : 3;
   const sufit = pkt >= 80 ? 7 : pkt >= 60 ? 6 : 5;
 
   const powody = g.powody.map(x => x[1]);
@@ -3200,7 +3235,17 @@ function zastosujGotowosc(n){
    nigdy nie wypadają i nigdy nie tracą swojego znacznika. */
 function zetnij(n, pkt, skala, ile, sufit, opis){
   const limit = Math.max(3, ile);
-  const cw = n.cwiczenia.filter((c, i) => i < limit || c.tag === 'coach').map(c => {
+  /* Wybór, nie ucięcie od końca — ta sama zasada co w `dostosuj()`: bój
+     i pozycje ode mnie zostają zawsze, a wolne miejsca idą do ćwiczeń,
+     które najmocniej dokładają do regionów pod normą. */
+  const brak = brakiRegionow();
+  const zostaja = new Set(n.cwiczenia
+    .map((c, i) => ({c, i, w: potrzebaCwiczenia(c.name, brak)}))
+    .sort((a, b) => (b.c.tag === 'coach') - (a.c.tag === 'coach')
+                 || (b.i === 0) - (a.i === 0)          /* bój dnia zostaje */
+                 || (b.w - a.w) || (a.i - b.i))
+    .slice(0, limit).map(o => o.c));
+  const cw = n.cwiczenia.filter(c => zostaja.has(c) || c.tag === 'coach').map(c => {
     const w = c.ciezar ? Math.max(2.5, Math.round(c.ciezar * skala / 2.5) * 2.5) : c.ciezar;
     if(w === c.ciezar) return c;
     return Object.assign({}, c, {ciezar: w, ciezarPlan: c.ciezar,
@@ -3211,7 +3256,8 @@ function zetnij(n, pkt, skala, ile, sufit, opis){
   });
   return {cwiczenia: cw, uwagi: [opis +
     (cw.length < n.cwiczenia.length ? ' Sesja skrócona do ' + cw.length + ' ćwiczeń.' : '') +
-    ' Sufit RPE ' + sufit + '. Boje zostają, cięte są tylko dodatki.'].concat(n.uwagi || [])};
+    ' Sufit RPE ' + sufit + '. Zostaje bój i to, czego w ostatnich 14 dniach '+
+    'było najmniej.'].concat(n.uwagi || [])};
 }
 
 /* Guzik pod propozycją — świadoma zgoda zamiast cichej podmiany. */
@@ -3939,11 +3985,37 @@ function dostosuj(lista, day){
   if(pkt >= 95) return lista;                    // wszystko w normie, nie ruszamy
 
   const skala = pkt >= 80 ? 0.95 : pkt >= 60 ? 0.9 : 0.8;
-  const ile   = pkt >= 80 ? lista.length : pkt >= 60 ? 4 : 3;
+  const ile   = pkt >= 80 ? lista.length : pkt >= 60 ? 5 : pkt >= 45 ? 4 : 3;
   const sufit = pkt >= 80 ? 7 : pkt >= 60 ? 6 : 5;
 
-  /* Boje zostają zawsze — wycinamy od końca, czyli akcesoria. */
-  const przyciete = lista.slice(0, Math.max(3, ile));
+  /* KTÓRE ĆWICZENIA ZOSTAJĄ — WYBÓR, NIE UCIĘCIE OD KOŃCA.
+
+     Poprzednia wersja brała po prostu pierwsze N z listy. Kolejność w planie
+     jest sensowna (bój, potem akcesoria), więc wynik nie był zły — ale nie był
+     też decyzją. Filip powiedział to wprost: „niech proponuje najlepsze
+     ćwiczenia, co mogę zrobić, a nie żeby se dodawał".
+
+     Więc: bój zostaje zawsze, a pozostałe miejsca dostają te ćwiczenia, które
+     najmocniej dokładają do regionów SIEDZĄCYCH POD NORMĄ w ostatnich 14 dniach.
+     Aplikacja i tak liczy to na mapie mięśni — tu tylko po to sięgamy. Krótka
+     sesja robi wtedy najbardziej brakującą robotę, a nie po prostu pierwszą z brzegu.
+
+     Podniesiony został też sam próg: przy gotowości 45–59 zostają CZTERY
+     ćwiczenia, nie trzy. Trzy to wersja na dzień po nieprzespanej nocy,
+     a nie na każdy gorszy dzień. */
+  const brak = brakiRegionow();
+  const wartosc = (nazwa) => potrzebaCwiczenia(nazwa, brak);
+
+  const boje = lista.filter(x => x.slot.fixed);
+  const reszta = lista.filter(x => !x.slot.fixed)
+    .map((x, i) => ({x, i, w: wartosc(x.name)}))
+    /* przy równej wartości wygrywa kolejność z planu — ona też coś znaczy */
+    .sort((a, b) => (b.w - a.w) || (a.i - b.i))
+    .map(o => o.x);
+
+  const wybrane = new Set(boje.concat(reszta).slice(0, Math.max(3, ile)));
+  /* Sesja idzie w kolejności z planu, nie w kolejności wybierania. */
+  const przyciete = lista.filter(x => wybrane.has(x));
 
   /* CO ZOSTAŁO UCIĘTE — I DLACZEGO. Powód siedział dotąd wyłącznie w polu
      `why` pierwszego ćwiczenia, czyli w miejscu, w które zagląda się przy
@@ -5142,8 +5214,8 @@ function renderSkrot(){
     ' ćwiczenia zamiast '+s.z+'</b>'+
     '<div class="hm" style="margin-top:4px">Gotowość '+s.pkt+'/100: '+esc(s.powod)+
     '. Sufit RPE '+s.sufit+'.</div>'+
-    '<div class="hm" style="margin-top:5px">Wypadły akcesoria, boje zostają: '+
-    esc(s.wyciete.join(', '))+'.</div>'+
+    '<div class="hm" style="margin-top:5px">Zostaje bój i to, czego w ostatnich '+
+    '14 dniach było najmniej. Wypadło: '+esc(s.wyciete.join(', '))+'.</div>'+
     '<div class="note" style="margin-top:6px">Skrócona sesja liczy się do rotacji '+
     'tak samo jak pełna. Jeśli czujesz się lepiej, niż mówią liczby — dorzuć '+
     'ćwiczenie przyciskiem „+ Inne ćwiczenie" na dole.</div></div>';
