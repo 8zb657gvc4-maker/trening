@@ -697,6 +697,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <button class="btn ghost sm" onclick="openTimer()" style="margin-bottom:11px">
       Timer przerwy — ustaw czas</button>
     <div id="rozgrzewkaBox"></div>
+    <div id="skrotBox"></div>
     <div id="korektaBox"></div>
     <div id="exList"></div>
     <button class="btn ghost sm" onclick="addCustom()" style="margin-bottom:11px">+ Inne ćwiczenie</button>
@@ -1616,8 +1617,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '59';
-const WERSJA_DATA = '2026-09-06';
+const WERSJA = '60';
+const WERSJA_DATA = '2026-09-07';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 let DB = null, SES = null, SUB = 'hub';
@@ -3944,7 +3945,21 @@ function dostosuj(lista, day){
   /* Boje zostają zawsze — wycinamy od końca, czyli akcesoria. */
   const przyciete = lista.slice(0, Math.max(3, ile));
 
-  return przyciete.map(x => {
+  /* CO ZOSTAŁO UCIĘTE — I DLACZEGO. Powód siedział dotąd wyłącznie w polu
+     `why` pierwszego ćwiczenia, czyli w miejscu, w które zagląda się przy
+     dobieraniu ciężaru, a nie przy otwieraniu sesji. Filip zobaczył trzy
+     ćwiczenia zamiast sześciu, nigdzie nie było napisane, że to decyzja,
+     i uznał — słusznie — że aplikacja jest zepsuta.
+
+     Zapisujemy to więc przy liście, a sesja pokazuje to na górze ekranu. */
+  przyciete.skrot = (przyciete.length < lista.length) ? {
+    z: lista.length, na: przyciete.length, pkt, sufit,
+    wyciete: lista.slice(przyciete.length).map(x => x.name),
+    powod: (dms >= 2 ? 'zakwasy w trenowanej partii'
+                     : (g.powody[0] ? g.powody[0][1] : 'niska gotowość'))
+  } : null;
+
+  return Object.assign(przyciete.map(x => {
     if(!x.sug) return x;
     const L = LIB[x.name] || {};
     const w = (x.sug.w != null && x.sug.w > 0 && !L.time)
@@ -3953,7 +3968,7 @@ function dostosuj(lista, day){
       why: 'Gotowość '+pkt+'/100 — '+(w !== x.sug.w ? 'ciężar w dół o '+
            Math.round((1-skala)*100)+'%. ' : '')+'Sufit RPE '+sufit+'. '+
            (g.powody[0] ? g.powody[0][1]+'.' : '')}};
-  });
+  }), {skrot: przyciete.skrot});
 }
 /* ============================================================
    KTÓRY DZIEŃ
@@ -4893,8 +4908,13 @@ function startSession(day, withSug){
      !confirm('Masz niezakończony trening '+SES.day+' z '+setCount(SES)+' seriami. Porzucić go i zacząć nowy?')) return;
   const w=weekNo(), tp=tydzienPlanu(), p=phaseOf(tp);
   const gotowy = planNaDzis(day);
+  const zbudowane = buildDay(day,p,tp);
   SES={date:today(), day:day, week:w, tygPlanu:tp, t0:Date.now(), note:'',
-    exercises: buildDay(day,p,tp).map(it=>{
+    /* Skrót dnia jest DECYZJĄ, więc jedzie razem z sesją i zostaje w historii —
+       inaczej za tydzień nie da się odczytać, czemu ta sesja miała trzy
+       ćwiczenia zamiast sześciu. */
+    skrot: zbudowane.skrot || null,
+    exercises: zbudowane.map(it=>{
       /* jeśli mam zatwierdzony plan na ten dzień, biorę z niego liczby —
          dzięki temu korekty trenera nie znikają przy starcie sesji */
       const z = gotowy && gotowy.cwiczenia.find(x=>x.slot===it.slot.id);
@@ -5110,8 +5130,28 @@ function renderKorekta(){
   }).catch(() => {});
 }
 
+/* Sesja skrócona przez gotowość musi to POWIEDZIEĆ, i to na górze ekranu.
+   Trzy ćwiczenia zamiast sześciu bez słowa wyjaśnienia wyglądają jak awaria —
+   bo z ekranu nie da się odróżnić decyzji od usterki. */
+function renderSkrot(){
+  const el = document.getElementById('skrotBox');
+  if(!el) return;
+  const s = SES && SES.skrot;
+  if(!s){ el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="tip warn"><b>Skróciłem dziś sesję — '+s.na+
+    ' ćwiczenia zamiast '+s.z+'</b>'+
+    '<div class="hm" style="margin-top:4px">Gotowość '+s.pkt+'/100: '+esc(s.powod)+
+    '. Sufit RPE '+s.sufit+'.</div>'+
+    '<div class="hm" style="margin-top:5px">Wypadły akcesoria, boje zostają: '+
+    esc(s.wyciete.join(', '))+'.</div>'+
+    '<div class="note" style="margin-top:6px">Skrócona sesja liczy się do rotacji '+
+    'tak samo jak pełna. Jeśli czujesz się lepiej, niż mówią liczby — dorzuć '+
+    'ćwiczenie przyciskiem „+ Inne ćwiczenie" na dole.</div></div>';
+}
+
 function renderSession(){
   renderRozgrzewka();
+  bezpiecznie('renderSkrot', renderSkrot);
   bezpiecznie('renderKorekta', renderKorekta);
   /* Ile z zaplanowanych serii już zrobione — jedna liczba i pasek zamiast
      domyślania się z listy, ile jeszcze zostało. */
