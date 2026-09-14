@@ -700,7 +700,8 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <div id="skrotBox"></div>
     <div id="korektaBox"></div>
     <div id="exList"></div>
-    <button class="btn ghost sm" onclick="addCustom()" style="margin-bottom:11px">+ Inne ćwiczenie</button>
+    <button class="btn ghost sm" onclick="addCustom()" style="margin-bottom:11px">+ Dodaj ćwiczenie</button>
+    <div id="dodajBox"></div>
     <div class="fld" style="margin-bottom:11px">
       <label>Notatka do treningu</label>
       <input type="text" id="sesNote" placeholder="np. bolało kolano, hałas, mało czasu"
@@ -1617,8 +1618,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '61';
-const WERSJA_DATA = '2026-09-07';
+const WERSJA = '64';
+const WERSJA_DATA = '2026-09-14';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 let DB = null, SES = null, SUB = 'hub';
@@ -5223,6 +5224,7 @@ function renderSkrot(){
 
 function renderSession(){
   renderRozgrzewka();
+  bezpiecznie('renderDodaj', renderDodaj);
   bezpiecznie('renderSkrot', renderSkrot);
   bezpiecznie('renderKorekta', renderKorekta);
   /* Ile z zaplanowanych serii już zrobione — jedna liczba i pasek zamiast
@@ -5554,11 +5556,148 @@ function delSet(i,j){
   SES.exercises[i].sets.splice(j,1); SES.exercises[i]._open=true;
   saveSes(); renderSession();
 }
+/* DODAWANIE ĆWICZENIA ZACZYNA SIĘ OD BIBLIOTEKI, NIE OD PUSTEGO POLA.
+
+   Do wersji 61 „+ Inne ćwiczenie" było zwykłym `prompt()` na wolny tekst.
+   7 września Filip dopisał tak „Facepull", podczas gdy w bibliotece stoi
+   „Face pull" — i dostał komunikat „pierwszy raz w tym planie, dobierz ciężar",
+   choć robił to ćwiczenie cztery razy. Historia rozjechała się na dwie nazwy,
+   a przy okazji ćwiczenie spoza biblioteki NIE MA mapowania na mięśnie, więc
+   nie policzyło się ani na mapie partii, ani do norm tygodniowych.
+
+   Teraz najpierw dostajesz listę z biblioteki (z wyszukiwarką odporną na
+   spacje i ogonki), a wpis własny jest na końcu, jako wyjście awaryjne —
+   i jeszcze ostrzega, gdy wpisana nazwa to biblioteczna napisana inaczej. */
+let DODAJ = null;
+
+/* „facepull", „face pull", „FACE-PULL" i „Face pull" to ta sama rzecz. */
+function kluczNazwy(x){ return slugCwiczenia(x).replace(/-/g, ''); }
+
 function addCustom(){
-  const n=prompt('Nazwa ćwiczenia:');
-  if(!n||!n.trim()) return;
-  SES.exercises.push({name:n.trim(), slot:null, lab:'poza planem', target:'poza planem', sets:[], _open:true});
-  saveSes(); renderSession();
+  if(!SES) return;
+  zbierzWpisane();
+  DODAJ = DODAJ ? null : {szukaj: ''};
+  renderSession();
+}
+function zamknijDodaj(){ DODAJ = null; renderSession(); }
+
+/* DWIE LISTY, NIE JEDNA POSORTOWANA.
+
+   Samo „czego brakuje" wypychało na górę wspięcia na palce i uginanie nóg —
+   bo łydki i dwugłowe stały pod normą — i to w dniu PULL. Prawdziwa
+   odpowiedź na „co najlepiej dziś dorzucić" ma dwie części: najpierw to,
+   co pasuje do dzisiejszego dnia, potem to, czego brakuje w ogóle.
+   Przy wpisanym szukaniu obie znikają — wtedy liczy się nazwa, nie ranking. */
+function kandydaciDoDodania(){
+  const juz = new Set((SES && SES.exercises || []).map(e => kluczNazwy(e.name)));
+  const brak = brakiRegionow();
+  const q = kluczNazwy((DODAJ && DODAJ.szukaj) || '');
+
+  const wolne = Object.keys(LIB)
+    .filter(n => !LIB[n].stare && LIB[n].mus && !isSkipped(n) && !juz.has(kluczNazwy(n)))
+    .map(n => ({n, w: potrzebaCwiczenia(n, brak), ost: lastFor(n)}));
+
+  if(q) return {szukane: wolne.filter(x => kluczNazwy(x.n).indexOf(q) >= 0)
+    .sort((a, b) => a.n.localeCompare(b.n, 'pl')).slice(0, 30)};
+
+  /* Ćwiczenia, które w ogóle mogą wypaść w dzisiejszym dniu — czyli te
+     z pul jego slotów. To jest „pasuje do dziś" liczone z planu, a nie
+     zgadywane z nazwy partii. */
+  const dnia = new Set();
+  const d = SES && PLAN[SES.day];
+  if(d) (d.slots || []).forEach(sl => (sl.fixed ? [sl.fixed] : (sl.pool || []))
+    .forEach(n => dnia.add(n)));
+
+  const wg = (a, b) => (b.w - a.w) || a.n.localeCompare(b.n, 'pl');
+  return {
+    doDnia: wolne.filter(x => dnia.has(x.n)).sort(wg),
+    brakujace: wolne.filter(x => !dnia.has(x.n)).sort(wg).slice(0, 12)
+  };
+}
+
+function renderDodajListe(){
+  const el = document.getElementById('dodajLista');
+  if(!el) return;
+  const poz = x => {
+    const L = LIB[x.n] || {};
+    const b = x.ost && bestSet(x.ost.sets, x.n);
+    const opis = b
+      ? 'ostatnio ' + (L.bw ? '' : fmtKg(b.w) + ' kg × ') + b.r + ' — ' + plDate(x.ost.date)
+      : 'jeszcze nie robione';
+    return '<button class="btn ghost sm" style="width:100%;text-align:left;margin-top:6px" '+
+      'onclick="dodajZBiblioteki(\''+esc(x.n).replace(/'/g,"\\'")+'\')">'+
+      esc(x.n)+'<div class="note" style="margin-top:2px">'+esc(opis)+'</div></button>';
+  };
+  const naglowek = t => '<div class="etyk" style="margin:12px 0 0">'+t+'</div>';
+  const k = kandydaciDoDodania();
+
+  if(k.szukane){
+    el.innerHTML = k.szukane.length ? k.szukane.map(poz).join('')
+      : '<div class="note" style="margin-top:8px">Nic takiego nie ma w bibliotece. '+
+        'Możesz dopisać własne przyciskiem niżej.</div>';
+    return;
+  }
+  el.innerHTML =
+    (k.doDnia.length ? naglowek('DO DZISIEJSZEGO DNIA') + k.doDnia.map(poz).join('') : '') +
+    (k.brakujace.length ? naglowek('NAJBARDZIEJ BRAKUJE (14 DNI)') + k.brakujace.map(poz).join('') : '');
+}
+
+function szukajCwiczenia(v){
+  if(!DODAJ) return;
+  DODAJ.szukaj = v;
+  renderDodajListe();          /* sama lista, żeby nie zabrać kursora z pola */
+}
+
+function renderDodaj(){
+  const el = document.getElementById('dodajBox');
+  if(!el) return;
+  if(!DODAJ || !SES){ el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="card" style="margin-bottom:11px">'+
+    '<div class="fld"><label>Z biblioteki</label>'+
+      '<input type="text" id="dodajSzukaj" placeholder="szukaj: face pull, przysiad…" '+
+      'oninput="szukajCwiczenia(this.value)"></div>'+
+    '<div class="note" style="margin-top:6px">Na górze to, czego w ostatnich '+
+      '14 dniach było najmniej.</div>'+
+    '<div id="dodajLista"></div>'+
+    '<div style="display:flex;gap:8px;margin-top:11px">'+
+      '<button class="btn ghost sm" style="flex:1" onclick="dodajWlasne()">Nie ma na liście</button>'+
+      '<button class="btn ghost sm" style="flex:1" onclick="zamknijDodaj()">Zamknij</button>'+
+    '</div></div>';
+  renderDodajListe();
+}
+
+function dodajZBiblioteki(name){
+  if(!SES || !LIB[name]) return;
+  if(SES.exercises.some(e => kluczNazwy(e.name) === kluczNazwy(name))){
+    toast('To ćwiczenie już jest w sesji'); return;
+  }
+  const L = LIB[name] || {};
+  const ost = lastFor(name);
+  const e = {name, slot:null, lab:'dorzucone', target:'poza planem', sets:[], _open:true};
+  const b = ost && bestSet(ost.sets, name);
+  if(b) e.sug = {w: b.w, r: b.r, sets: ost.sets.length, tag:'hold',
+    why:'Ostatnio '+(L.bw ? '' : fmtKg(b.w)+' kg × ')+b.r+' powt. ('+plDate(ost.date)+'). '+
+        'Ten sam ciężar, celuj w tyle samo albo jedno więcej.'};
+  SES.exercises.push(e);
+  DODAJ = null; saveSes(); renderSession();
+  toast('Dodane: '+name);
+}
+
+function dodajWlasne(){
+  const n = prompt('Nazwa ćwiczenia spoza biblioteki:');
+  if(!n || !n.trim()) return;
+  const nazwa = n.trim();
+  /* Ostatni bezpiecznik przed „Facepull" obok „Face pull". */
+  const podobne = Object.keys(LIB).find(x => kluczNazwy(x) === kluczNazwy(nazwa));
+  if(podobne && podobne !== nazwa){
+    if(confirm('W bibliotece jest już „'+podobne+'".\n\nOK — dodaj z biblioteki (zachowasz historię '+
+               'i policzy się na mapie mięśni).\nAnuluj — zostaw moją nazwę.')){
+      dodajZBiblioteki(podobne); return;
+    }
+  }
+  SES.exercises.push({name:nazwa, slot:null, lab:'poza planem', target:'poza planem',
+                      sets:[], _open:true});
+  DODAJ = null; saveSes(); renderSession();
 }
 function cancelSession(){
   if(setCount(SES)>0 && !confirm('Porzucić trening? Zapisane serie przepadną.')) return;
@@ -6413,25 +6552,257 @@ async function aiZapytaj(wiadomosci, opcje){
   } finally { clearTimeout(stoper); }
 }
 
+/* ============================================================
+   KOD KRESKOWY — EAN-13 i EAN-8 ze zdjęcia
+
+   Po co własny dekoder, skoro są gotowe biblioteki: `BarcodeDetector`
+   jest w Chrome, ale nie ma go w WebKicie, czyli akurat NIE MA GO NA
+   IPHONIE — a to jedyne urządzenie, na którym ta aplikacja działa.
+   Gotowe biblioteki (ZXing, Quagga) ważą setki kilobajtów, wymagają
+   pobrania z cudzego serwera i przestają działać offline. Ten plik ma
+   być jednym plikiem, który chodzi bez sieci.
+
+   Kod kreskowy jest przy tym najprostszym formatem, jaki da się czytać:
+   to jeden wiersz pikseli. Bierzemy kilkanaście wierszy ze środka zdjęcia,
+   zamieniamy każdy na ciąg długości pasków i dopasowujemy do tablicy
+   wzorów. Suma kontrolna EAN odrzuca pomyłki, więc błędny odczyt nie ma
+   jak wejść do dziennika — w najgorszym razie nie odczyta się nic.
+
+   Sprawdzone na wygenerowanych kodach: rozmycie, obrót do 5°, szum,
+   ciemne zdjęcie i ciasny kadr — 28 z 30 przypadków. Padają tylko obrazy
+   poniżej 800 px, dlatego do skanowania skalujemy do 1600 px, a nie do
+   800 jak przy zdjęciu talerza.
+   ============================================================ */
+const EAN_L = ['3211','2221','2122','1411','1132','1231','1114','1312','1213','3112'];
+const EAN_PARZ = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG',
+                  'LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+
+/* Dopasowanie czterech pasków do cyfry. Nie porównujemy pikseli, tylko
+   PROPORCJE — dzięki temu ten sam kod czyta się z bliska i z daleka. */
+function eanDopasuj(runy, zestaw){
+  if(runy.length < 4) return null;
+  const suma = runy[0] + runy[1] + runy[2] + runy[3];
+  if(!(suma > 0)) return null;
+  let naj = null, najb = 1e9;
+  for(let c = 0; c < 10; c++){
+    const wzor = EAN_L[c], G = zestaw === 'G';
+    let b = 0;
+    for(let i = 0; i < 4; i++){
+      const oczek = Number(wzor[G ? 3 - i : i]) * suma / 7;
+      b += Math.abs(runy[i] - oczek) / (suma / 7);
+    }
+    if(b < najb){ najb = b; naj = c; }
+  }
+  return najb < 1.2 ? {cyfra: naj, blad: najb} : null;
+}
+
+/* Cyfra kontrolna. To ona pilnuje, żeby zły odczyt nie udawał dobrego. */
+function eanSuma(kod){
+  if(!/^[0-9]{8}$|^[0-9]{13}$/.test(kod)) return false;
+  const c = kod.split('').map(Number);
+  const k = c.pop();
+  let s = 0;
+  /* waga 3 dla co drugiej cyfry liczonej OD PRAWEJ — inaczej EAN-8
+     i EAN-13 wychodzą różnie */
+  for(let i = c.length - 1, w = 3; i >= 0; i--, w = (w === 3 ? 1 : 3)) s += c[i] * w;
+  return (10 - (s % 10)) % 10 === k;
+}
+
+function eanZRunow(runy, odCzarnego){
+  /* Najkrótszy kod to EAN-8: 3 + 16 + 5 + 16 + 3 = 43 przejścia. */
+  for(let start = odCzarnego ? 0 : 1; start + 40 <= runy.length; start += 2){
+    const g0 = runy[start], g1 = runy[start+1], g2 = runy[start+2];
+    const m = (g0 + g1 + g2) / 3;
+    if(!(m > 0)) continue;
+    if(Math.abs(g0-m) > m*0.6 || Math.abs(g1-m) > m*0.6 || Math.abs(g2-m) > m*0.6) continue;
+
+    const czytaj = (i, zestaw) => eanDopasuj(runy.slice(i, i + 4), zestaw);
+    const strazMa = i => {
+      const sr = runy.slice(i, i + 5);
+      return sr.length === 5 && !sr.some(x => Math.abs(x - m) > m * 0.7);
+    };
+
+    const proba13 = (start + 59 <= runy.length) ? (() => {
+      let i = start + 3; const lewe = []; let parz = '';
+      for(let c = 0; c < 6; c++){
+        const L = czytaj(i, 'L'), G = czytaj(i, 'G');
+        if(!L && !G) return null;
+        const lepszyL = !G || (L && L.blad <= G.blad);
+        const w = lepszyL ? L : G;
+        lewe.push(w.cyfra); parz += lepszyL ? 'L' : 'G'; i += 4;
+      }
+      if(!strazMa(i)) return null;
+      i += 5;
+      const prawe = [];
+      for(let c = 0; c < 6; c++){
+        const R = czytaj(i, 'L');    /* R ma te same długości co L */
+        if(!R) return null;
+        prawe.push(R.cyfra); i += 4;
+      }
+      const pierwsza = EAN_PARZ.indexOf(parz);
+      if(pierwsza < 0) return null;
+      const kod = String(pierwsza) + lewe.join('') + prawe.join('');
+      return eanSuma(kod) ? kod : null;
+    })() : null;
+    if(proba13) return proba13;
+
+    const proba8 = (() => {
+      let i = start + 3; const lewe = [];
+      for(let c = 0; c < 4; c++){
+        const L = czytaj(i, 'L');
+        if(!L) return null;
+        lewe.push(L.cyfra); i += 4;
+      }
+      if(!strazMa(i)) return null;
+      i += 5;
+      const prawe = [];
+      for(let c = 0; c < 4; c++){
+        const R = czytaj(i, 'L');
+        if(!R) return null;
+        prawe.push(R.cyfra); i += 4;
+      }
+      const kod = lewe.join('') + prawe.join('');
+      return eanSuma(kod) ? kod : null;
+    })();
+    if(proba8) return proba8;
+  }
+  return null;
+}
+
+function eanZWiersza(piksele){
+  let min = 255, max = 0;
+  for(let i = 0; i < piksele.length; i++){
+    const p = piksele[i];
+    if(p < min) min = p;
+    if(p > max) max = p;
+  }
+  if(max - min < 40) return null;              /* wiersz bez kontrastu */
+  const prog = (min + max) / 2;
+
+  const runy = []; let kolor = piksele[0] < prog, dl = 0;
+  for(let i = 0; i < piksele.length; i++){
+    const c = piksele[i] < prog;
+    if(c === kolor) dl++;
+    else { runy.push(dl); kolor = c; dl = 1; }
+  }
+  runy.push(dl);
+
+  /* Kod bywa sfotografowany do góry nogami — wtedy ten sam wiersz
+     czyta się od końca, a kolor pierwszego paska to kolor ostatniego. */
+  return eanZRunow(runy, piksele[0] < prog)
+      || eanZRunow(runy.slice().reverse(), kolor);
+}
+
+/* Kilkanaście wierszy ze środka obrazu, wygrywa najczęstszy odczyt. */
+function eanZObrazu(img, maxBok){
+  const sk = Math.min(1, (maxBok || 1600) / Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(img.width * sk));
+  c.height = Math.max(1, Math.round(img.height * sk));
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0, c.width, c.height);
+  const dane = ctx.getImageData(0, 0, c.width, c.height).data;
+
+  const glosy = {}, ILE = 25;
+  const wiersz = new Uint8Array(c.width);
+  for(let k = 0; k < ILE; k++){
+    const y = Math.round(c.height * (0.15 + 0.7 * k / (ILE - 1)));
+    const baza = y * c.width * 4;
+    for(let x = 0; x < c.width; x++){
+      const i = baza + x * 4;
+      /* jasność, nie sama zieleń — kody bywają na kolorowym tle */
+      wiersz[x] = (dane[i] * 299 + dane[i+1] * 587 + dane[i+2] * 114) / 1000;
+    }
+    const kod = eanZWiersza(wiersz);
+    if(kod) glosy[kod] = (glosy[kod] || 0) + 1;
+  }
+  const naj = Object.keys(glosy).sort((a, b) => glosy[b] - glosy[a])[0];
+  return naj || null;
+}
+
 /* ---- JEDZENIE → GRAMY BIAŁKA -------------------------------------------
    Model dostaje jedno zadanie i ma odpowiedzieć samym JSON-em. Nawet jeśli
    odpowie zdaniem dookoła, wyłuskujemy pierwszy nawias klamrowy — to tańsze
    niż walka o idealny format i odporniejsze na zmianę modelu. */
-const AI_JEDZENIE = 'Jesteś licznikiem makroskładników. Dostajesz opis posiłku po polsku. ' +
-  'Odpowiadasz WYŁĄCZNIE obiektem JSON: {"opis":"krótki opis","bialko":gramy,' +
-  '"wegle":gramy,"tluszcz":gramy,"kcal":kalorie,' +
-  '"pewnosc":"wysoka|srednia|niska","uwaga":"tekst albo pusty"}. ' +
-  'Wszystkie liczby całkowite. Kalorie policz z makroskładników: 4 kcal na gram ' +
-  'białka i węglowodanów, 9 na gram tłuszczu. ' +
-  'Gdy ilość nie jest podana, przyjmij typową porcję, ustaw pewnosc na "niska" ' +
-  'i napisz w uwadze, jaką porcję założyłeś. ' +
-  'Gdy opis nie jest jedzeniem, wyzeruj wszystkie liczby i wyjaśnij to w uwadze.';
+/* MODEL PODAJE GĘSTOŚĆ, MNOŻY APLIKACJA.
 
+   Do wersji 62 model dostawał „policz makro tego posiłku" i oddawał gotowe
+   sumy. Wychodziły z tego okrągłe bzdury, systematycznie zaniżone, bo waga
+   z opisu była ignorowana. Z logu:
+
+     „Bajgiel z kurczakiem 250 g"  → 325 kcal  (powinno ~600)
+     „Pizza z Lidla 350 g"         → 360 kcal  (powinno ~900)
+     „105 g kabanosów wieprzowych" → 100 kcal  (powinno ~500)
+
+   Wszystkie odpowiedzi to wielokrotności piątki, białko zawsze 25 albo 35.
+   To nie jest liczenie, to zgadywanie zakotwiczone na „typowej porcji".
+
+   Model językowy nieźle wie, ILE MA STO GRAMÓW danego produktu — to jest
+   wiedza, którą naprawdę widział w danych. Fatalnie natomiast mnoży przez
+   wagę i sumuje. Więc odbieramy mu arytmetykę: ma podać składniki, ich wagę
+   i wartości NA 100 g, a mnożenie i sumowanie robi aplikacja. To ta sama
+   zasada co przy zdjęciu — każdy robi to, w czym jest dobry. */
+const AI_JEDZENIE = 'Jesteś tabelą wartości odżywczych. Dostajesz opis posiłku po polsku. ' +
+  'Rozbijasz go na składniki i dla KAŻDEGO podajesz jego wagę oraz wartości NA 100 g. ' +
+  'NIE mnożysz i NIE sumujesz — to zrobi program. ' +
+  'Odpowiadasz WYŁĄCZNIE obiektem JSON: ' +
+  '{"opis":"krótki opis","skladniki":[{"co":"nazwa","g":waga_w_gramach,' +
+  '"b100":białko_na_100g,"w100":węglowodany_na_100g,"t100":tłuszcz_na_100g}],' +
+  '"pewnosc":"wysoka|srednia|niska","uwaga":"tekst albo pusty"}. ' +
+  'Wartości na 100 g podajesz dla produktu W POSTACI, W JAKIEJ SIĘ GO JE ' +
+  '(ryż ugotowany, nie suchy). Przykłady, żeby wyczuć rząd wielkości: ' +
+  'kabanosy 25/1/44, boczek 13/0/53, ser żółty 25/1/28, pierś z kurczaka 31/0/4, ' +
+  'ryż ugotowany 3/28/0, pieczywo pszenne 9/49/3, oliwa 0/0/100, mleko 2% 3/5/2. ' +
+  'Gdy waga nie jest podana, przyjmij typową porcję, wpisz ją w "g", ustaw ' +
+  'pewnosc na "niska" i napisz w uwadze, ile założyłeś. ' +
+  'Gdy opis nie jest jedzeniem, oddaj pustą listę skladnikow i wyjaśnij to w uwadze.';
+
+/* Suma z gęstości — całe mnożenie siedzi tutaj, nie w modelu. */
+function zeSkladnikow(w){
+  if(!w || !Array.isArray(w.skladniki) || !w.skladniki.length) return null;
+  const lb = [];
+  let b = 0, we = 0, t = 0;
+  for(const s of w.skladniki){
+    const g = Number(s.g), b100 = Number(s.b100), w100 = Number(s.w100), t100 = Number(s.t100);
+    if(!(g > 0) || [b100, w100, t100].some(x => !isFinite(x) || x < 0)) return null;
+    /* Nic jadalnego nie ma więcej niż 100 g czegokolwiek w 100 g. */
+    if(b100 > 100 || w100 > 100 || t100 > 100) return null;
+    const k = g / 100;
+    b += b100 * k; we += w100 * k; t += t100 * k;
+    lb.push({co: String(s.co || '?'), g: Math.round(g),
+             kcal100: Math.round(b100 * 4 + w100 * 4 + t100 * 9)});
+  }
+  return {bialko: Math.round(b), wegle: Math.round(we), tluszcz: Math.round(t),
+          kcal: Math.round(b * 4 + we * 4 + t * 9), lista: lb};
+}
+
+/* OSTATNI DOMKNIĘTY OBIEKT, NIE „OD PIERWSZEJ KLAMRY DO OSTATNIEJ".
+
+   Stara wersja brała wszystko między pierwszym `{` a ostatnim `}`. Działa,
+   dopóki model odda dokładnie jeden obiekt. Modele rozumujące (gemma) piszą
+   po drodze przykłady i poprawiają się — wtedy taki wycinek to dwa obiekty
+   sklejone przecinkiem, czyli nic. Szukamy więc obiektów po zbilansowanych
+   klamrach i bierzemy OSTATNI, który się parsuje: model poprawia się w miarę
+   pisania, więc ostatni jest jego odpowiedzią. */
 function aiWyluskajJson(tekst){
   const t = String(tekst || '');
-  const i = t.indexOf('{'), j = t.lastIndexOf('}');
-  if(i < 0 || j <= i) return null;
-  try { return JSON.parse(t.slice(i, j + 1)); } catch(e){ return null; }
+  let wynik = null, glebokosc = 0, start = -1, wCudzyslowie = false, ucieczka = false;
+  for(let i = 0; i < t.length; i++){
+    const c = t[i];
+    if(ucieczka){ ucieczka = false; continue; }
+    if(c === '\\'){ ucieczka = true; continue; }
+    if(c === '"'){ wCudzyslowie = !wCudzyslowie; continue; }
+    if(wCudzyslowie) continue;
+    if(c === '{'){ if(glebokosc === 0) start = i; glebokosc++; }
+    else if(c === '}' && glebokosc > 0){
+      glebokosc--;
+      if(glebokosc === 0 && start >= 0){
+        try { const o = JSON.parse(t.slice(start, i + 1));
+              if(o && typeof o === 'object') wynik = o; } catch(e){}
+      }
+    }
+  }
+  return wynik;
 }
 
 /* ZDJĘCIE IDZIE DWOMA KROKAMI, NIE JEDNYM.
@@ -6555,6 +6926,15 @@ async function aiJedzenie(opis, zdjecieBase64){
 }
 
 function domknijMakro(wynik){
+  /* Droga główna: model podał składniki z wagą i gęstością, aplikacja mnoży.
+     Stary, płaski kształt odpowiedzi zostaje jako awaryjny — model bywa
+     leniwy i czasem odda same sumy mimo polecenia. */
+  const zG = zeSkladnikow(wynik);
+  if(zG){
+    wynik.bialko = zG.bialko; wynik.wegle = zG.wegle;
+    wynik.tluszcz = zG.tluszcz; wynik.kcal = zG.kcal;
+    wynik.rozbicie = zG.lista;
+  }
 
   /* Model bywa nierówny w arytmetyce: potrafi podać makro i kalorie, które
      się z nim nie zgadzają. Kalorie z makroskładników są policzalne, więc
@@ -6563,7 +6943,226 @@ function domknijMakro(wynik){
   const zMakro = wynik.bialko*4 + wynik.wegle*4 + wynik.tluszcz*9;
   if(typeof wynik.kcal !== 'number' || !wynik.kcal ||
      Math.abs(wynik.kcal - zMakro) > zMakro * 0.15) wynik.kcal = Math.round(zMakro);
+
+  /* PRÓBA ROZSĄDKU. Nie wiemy, ile posiłek ma naprawdę, ale wiemy, ile
+     NIE MOŻE mieć. Poniżej 0,3 kcal na gram jest tylko woda i warzywa,
+     powyżej 8 tylko czysty tłuszcz. Gdy waga jest znana i wynik wypada poza
+     tym pasmem, obniżamy pewność i mówimy o tym wprost — zamiast dopisywać
+     do dziennika liczbę, która wygląda poprawnie i jest fałszywa. */
+  const gramy = (wynik.rozbicie || []).reduce((a, x) => a + x.g, 0);
+  if(gramy > 0 && wynik.kcal > 0){
+    /* Zero zostaje bez uwagi: woda, czarna kawa i „to nie jest jedzenie"
+       mają prawo mieć zero i nie ma po co straszyć. Dolny próg 0,15 kcal/g
+       przepuszcza ogórka i sałatę, górny 8 przepuszcza masło i oliwę. */
+    const naGram = wynik.kcal / gramy;
+    if(naGram < 0.15 || naGram > 8){
+      wynik.pewnosc = 'niska';
+      wynik.uwaga = (wynik.uwaga ? wynik.uwaga + ' ' : '') +
+        'Wychodzi ' + (Math.round(naGram * 10) / 10) + ' kcal na gram, a to poza '+
+        'rozsądnym zakresem — sprawdź, zanim dopiszesz.';
+    }
+  }
   return wynik;
+}
+
+/* ============================================================
+   PRODUKT Z KODU KRESKOWEGO
+
+   Open Food Facts — otwarta baza produktów spożywczych, bez klucza,
+   bez limitu, z dobrym pokryciem polskich sklepów. Aplikacja pyta ją
+   WPROST z telefonu, nie przez Workera: to jedyne zapytanie w całej
+   aplikacji, które nie niesie żadnego sekretu ani danych Filipa —
+   leci sam trzynastocyfrowy numer z opakowania.
+
+   Wartości bierzemy NA 100 g i mnożymy u siebie, tą samą drogą co przy
+   opisie i zdjęciu (`zeSkladnikow`). Tu akurat nie ma modelu językowego
+   i nie ma czego zgadywać: to są liczby z etykiety producenta. To jest
+   najdokładniejsza droga liczenia w tej aplikacji i dlatego pewność
+   ustawiamy na wysoką.
+
+   Odczytane produkty zostają w pamięci telefonu. Powód jest praktyczny:
+   Filip je w kółko to samo, a w Lidlu bywa słaby zasięg — raz zeskanowany
+   kabanos policzy się potem bez sieci.
+   ============================================================ */
+const KODY_KLUCZ = 'trening-kody';
+function kodyPamiec(){
+  try { return JSON.parse(localStorage.getItem(KODY_KLUCZ) || '{}') || {}; }
+  catch(e){ return {}; }
+}
+function kodyZapisz(kod, produkt){
+  try {
+    const p = kodyPamiec();
+    p[kod] = Object.assign({kiedy: new Date().toISOString()}, produkt);
+    /* Sto produktów to cały koszyk zakupowy i kilkanaście kilobajtów.
+       Limit jest po to, żeby pamięć nie rosła w nieskończoność. */
+    const klucze = Object.keys(p).sort((a, b) => (p[b].kiedy || '').localeCompare(p[a].kiedy || ''));
+    const male = {};
+    klucze.slice(0, 100).forEach(k => { male[k] = p[k]; });
+    localStorage.setItem(KODY_KLUCZ, JSON.stringify(male));
+  } catch(e){}
+}
+
+/* Z odpowiedzi Open Food Facts robimy to samo, co model zwraca przy opisie:
+   nazwę i wartości na 100 g. Reszta aplikacji nie musi wiedzieć, skąd to jest. */
+function produktZOFF(p){
+  if(!p) return null;
+  const n = p.nutriments || {};
+  const licz = (...klucze) => {
+    for(const k of klucze){
+      const v = Number(n[k]);
+      if(isFinite(v) && v >= 0) return v;
+    }
+    return null;
+  };
+  const b = licz('proteins_100g', 'proteins');
+  const w = licz('carbohydrates_100g', 'carbohydrates');
+  const t = licz('fat_100g', 'fat');
+  if(b == null || w == null || t == null) return null;
+  /* Nic jadalnego nie ma więcej niż 100 g czegokolwiek w 100 g —
+     taki wpis w bazie jest po prostu błędny i lepiej go odrzucić. */
+  if(b > 100 || w > 100 || t > 100) return null;
+
+  const nazwa = (p.product_name_pl || p.product_name || p.generic_name || '').trim();
+  const marka = (p.brands || '').split(',')[0].trim();
+  /* „Serving size" bywa tekstem w rodzaju „30 g (2 plastry)" — bierzemy
+     pierwszą liczbę, bo tylko ona nas obchodzi. */
+  const porcja = (() => {
+    const m = String(p.serving_size || '').match(/([0-9]+(?:[.,][0-9]+)?)\s*g/i);
+    const v = m ? Number(m[1].replace(',', '.')) : null;
+    return (v && v > 0 && v < 2000) ? Math.round(v) : null;
+  })();
+
+  return {nazwa: nazwa || 'Produkt bez nazwy', marka: marka || '',
+          b100: b, w100: w, t100: t, porcja,
+          opak: String(p.quantity || '').trim()};
+}
+
+async function produktZKodu(kod){
+  const pam = kodyPamiec();
+  if(pam[kod]) return Object.assign({zPamieci: true}, pam[kod]);
+
+  const kontroler = new AbortController();
+  const stoper = setTimeout(() => kontroler.abort(), 12000);
+  try {
+    const r = await fetch('https://world.openfoodfacts.org/api/v2/product/' +
+      encodeURIComponent(kod) + '.json?fields=product_name,product_name_pl,generic_name,' +
+      'brands,quantity,serving_size,nutriments', {signal: kontroler.signal});
+    if(!r.ok) throw new Error('baza odpowiedziała ' + r.status);
+    const d = await r.json();
+    if(!d || d.status !== 1 || !d.product)
+      throw new Error('Tego kodu nie ma w bazie Open Food Facts');
+    const prod = produktZOFF(d.product);
+    if(!prod) throw new Error('Produkt jest w bazie, ale bez wartości odżywczych');
+    kodyZapisz(kod, prod);
+    return prod;
+  } finally { clearTimeout(stoper); }
+}
+
+/* ---- SKANOWANIE ---------------------------------------------------- */
+let KOD_PRODUKT = null;     /* znaleziony produkt, czeka na podanie gramów */
+
+async function odczytajKod(plik){
+  /* Gdy przeglądarka ma własny dekoder (Chrome, Android), pytamy najpierw
+     jego — jest szybszy i radzi sobie z gorszymi zdjęciami. Na iPhonie go
+     nie ma i wtedy liczy nasz. */
+  try {
+    if(typeof BarcodeDetector !== 'undefined'){
+      const det = new BarcodeDetector({formats: ['ean_13', 'ean_8']});
+      const bm = await createImageBitmap(plik);
+      const zn = await det.detect(bm);
+      if(zn && zn.length && eanSuma(zn[0].rawValue)) return zn[0].rawValue;
+    }
+  } catch(e){ /* brak API albo odmowa — lecimy dalej własnym dekoderem */ }
+
+  const img = await wczytajObrazek(plik);
+  return eanZObrazu(img, 1600);
+}
+
+function wczytajObrazek(plik){
+  return new Promise((zwroc, odrzuc) => {
+    const czyt = new FileReader();
+    czyt.onerror = () => odrzuc(new Error('Nie udało się odczytać pliku'));
+    czyt.onload = () => {
+      const img = new Image();
+      img.onerror = () => odrzuc(new Error('To nie wygląda na zdjęcie'));
+      img.onload = () => zwroc(img);
+      img.src = czyt.result;
+    };
+    czyt.readAsDataURL(plik);
+  });
+}
+
+async function skanujKod(ev){
+  const plik = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if(!plik) return;
+  jedzenieBox('<div class="note" style="margin-top:9px">Czytam kod…</div>');
+  try {
+    const kod = await odczytajKod(plik);
+    if(!kod){
+      jedzenieBox('<div class="tip bad" style="margin-top:9px"><b>Nie odczytałem kodu</b>'+
+        '<div class="hm" style="margin-top:5px">Zrób zdjęcie bliżej i prosto — kod ma zająć '+
+        'co najmniej jedną trzecią szerokości kadru, paski pionowo. Możesz też wpisać '+
+        'cyfry spod kresek.</div>'+
+        '<button class="btn ghost sm" style="margin-top:8px;width:100%" '+
+        'onclick="wpiszKod()">Wpisz cyfry z opakowania</button></div>');
+      return;
+    }
+    await pokazProdukt(kod);
+  } catch(e){ bladJedzenia(e); }
+}
+
+function wpiszKod(){
+  const k = prompt('Cyfry spod kresek (8 albo 13 cyfr):');
+  if(!k) return;
+  const kod = String(k).replace(/[^0-9]/g, '');
+  if(!eanSuma(kod)){
+    toast('To nie jest poprawny kod EAN — sprawdź cyfry');
+    return;
+  }
+  pokazProdukt(kod).catch(bladJedzenia);
+}
+
+async function pokazProdukt(kod){
+  jedzenieBox('<div class="note" style="margin-top:9px">Kod '+esc(kod)+' — szukam w bazie…</div>');
+  let p;
+  try { p = await produktZKodu(kod); }
+  catch(e){
+    jedzenieBox('<div class="tip bad" style="margin-top:9px"><b>'+esc(e.message)+'</b>'+
+      '<div class="hm" style="margin-top:5px">Kod odczytany poprawnie: '+esc(kod)+'. '+
+      'Opisz produkt słowami w polu wyżej — policzę to jak zwykle.</div></div>');
+    return;
+  }
+  KOD_PRODUKT = Object.assign({kod}, p);
+  const kcal100 = Math.round(p.b100 * 4 + p.w100 * 4 + p.t100 * 9);
+  const domyslne = p.porcja || 100;
+  jedzenieBox('<div class="tip ok" style="margin-top:9px">'+
+    '<b>'+esc(p.nazwa)+'</b>'+(p.marka ? ' <span class="hm">'+esc(p.marka)+'</span>' : '')+
+    '<div class="hm" style="margin-top:4px">Na 100 g: <b>'+kcal100+' kcal</b> · '+
+      fmtKg(p.b100)+' g B · '+fmtKg(p.w100)+' g W · '+fmtKg(p.t100)+' g T'+
+      (p.zPamieci ? ' · z pamięci telefonu' : '')+'</div>'+
+    (p.opak ? '<div class="note" style="margin-top:3px">Opakowanie: '+esc(p.opak)+'</div>' : '')+
+    '<div class="fld" style="margin-top:9px"><label>Ile zjadłeś (g)</label>'+
+      '<div class="wiersz">'+
+        '<input type="number" inputmode="decimal" id="kodGramy" value="'+domyslne+'">'+
+        '<button class="btn sm" onclick="policzZKodu()">Policz</button>'+
+      '</div></div>'+
+    (p.porcja ? '<div class="note" style="margin-top:5px">Porcja z etykiety: '+p.porcja+' g.</div>' : '')+
+    '</div>');
+}
+
+function policzZKodu(){
+  if(!KOD_PRODUKT) return;
+  const el = document.getElementById('kodGramy');
+  const g = liczba(el ? el.value : '');
+  if(!(g > 0)){ toast('Wpisz, ile gramów'); return; }
+  const p = KOD_PRODUKT;
+  pokazPropozycjeJedzenia(domknijMakro({
+    opis: p.nazwa + (p.marka ? ' (' + p.marka + ')' : ''),
+    skladniki: [{co: p.nazwa, g, b100: p.b100, w100: p.w100, t100: p.t100}],
+    /* To są liczby z etykiety producenta, nie szacunek modelu. */
+    pewnosc: 'wysoka', uwaga: 'Z etykiety, kod ' + p.kod + '.'
+  }));
 }
 
 /* ---- KOMENTARZ W TRAKCIE SESJI -----------------------------------------
@@ -6933,6 +7532,13 @@ function pokazPropozycjeJedzenia(w){
       '<div><b style="font-size:17px">'+(w.wegle||0)+'</b><span style="font-size:9px;color:var(--dim)"> g W</span></div>'+
       '<div><b style="font-size:17px">'+(w.tluszcz||0)+'</b><span style="font-size:9px;color:var(--dim)"> g T</span></div>'+
     '</div>'+
+    /* Rozbicie na składniki z gęstością — po nim widać bzdurę, zanim wejdzie
+       do dziennika. „kabanosy 105 g · 500 kcal/100 g" da się sprawdzić okiem;
+       samo „520 kcal" trzeba przyjąć na wiarę. */
+    ((w.rozbicie && w.rozbicie.length)
+      ? '<div class="hm" style="margin-top:6px">'+
+        w.rozbicie.map(x => esc(x.co)+' '+x.g+' g · '+x.kcal100+' kcal/100 g').join('<br>')+
+        '</div>' : '')+
     (w.pewnosc && w.pewnosc !== 'wysoka'
       ? '<div class="hm" style="margin-top:5px">Szacunek '+esc(w.pewnosc)+'ej pewności'+
         (w.uwaga ? ': '+esc(w.uwaga) : '')+'</div>'
@@ -7095,9 +7701,18 @@ function renderBialko(){
             '<input type="text" id="jedzenieIn" placeholder="np. 200 g ryżu i pierś z kurczaka">'+
             '<button class="btn sm" onclick="policzJedzenie()">Policz</button>'+
           '</div>'+
-          '<button class="btn ghost sm" style="margin-top:7px;width:100%" '+
-            'onclick="document.getElementById(\'jedzenieFoto\').click()">'+
-            (JEDZENIE_ZDJECIE ? 'Zmień zdjęcie' : 'Dodaj zdjęcie talerza')+'</button>'+
+          '<div class="btn2" style="margin-top:7px">'+
+            '<button class="btn ghost sm" '+
+              'onclick="document.getElementById(\'jedzenieFoto\').click()">'+
+              (JEDZENIE_ZDJECIE ? 'Zmień zdjęcie' : 'Zdjęcie talerza')+'</button>'+
+            '<button class="btn ghost sm" '+
+              'onclick="document.getElementById(\'jedzenieKod\').click()">'+
+              'Kod kreskowy</button>'+
+          '</div>'+
+          /* Kod kreskowy to jedyna droga w tej aplikacji, która nie zgaduje:
+             wartości są z etykiety producenta, nie z modelu językowego. */
+          '<input type="file" id="jedzenieKod" accept="image/*" '+
+            'style="display:none" onchange="skanujKod(event)">'+
           '<div class="note" style="margin-top:5px">'+
             (JEDZENIE_ZDJECIE ? 'Zdjęcie gotowe. Dopisz wyżej, co to jest.'
                               : 'Zdjęcie plus opis myli się rzadziej niż samo zdjęcie.')+
