@@ -792,6 +792,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     <button class="btn sm" onclick="srvZapiszUstawienia()">Zapisz ustawienia</button>
     <button class="btn ghost sm" style="margin-top:9px" onclick="srvSync()">Synchronizuj teraz</button>
     <div class="note" style="margin-top:11px">Token zostaje w telefonie i nie trafia do eksportu.</div>
+    <div id="pushBox" style="margin-top:13px"></div>
   </div>
 
   <h2>Plan treningowy</h2>
@@ -1618,7 +1619,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '64';
+const WERSJA = '65';
 const WERSJA_DATA = '2026-09-14';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -1828,6 +1829,212 @@ async function garminPoOtwarciu(){
   await garminTeraz(true);
 }
 
+/* ============================================================
+   POWIADOMIENIA NA TELEFON
+
+   Warunek, o który rozbija się większość prób: na iPhonie Push API
+   ISTNIEJE WYŁĄCZNIE w aplikacji dodanej do ekranu głównego. W karcie
+   Safari nie ma go wcale — i to nie jest usterka do obejścia, tylko
+   decyzja Apple'a. Dlatego zanim cokolwiek zaproponujemy, sprawdzamy
+   `display-mode: standalone` i mówimy wprost, czego brakuje.
+
+   Drugi warunek: zgodę wolno zapytać tylko w odpowiedzi na dotknięcie.
+   Stąd guzik, a nie pytanie przy starcie.
+
+   Adres i token zapisujemy dodatkowo w IndexedDB, bo service worker —
+   ten, który obsłuży powiadomienie, gdy aplikacja jest zamknięta — nie
+   widzi `localStorage`.
+   ============================================================ */
+function pwaNaEkranie(){
+  try {
+    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+      || navigator.standalone === true;
+  } catch(e){ return false; }
+}
+function pushMozliwe(){
+  return typeof Notification !== 'undefined' && 'serviceWorker' in navigator
+      && 'PushManager' in window;
+}
+function pushStan(){
+  if(!pushMozliwe()) return 'brak';
+  if(!pwaNaEkranie()) return 'wKarcie';
+  try { return Notification.permission; } catch(e){ return 'brak'; }
+}
+
+/* IndexedDB zamiast localStorage — patrz komentarz wyżej. */
+function pushZapiszDlaSW(dane){
+  return new Promise(zwroc => {
+    let gotowe = false;
+    const koniec = () => { if(!gotowe){ gotowe = true; zwroc(); } };
+    try {
+      const zad = indexedDB.open('trening-push', 1);
+      zad.onupgradeneeded = () => zad.result.createObjectStore('ust');
+      zad.onerror = koniec;
+      zad.onsuccess = () => {
+        try {
+          const t = zad.result.transaction('ust', 'readwrite');
+          t.objectStore('ust').put(dane, 'serwer');
+          t.oncomplete = koniec; t.onerror = koniec;
+        } catch(e){ koniec(); }
+      };
+    } catch(e){ koniec(); }
+    setTimeout(koniec, 3000);
+  });
+}
+
+function pushKluczNaBajty(b64){
+  const t = b64.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(t + '='.repeat((4 - t.length % 4) % 4));
+  const b = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+  return b;
+}
+
+function renderPush(){
+  const el = document.getElementById('pushBox');
+  if(!el) return;
+  const stan = pushStan();
+  const naglowek = '<div class="etyk" style="margin:0 0 6px">POWIADOMIENIA</div>';
+
+  if(stan === 'brak'){
+    el.innerHTML = naglowek + '<div class="note">Ta przeglądarka nie obsługuje '+
+      'powiadomień. Na iPhonie działają w Safari, od iOS 16.4.</div>';
+    return;
+  }
+  if(stan === 'wKarcie'){
+    /* Najczęstszy powód, dla którego „nie działa": aplikacja otwarta jako
+       strona, a nie jako ikona. Mówimy to wprost, zamiast pokazywać guzik,
+       który i tak nic nie da. */
+    el.innerHTML = naglowek + '<div class="tip warn"><b>Najpierw dodaj aplikację '+
+      'do ekranu głównego</b><div class="hm" style="margin-top:4px">iPhone wysyła '+
+      'powiadomienia tylko z aplikacji uruchamianej z ikony — w karcie Safari ta '+
+      'możliwość nie istnieje. Przycisk udostępniania → „Dodaj do ekranu początkowego", '+
+      'potem otwórz z ikony i wróć tutaj.</div></div>';
+    return;
+  }
+  if(stan === 'granted'){
+    el.innerHTML = naglowek +
+      '<div class="note">Włączone. Powiadomienie przychodzi rano, razem z danymi '+
+      'z zegarka — treść składa aplikacja przy ostatniej synchronizacji.</div>'+
+      '<div class="btn2" style="margin-top:8px">'+
+        '<button class="btn ghost sm" onclick="pushProba()">Wyślij próbne</button>'+
+        '<button class="btn ghost sm" onclick="wylaczPowiadomienia()">Wyłącz</button>'+
+      '</div>';
+    return;
+  }
+  if(stan === 'denied'){
+    el.innerHTML = naglowek + '<div class="tip warn"><b>Zgoda odrzucona</b>'+
+      '<div class="hm" style="margin-top:4px">Włączysz ją w Ustawieniach iPhone’a → '+
+      'Powiadomienia → Trening. Z poziomu aplikacji nie da się o nią zapytać drugi raz.</div></div>';
+    return;
+  }
+  el.innerHTML = naglowek +
+    '<div class="note">Jedno powiadomienie rano: co dziś robisz i jaka jest gotowość. '+
+    'Treść składa aplikacja, serwer tylko budzi telefon.</div>'+
+    '<button class="btn ghost sm" style="margin-top:8px;width:100%" '+
+    'onclick="wlaczPowiadomienia()">Włącz powiadomienia</button>';
+}
+
+async function pushProba(){
+  if(!srvGotowy()){ toast('Najpierw ustaw serwer'); return; }
+  toast('Wysyłam…');
+  await pushWyslijTresc(true);
+  try {
+    const r = await fetch(srvUrl('push/teraz'), {headers: srvNaglowki({'Accept':'application/json'})});
+    const d = await r.json().catch(() => ({}));
+    toast(r.ok ? ('Serwer: ' + (d.status || 'wysłane')) : ('Błąd: ' + (d.blad || r.status)));
+  } catch(e){ toast('Brak połączenia z serwerem'); }
+}
+
+async function wlaczPowiadomienia(){
+  if(!srvGotowy()){ toast('Najpierw ustaw serwer wyżej'); return; }
+  const stan = pushStan();
+  if(stan === 'brak'){ toast('Ta przeglądarka nie obsługuje powiadomień'); return; }
+  if(stan === 'wKarcie'){
+    alert('Powiadomienia działają tylko z aplikacji dodanej do ekranu głównego.\n\n' +
+          'W Safari: przycisk udostępniania → „Dodaj do ekranu początkowego". ' +
+          'Potem otwórz aplikację z ikony i wróć tutaj.');
+    return;
+  }
+  try {
+    const zgoda = await Notification.requestPermission();
+    if(zgoda !== 'granted'){
+      toast(zgoda === 'denied'
+        ? 'Odmówiłeś — zgodę włączysz w Ustawieniach iPhone’a'
+        : 'Bez zgody nie wyślę powiadomienia');
+      renderData();
+      return;
+    }
+    const r = await fetch(srvUrl('push/klucz'), {headers: srvNaglowki({'Accept':'application/json'})});
+    const d = await r.json().catch(() => ({}));
+    if(!r.ok || !d.klucz) throw new Error(d.blad || 'Worker nie ma kluczy VAPID');
+
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: pushKluczNaBajty(d.klucz)
+    });
+    const w = await fetch(srvUrl('push/zapis'), {
+      method: 'POST', headers: srvNaglowki({'Content-Type':'application/json'}),
+      body: JSON.stringify(sub)
+    });
+    if(!w.ok) throw new Error('nie udało się zapisać na serwerze');
+
+    await pushZapiszDlaSW({adres: SRV.adres, token: SRV.token});
+    await pushWyslijTresc(true);
+    toast('Powiadomienia włączone');
+  } catch(e){
+    toast('Nie udało się: ' + (e.message || e));
+  }
+  renderData();
+}
+
+async function wylaczPowiadomienia(){
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if(sub) await sub.unsubscribe();
+    if(srvGotowy()) await fetch(srvUrl('push/wypis'), {headers: srvNaglowki({})});
+    toast('Powiadomienia wyłączone');
+  } catch(e){ toast('Nie udało się wyłączyć'); }
+  renderData();
+}
+
+/* CO MA BYĆ W POWIADOMIENIU — składa aplikacja, bo tylko ona ma silnik.
+   Worker jest listonoszem: przechowuje ostatnie zdanie i budzi telefon.
+   Wysyłamy przy każdej synchronizacji, więc zdanie jest tak świeże,
+   jak ostatnie otwarcie aplikacji. */
+function trescPowiadomienia(){
+  const n = planDoPokazania();
+  if(n && n.dzien && PLAN[n.dzien]){
+    const g = gotowosc();
+    return {tytul: 'Dziś: ' + n.dzien + ' — ' + PLAN[n.dzien].name,
+            tekst: (g.nieznana ? 'Wpisz dane poranne i ruszaj.'
+                               : 'Gotowość ' + gotowoscDnia(n.dzien, g) + '/100.') +
+                   ' ' + n.cwiczenia.length + ' ćwiczeń.'};
+  }
+  const md = makroDnia(), cm = celeMakro();
+  if(md && md.kcal === 0)
+    return {tytul: 'Trening', tekst: 'Dziś wolne. Nie zapisałeś jeszcze nic z jedzenia — '+
+            'cel to ' + cm.b.min + ' g białka.'};
+  return {tytul: 'Trening', tekst: 'Dziś wolne. Zajrzyj wieczorem i wpisz dane dnia.'};
+}
+
+async function pushWyslijTresc(cicho){
+  if(!srvGotowy()) return false;
+  try {
+    const t = trescPowiadomienia();
+    const r = await fetch(srvUrl('push/tresc'), {
+      method: 'POST', headers: srvNaglowki({'Content-Type':'application/json'}),
+      body: JSON.stringify(t)
+    });
+    return r.ok;
+  } catch(e){
+    if(!cicho) toast('Nie udało się odświeżyć powiadomienia');
+    return false;
+  }
+}
+
 /* pobranie tego, co przysłał trener: raport, plan, odpowiedzi na pytania */
 async function srvPull(cicho){
   if(!srvGotowy()) return false;
@@ -1896,6 +2103,9 @@ async function srvPull(cicho){
        kończyła się komunikatem „Zsynchronizowano" i trening po cichu zostawał
        na telefonie. Najgorszy możliwy wynik: fałszywe potwierdzenie. */
     SRV.pobrano = new Date().toISOString(); SRV.bladPob = null; srvSave();
+    /* Zdanie do powiadomienia jest tak świeże, jak ostatnia synchronizacja —
+       a ta dzieje się przy każdym otwarciu aplikacji. */
+    pushWyslijTresc(true);
     if(!cicho) toast(zmiany.length ? 'Pobrano: '+zmiany.join(', ') : 'Nic nowego');
     return true;
   }catch(e){
@@ -9002,6 +9212,7 @@ function renderKosz(){
 }
 
 function renderData(){
+  setTimeout(() => bezpiecznie('renderPush', renderPush), 0);
   renderSrv();
   renderKosz();
   renderKopie();
