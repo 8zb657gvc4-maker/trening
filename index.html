@@ -747,14 +747,22 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 
 <!-- ================= DZIENNIK ================= -->
 <div class="view" id="v-daily">
-  <div class="tip">Sen, tętno, HRV i Body Battery wchodzą tu same z zegarka.
-    Jeśli dopiero wstałeś, dotknij „Pobierz z zegarka" — dane o śnie pojawiają się
-    w Garmin Connect dopiero po tym, jak zegarek zsynchronizuje się po przebudzeniu.
-    <button class="btn ghost sm" style="margin-top:9px;width:100%"
-            onclick="garminTeraz()">Pobierz z zegarka</button></div>
+  <!-- Cztery linijki wykladu o tym, skad biora sie dane, stały tu codziennie.
+       Przeczytac warto raz; potem to juz tylko przewijanie. Zostaje jedno
+       zdanie i przycisk, a pelne wyjasnienie chowa sie pod znakiem zapytania. -->
+  <div class="tip" style="display:flex;align-items:center;gap:10px">
+    <button class="btn ghost sm" style="flex:1;width:auto;margin:0"
+            onclick="garminTeraz()">Pobierz z zegarka</button>
+    <button class="btn ghost sm" style="width:44px;flex:none;margin:0"
+            onclick="pomocZegarek()" aria-label="Skąd te dane">?</button>
+  </div>
   <div class="card">
     <div class="fld" style="margin-bottom:12px">
       <label>Data</label><input type="date" id="dDate" onchange="renderDaily()">
+      <!-- iPhone rysuje pole daty w formacie swojego regionu — u Filipa
+           wychodzilo „09/15/2026". Formatu natywnego pola nie da sie narzucic
+           ze strony, wiec dopisujemy pod spodem date po polsku. -->
+      <div class="hm" id="dDateOpis" style="margin-top:5px"></div>
     </div>
     <div class="note" style="margin-bottom:8px"><b>Rano, zaraz po przebudzeniu.</b>
       Na nich liczy się dzisiejsza gotowość.</div>
@@ -799,7 +807,10 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 <!-- ================= DANE ================= -->
 <div class="view" id="v-data">
   <h2>Kopia zapasowa</h2>
-  <div class="tip warn">Dane są tylko w tym telefonie. Eksportuj co niedzielę.</div>
+  <!-- Stale zolte ostrzezenie wisialo tu takze wtedy, gdy synchronizacja
+       z Workerem dzialala od tygodni. Ostrzezenie, ktore klamie, przestaje
+       byc czytane — wiec teraz pokazuje stan faktyczny. -->
+  <div id="kopiaStan"></div>
   <div class="card">
     <div class="btn2">
       <button class="btn sm" onclick="exportData()">Wyślij do iCloud</button>
@@ -1651,7 +1662,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '68';
+const WERSJA = '69';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3845,7 +3856,20 @@ function renderDzis(){
      z pamięci pokazywała myślniki zamiast liczb, choć plan był kompletny. */
   const serie = gp ? gp.cwiczenia.reduce((a, e) =>
     a + (e.serie != null ? e.serie : ((e.sug && e.sug.sets) || 0)), 0) : 0;
-  const minuty = serie ? Math.round((serie * 3 + 8) / 5) * 5 : 0;
+  /* GDY NIE MA JESZCZE GOTOWEGO PLANU, LICZYMY Z SAMEGO PLANU DNIA.
+
+     Do tej pory karta pokazywała wtedy trzy myślniki i pięć pustych pasków —
+     czyli miejsce po liczbach, ktore nigdy nie przyszly. A plan dnia jest
+     znany zawsze: wystarczy policzyc sloty z serii dla biezacej fazy.
+     Lepiej „5 cwiczen · 15 serii · 55 minut" niz „— — —". */
+  let ileP = ile, serieP = serie;
+  if(!ileP){
+    const fz = phaseOf(tydzienPlanu());
+    const sloty = ((PLAN[dzien] || {}).slots || []).filter(x => (x.s || [])[fz] > 0);
+    ileP = sloty.length;
+    serieP = sloty.reduce((a, x) => a + (x.s[fz] || 0), 0);
+  }
+  const minuty = serieP ? Math.round((serieP * 3 + 8) / 5) * 5 : 0;
   const kropka = !maOdp ? 'var(--dim)'
     : g.pkt >= 85 ? 'var(--acc)' : g.pkt >= 55 ? '#ffc53d' : '#e5484d';
 
@@ -3858,18 +3882,23 @@ function renderDzis(){
           (gp && gp.zalegly ? ' · CZEKA '+gp.zalegly+' DNI' : '')+'</div>'+
         '<div class="nazwa" style="color:'+b.a+'">'+esc(dayName2(dzien))+'</div>'+
         '<div class="liczby">'+
-          '<div><b>'+(ile || '—')+'</b><span>ĆWICZEŃ</span></div>'+
-          '<div><b>'+(serie || '—')+'</b><span>SERII</span></div>'+
+          '<div><b>'+(ileP || '—')+'</b><span>ĆWICZEŃ</span></div>'+
+          '<div><b>'+(serieP || '—')+'</b><span>SERII</span></div>'+
           '<div><b>'+(minuty ? minuty : '—')+'</b><span>MINUT</span></div>'+
         '</div>'+
         pasekTygodnia()+
       '</div>'+
     '</div>'+
     '<div class="dol">'+
+      /* Liczba gotowosci stoi pierscien nizej, na kafelku GOTOWOSC. Tutaj
+         zostaje tylko kropka koloru i — gdy danych brak — zdanie, ktore mowi,
+         co z tym zrobic. Ta sama liczba w dwoch miejscach na jednym ekranie
+         nie dodaje nic poza szumem. */
       '<div class="hm" style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+
-        '<i style="width:7px;height:7px;border-radius:50%;background:'+kropka+';flex:none"></i>'+
-        (g.nieznana ? '<b>Gotowość nieznana — wpisz dane poranne</b>'
-                    : 'Gotowość '+g.pkt+'/100')+
+        (g.nieznana
+          ? '<i style="width:7px;height:7px;border-radius:50%;background:'+kropka+';flex:none"></i>'+
+            '<b>Gotowość nieznana — wpisz dane poranne</b>'
+          : '')+
         (gp ? '<span class="autor '+(gp.sprawdzony?'trener':'apka')+'" '+
               'style="margin-left:auto">'+(gp.sprawdzony?'TRENER':'APLIKACJA')+'</span>' : '')+
       '</div>'+
@@ -4983,6 +5012,10 @@ function kafelMakro(){
       '<span class="mkl">'+jest+'<span class="mkc">/'+c+' g</span></span>'+
     '</div>';
   }).join('');
+  /* „brakuje: bialko 113 g · weglowodany 403 g · tluszcze 57 g" powtarzalo
+     slowo w slowo to, co stoi w slupkach ponizej — trzeci raz ta sama rzecz
+     na jednym ekranie, licząc pierścień kalorii. Zostaje sam komunikat
+     o domknieciu dnia, bo tego w slupkach nie widac. */
   const brakuje = MAKRA
     .map(mk => [mk.n.toLowerCase(), Math.max(0, (cele[mk.k]||0) - Math.round(m[mk.k]||0))])
     .filter(x => x[1] > 0);
@@ -4992,8 +5025,7 @@ function kafelMakro(){
       '<div class="etyk" style="margin:0">MAKRO NA DZIŚ</div>'+
       '<div style="font-size:11px;font-weight:700;color:'+
         (brakuje.length ? 'var(--dim)' : 'var(--ok)')+'">'+
-        (brakuje.length ? 'brakuje: '+esc(brakuje.map(x => x[0]+' '+x[1]+' g').join(' · '))
-                        : 'wszystko dowiezione')+'</div>'+
+        (brakuje.length ? '' : 'wszystko dowiezione')+'</div>'+
     '</div>'+ wiersze +
     (m.niepelne ? '<div class="note" style="margin-top:8px">Ten dzień ma wpisane samo '+
       'białko — kalorie są policzone z tego, co znane, więc to dolna granica.</div>' : '')+
@@ -5025,12 +5057,16 @@ function renderHub(){
      czego użytkownik nie zobaczy w liczbach — i cicha korekta jest gorsza
      od błędu. Więc pokazujemy ją tylko wtedy, gdy naprawdę zachodzi. */
   const tp = tydzienPlanu(), stracone = przepadleTygodnie();
+  /* To byla karta na pol ekranu opisujaca stan, ktory nie zmienia sie
+     tygodniami — czyli dokladnie definicja tapety. Rozjazd miedzy kalendarzem
+     a planem dalej MUSI byc widoczny (cicha korekta jest gorsza od bledu),
+     ale wystarczy jedna szara linijka pod paskiem tygodnia. Pelne wyjasnienie
+     stoi w naglowku Raportu, gdzie i tak sie po nie siega. */
   const fazaBox = stracone > 0
-    ? '<div class="tip"><b>Kalendarz mówi tydzień '+w+', plan liczy '+tp+'</b>'+
-      '<div class="hm" style="margin-top:4px">'+
-      (stracone===1?'Jeden tydzień':stracone+' tygodnie')+
-      ' bez siłowni nie przesuwa fazy — nie było czego progresować. '+
-      'Wracasz tam, gdzie skończyłeś.</div></div>'
+    ? '<div class="hm" style="margin:-2px 0 10px;opacity:.75">Tydzień '+w+
+      ' kalendarza · plan liczy '+tp+' — '+
+      (stracone===1?'tydzień':stracone+' tygodnie')+
+      ' bez siłowni nie przesuwa fazy.</div>'
     : '';
   const s=suggestNext();
   /* BŁĄD, przez który cały ekran główny był pusty: usunąłem z HTML dwa
@@ -5156,11 +5192,11 @@ function renderHub(){
        jedno spojrzenie zamiast dwóch akapitów. Potem plan, potem obraz tygodnia.
        Proza (poranne pytania, braki danych, uwagi) siedzi pod dotknięciem
        kafelków albo niżej, gdzie nie zasłania rzeczy pilnych. */
+    fazaBox +
     renderZapis() + renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume +
     renderDzis() +
     '<div class="krata">' + kafelGotowosc() + kafelKalorii() + '</div>' +
     bezpieczneHtml('kafelMakro', kafelMakro) +
-    fazaBox +
     /* Rozwinięcie musi wyjść ZARAZ POD kafelkiem, który dotknąłeś. Wersja 40
        doklejała je na końcu ekranu — dotykało się pierścienia, a panel
        otwierał się kilka ekranów niżej i wyglądało to na brak reakcji. */
@@ -6540,10 +6576,16 @@ function przerwaDla(nazwa){
 function startTimer(sec, cwiczenie){
   T_LEN=sec||DB.settings.rest||90; T_END=Date.now()+T_LEN*1000;
   if(cwiczenie != null) T_CW = cwiczenie;
-  try{ localStorage.setItem(TIMKEY, JSON.stringify({end:T_END, len:T_LEN})); }catch(e){}
+  try{ localStorage.setItem(TIMKEY, JSON.stringify({end:T_END, len:T_LEN, cw:T_CW||''})); }catch(e){}
   const bar=document.getElementById('tbar'); bar.classList.add('on'); bar.classList.remove('done');
-  document.getElementById('tLab').textContent='PRZERWA · '+fmtTime(T_LEN);
+  document.getElementById('tLab').textContent=etykietaPrzerwy();
   clearInterval(TICK); paint(); TICK=setInterval(paint,250); wakeOn();
+}
+/* Nazwa cwiczenia w pasku. Miedzy seriami ekran bywa przewiniety gdzie indziej,
+   a pasek jest przypiety na stale — bez nazwy nie wiadomo, do czego liczy. */
+function etykietaPrzerwy(){
+  return 'PRZERWA' + (T_CW ? ' · ' + String(T_CW).toUpperCase() : '') +
+    ' · ' + fmtTime(T_LEN);
 }
 function resumeTimer(){
   try{
@@ -6551,9 +6593,9 @@ function resumeTimer(){
     if(!r || !r.end) return;
     const zostalo=(r.end-Date.now())/1000;
     if(zostalo<=0){ localStorage.removeItem(TIMKEY); return; }
-    T_LEN=r.len||90; T_END=r.end;
+    T_LEN=r.len||90; T_END=r.end; if(r.cw) T_CW=r.cw;
     const bar=document.getElementById('tbar'); bar.classList.add('on'); bar.classList.remove('done');
-    document.getElementById('tLab').textContent='PRZERWA · '+fmtTime(T_LEN);
+    document.getElementById('tLab').textContent=etykietaPrzerwy();
     clearInterval(TICK); paint(); TICK=setInterval(paint,250); wakeOn();
   }catch(e){}
 }
@@ -8340,10 +8382,65 @@ function renderSteppery(){
   }).join('') + '</div>';
 }
 
+/* Pelne wyjasnienie, skad biora sie dane z zegarka — schowane pod „?",
+   bo czyta sie je raz, a zajmowalo cztery linijki kazdego dnia. */
+function pomocZegarek(){
+  alert('Sen, tętno spoczynkowe, HRV i Body Battery wchodzą tu same z zegarka '+
+    '— Cloudflare pobiera je rano, bez udziału telefonu.\n\n'+
+    'Jeśli dopiero wstałeś i pól jeszcze nie ma: dane o śnie pojawiają się '+
+    'w Garmin Connect dopiero po tym, jak zegarek zsynchronizuje się po '+
+    'przebudzeniu. Wtedy pomaga „Pobierz z zegarka".');
+}
+
+/* Data po polsku pod natywnym polem — patrz komentarz przy #dDateOpis. */
+function opisDaty(){
+  const el = document.getElementById('dDate');
+  const box = document.getElementById('dDateOpis');
+  if(!el || !box) return;
+  const v = el.value;
+  if(!v){ box.textContent = ''; return; }
+  const d = new Date(v + 'T12:00:00');
+  const dni = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
+  const mies = ['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca',
+                'sierpnia','września','października','listopada','grudnia'];
+  if(isNaN(d.getTime())){ box.textContent = ''; return; }
+  box.textContent = dni[d.getDay()] + ', ' + d.getDate() + ' ' + mies[d.getMonth()] +
+    ' ' + d.getFullYear() + (v === today() ? ' · dziś' : '');
+}
+
+/* STAN KOPII ZAPASOWEJ — to, co jest, a nie to, czego sie obawiamy.
+
+   Wczesniej stalo tu na sztywno zolte „Dane sa tylko w tym telefonie".
+   Odkad dziala Worker, to zdanie bylo po prostu nieprawdziwe — a ostrzezenie,
+   ktore klamie, przestaje byc czytane takze wtedy, gdy zaczyna miec racje. */
+function stanKopii(){
+  const box = document.getElementById('kopiaStan');
+  if(!box) return;
+  if(srvGotowy() && SRV.ostatni && !SRV.blad){
+    const dzien = SRV.ostatni.slice(0, 10);
+    const swieza = dzien >= daysAgo(2);
+    box.innerHTML = '<div class="tip '+(swieza ? 'ok' : 'warn')+'">'+
+      '<b>Kopia na serwerze: '+plDate(dzien)+' '+SRV.ostatni.slice(11,16)+'</b>'+
+      (swieza ? '' : '<div class="hm" style="margin-top:4px">To już ponad dobę temu — '+
+        'wejdź w Serwer → „Synchronizuj teraz".</div>')+'</div>';
+    return;
+  }
+  if(srvGotowy() && SRV.blad){
+    box.innerHTML = '<div class="tip warn"><b>Ostatnia wysyłka się nie udała</b>'+
+      '<div class="hm" style="margin-top:4px">'+esc(String(SRV.blad))+'</div></div>';
+    return;
+  }
+  box.innerHTML = '<div class="tip warn"><b>Dane są tylko w tym telefonie</b>'+
+    '<div class="hm" style="margin-top:4px">Włącz synchronizację w Serwerze '+
+    'niżej — wtedy kopia leci na Cloudflare przy każdej zmianie. Do tego czasu '+
+    'eksportuj co niedzielę.</div></div>';
+}
+
 function renderDaily(){
   renderHistTreningow();
   const el=document.getElementById('dDate');
   if(!el.value) el.value=today();
+  opisDaty();
   const ex=DB.daily.find(d=>d.date===el.value);
   renderRest();
   [['dSleep','sleep'],['dRhr','rhr'],['dHrv','hrv'],['dSteps','steps'],
@@ -9534,6 +9631,7 @@ function renderKosz(){
 
 function renderData(){
   setTimeout(() => bezpiecznie('renderPush', renderPush), 0);
+  bezpiecznie('stanKopii', stanKopii);
   renderSrv();
   renderKosz();
   renderKopie();
