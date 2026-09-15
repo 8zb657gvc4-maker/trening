@@ -1619,8 +1619,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '65';
-const WERSJA_DATA = '2026-09-14';
+const WERSJA = '66';
+const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 let DB = null, SES = null, SUB = 'hub';
@@ -1890,6 +1890,65 @@ function pushKluczNaBajty(b64){
   return b;
 }
 
+/** Subskrypcja z przeglądarki — albo null, gdy telefon jej nie ma. */
+async function pushSubskrypcja(){
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    return await reg.pushManager.getSubscription();
+  } catch(e){ return null; }
+}
+
+/** Pełna rejestracja: klucz z Workera → subskrypcja → zapis na serwerze.
+    Wołana i przy pierwszym włączeniu, i przy naprawie. */
+async function pushZarejestruj(odNowa){
+  const r = await fetch(srvUrl('push/klucz'), {headers: srvNaglowki({'Accept':'application/json'})});
+  const d = await r.json().catch(() => ({}));
+  if(!r.ok || !d.klucz) throw new Error(d.blad || 'Worker nie ma kluczy VAPID');
+
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  /* Subskrypcja wystawiona na stary klucz VAPID da 403 przy wysyłce —
+     wtedy trzeba ją wyrzucić i poprosić o nową. */
+  if(sub && odNowa){ try { await sub.unsubscribe(); } catch(e){} sub = null; }
+  if(!sub){
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: pushKluczNaBajty(d.klucz)
+    });
+  }
+  const w = await fetch(srvUrl('push/zapis'), {
+    method: 'POST', headers: srvNaglowki({'Content-Type':'application/json'}),
+    body: JSON.stringify(sub)
+  });
+  if(!w.ok) throw new Error('nie udało się zapisać na serwerze');
+  await pushZapiszDlaSW({adres: SRV.adres, token: SRV.token});
+  return sub;
+}
+
+/** Ostrzeżenie pod „Włączone", gdy zgoda jest, a subskrypcji nie ma. */
+async function pushDiagnoza(){
+  const el = document.getElementById('pushStanSerwer');
+  if(!el) return;
+  const sub = await pushSubskrypcja();
+  if(sub){ el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="tip warn" style="margin-top:8px"><b>Telefon nie jest '+
+    'zapisany na serwerze</b><div class="hm" style="margin-top:4px">Zgoda jest, ale '+
+    'brakuje subskrypcji — serwer nie ma dokąd wysłać powiadomienia.</div>'+
+    '<button class="btn ghost sm" style="margin-top:8px;width:100%" '+
+    'onclick="naprawPowiadomienia()">Dokończ włączanie</button></div>';
+}
+
+async function naprawPowiadomienia(){
+  if(!srvGotowy()){ toast('Najpierw ustaw serwer wyżej'); return; }
+  toast('Zapisuję telefon…');
+  try {
+    await pushZarejestruj(true);
+    await pushWyslijTresc(true);
+    toast('Gotowe — telefon zapisany');
+  } catch(e){ toast('Nie udało się: ' + (e.message || e)); }
+  renderData();
+}
+
 function renderPush(){
   const el = document.getElementById('pushBox');
   if(!el) return;
@@ -1916,10 +1975,16 @@ function renderPush(){
     el.innerHTML = naglowek +
       '<div class="note">Włączone. Powiadomienie przychodzi rano, razem z danymi '+
       'z zegarka — treść składa aplikacja przy ostatniej synchronizacji.</div>'+
+      '<div id="pushStanSerwer"></div>'+
       '<div class="btn2" style="margin-top:8px">'+
         '<button class="btn ghost sm" onclick="pushProba()">Wyślij próbne</button>'+
         '<button class="btn ghost sm" onclick="wylaczPowiadomienia()">Wyłącz</button>'+
       '</div>';
+    /* Zgoda iPhone'a to dopiero połowa. Druga połowa — subskrypcja zapisana
+       na Workerze — potrafi zniknąć (nowa instalacja z ekranu głównego, zmiana
+       kluczy VAPID, przerwane włączanie). Wtedy ekran mówił „Włączone", a serwer
+       nie miał dokąd wysłać. Sprawdzamy to osobno i dajemy przycisk naprawy. */
+    setTimeout(pushDiagnoza, 0);
     return;
   }
   if(stan === 'denied'){
@@ -1935,15 +2000,33 @@ function renderPush(){
     'onclick="wlaczPowiadomienia()">Włącz powiadomienia</button>';
 }
 
+async function pushTeraz(){
+  const r = await fetch(srvUrl('push/teraz'), {headers: srvNaglowki({'Accept':'application/json'})});
+  const d = await r.json().catch(() => ({}));
+  if(!r.ok && !d.blad) d.blad = 'HTTP ' + r.status;
+  return d;
+}
+
 async function pushProba(){
   if(!srvGotowy()){ toast('Najpierw ustaw serwer'); return; }
   toast('Wysyłam…');
   await pushWyslijTresc(true);
   try {
-    const r = await fetch(srvUrl('push/teraz'), {headers: srvNaglowki({'Accept':'application/json'})});
-    const d = await r.json().catch(() => ({}));
-    toast(r.ok ? ('Serwer: ' + (d.status || 'wysłane')) : ('Błąd: ' + (d.blad || r.status)));
-  } catch(e){ toast('Brak połączenia z serwerem'); }
+    let d = await pushTeraz();
+    /* Dwie awarie naprawiają się same: brak subskrypcji (telefon nigdy się
+       nie zapisał) i 403 (subskrypcja na stary klucz VAPID). W obu wypadkach
+       rejestrujemy telefon od nowa i próbujemy raz jeszcze, zamiast kazać
+       użytkownikowi zgadywać, co poszło nie tak. */
+    const trzebaNaprawic = (d.status && /brak subskrypcji|wygasła/.test(d.status))
+      || (d.blad && /40[34]|410/.test(String(d.blad)));
+    if(trzebaNaprawic && pushStan() === 'granted'){
+      toast('Zapisuję telefon na serwerze…');
+      await pushZarejestruj(true);
+      d = await pushTeraz();
+    }
+    toast(d.blad ? ('Błąd: ' + d.blad) : ('Serwer: ' + (d.status || 'wysłane')));
+  } catch(e){ toast('Nie udało się: ' + (e.message || e)); }
+  renderData();
 }
 
 async function wlaczPowiadomienia(){
@@ -1965,22 +2048,7 @@ async function wlaczPowiadomienia(){
       renderData();
       return;
     }
-    const r = await fetch(srvUrl('push/klucz'), {headers: srvNaglowki({'Accept':'application/json'})});
-    const d = await r.json().catch(() => ({}));
-    if(!r.ok || !d.klucz) throw new Error(d.blad || 'Worker nie ma kluczy VAPID');
-
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: pushKluczNaBajty(d.klucz)
-    });
-    const w = await fetch(srvUrl('push/zapis'), {
-      method: 'POST', headers: srvNaglowki({'Content-Type':'application/json'}),
-      body: JSON.stringify(sub)
-    });
-    if(!w.ok) throw new Error('nie udało się zapisać na serwerze');
-
-    await pushZapiszDlaSW({adres: SRV.adres, token: SRV.token});
+    await pushZarejestruj(false);
     await pushWyslijTresc(true);
     toast('Powiadomienia włączone');
   } catch(e){
