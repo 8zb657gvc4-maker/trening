@@ -164,15 +164,23 @@ h2:first-child{margin-top:0}
   padding:0;border-radius:9px;color:#7d8a9c}
 .sdel:active{background:rgba(255,107,107,.18);color:var(--bad)}
 
-.inrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+/* Dwie kolumny, nie trzy. Pol w tym wierszu sa DWA — ciezar i powtorzenia —
+   a siatka miala trzy kolumny jeszcze z czasow, gdy RPE bylo trzecim licznikiem.
+   Kazde pole dostawalo przez to trzecia szerokosci karty: dwa przyciski po 46 px
+   zjadaly z niej prawie wszystko i na wpisana liczbe zostawalo kilkanascie
+   pikseli. Filip zglosil to wprost: „guziki zaslaniaja liczby". */
+.inrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:12px}
 .fld label{display:block;font-size:10.5px;color:var(--dim);margin-bottom:4px;
   text-transform:uppercase;letter-spacing:.5px;font-weight:700}
 .step{display:flex;align-items:center;gap:0}
-.step button{width:46px;height:46px;background:var(--card2);border:1px solid var(--line);
+.step button{width:44px;height:46px;background:var(--card2);border:1px solid var(--line);
   font-size:19px;color:var(--acc);flex-shrink:0;font-weight:600}
 .step button:first-child{border-radius:10px 0 0 10px}
 .step button:last-child{border-radius:0 10px 10px 0}
-.step input{border-radius:0;text-align:center;padding:11px 2px;height:44px;
+/* `flex:1` z `min-width:0` — bez tego pole liczbowe trzyma domyslna
+   szerokosc przegladarki i wypycha przyciski poza karte zamiast sie zwezic. */
+.step input{border-radius:0;text-align:center;padding:11px 2px;height:46px;
+  flex:1;min-width:0;width:100%;font-size:18px;font-weight:700;
   border-left:none;border-right:none;font-variant-numeric:tabular-nums}
 
 .btn{background:var(--acc);color:#04140a;font-weight:800;padding:13px;
@@ -620,6 +628,30 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .imgbrak{margin:9px 0 4px;padding:11px;border:1px dashed var(--line);border-radius:12px;
   color:var(--dim);font-size:12.5px;line-height:1.45}
 .imgbrak a{color:var(--acc)}
+
+/* SKANER NA ZYWO --------------------------------------------------------
+   Pelny ekran nad aplikacja. Ramka nie kadruje niczego w kodzie - sluzy
+   wylacznie temu, zeby czlowiek wiedzial, gdzie trzymac opakowanie. */
+.skaner{position:fixed;inset:0;z-index:9000;background:#000;display:flex;
+  align-items:center;justify-content:center;overflow:hidden}
+.skaner video{width:100%;height:100%;object-fit:cover}
+.skaner-ramka{position:absolute;left:8%;right:8%;top:38%;height:24%;
+  border:2px solid rgba(255,255,255,.85);border-radius:10px;
+  box-shadow:0 0 0 9999px rgba(0,0,0,.35)}
+.skaner-ramka:after{content:'';position:absolute;left:4px;right:4px;top:50%;
+  height:2px;background:var(--dzien-a,#4ade80);opacity:.9}
+.skaner-info{position:absolute;left:0;right:0;top:calc(38% - 42px);
+  text-align:center;color:#fff;font-size:14px;text-shadow:0 1px 3px #000;padding:0 16px}
+.skaner-dol{position:absolute;left:12px;right:12px;bottom:calc(18px + env(safe-area-inset-bottom,0px));
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.skaner-dol .btn{width:100%;background:rgba(20,20,20,.85);color:#fff;border-color:rgba(255,255,255,.35)}
+
+/* Powtarzanie posilkow — male guziki, ciasno, bo jest ich kilka. */
+.chipy{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.chip{background:var(--card2);border:1px solid var(--line);color:var(--txt);
+  border-radius:999px;padding:8px 12px;font-size:12.5px;font-weight:700;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip small{color:var(--dim);font-weight:600;margin-left:5px}
 </style>
 </head>
 <body>
@@ -1619,7 +1651,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '66';
+const WERSJA = '68';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -5607,6 +5639,11 @@ function renderSession(){
             '<input type="number" inputmode="numeric" id="ir'+i+'" value="'+prefill(e,'r')+'">'+
             '<button onclick="bump('+i+',\'r\',1)">+</button></div></div>'+
         '</div>'+
+        (() => { const o = jakOstatnio(e); return o
+          ? '<button class="btn ghost sm" style="margin-top:8px" '+
+            'onclick="wpiszJakOstatnio('+i+')">Jak ostatnio: '+
+            (o.w ? fmtKg(o.w)+' kg × ' : '') + o.r + '</button>'
+          : ''; })()+
         /* RPE jako przyciski, nie licznik ze strzałkami. To jedyna wartość,
            która zmienia się prawie co serię, a przy strzałkach zejście z 9 na 6
            kosztowało trzy dotknięcia — w praktyce kończyło się zostawianiem
@@ -5724,8 +5761,40 @@ function przywrocWpisane(){
   SES_WPISANE = null;
 }
 
+/* JAK OSTATNIO — jedno dotkniecie zamiast dwoch licznikow.
+
+   Miedzy seriami wpisuje sie te same liczby co poprzednio, po jednej
+   strzalce naraz. Bierzemy serie o tym samym numerze z poprzedniego
+   treningu tego cwiczenia; gdy bylo ich wtedy mniej, ostatnia. */
+function jakOstatnio(e){
+  const last = lastFor(e.name);
+  if(!last || !last.sets) return null;
+  const robocze = last.sets.filter(x => !x.wu);
+  if(!robocze.length) return null;
+  const nr = e.sets.filter(x => !x.wu).length;
+  return robocze[Math.min(nr, robocze.length - 1)] || null;
+}
+
+function wpiszJakOstatnio(i){
+  const e = SES.exercises[i], s = jakOstatnio(e);
+  if(!s){ toast('Nie mam poprzedniego wyniku'); return; }
+  const w = document.getElementById('iw' + i), r = document.getElementById('ir' + i);
+  if(w) w.value = s.w == null ? 0 : s.w;
+  if(r) r.value = s.r == null ? '' : s.r;
+  sygnal(18);
+}
+
 function prefill(e,f){
   if(e.sets.length) return e.sets[e.sets.length-1][f] ?? '';
+  /* RPE PIERWSZEJ SERII ZOSTAJE PUSTE.
+
+     Do wersji 67 brala sie tu wartosc z poprzedniego treningu. Efekt widac
+     bylo w danych: 90 serii oznaczonych jako RPE 6, a od 6 wrzesnia dwie cale
+     sesje po kolei bez jednego odstepstwa. Wystarczylo raz zostawic szostke
+     i przenosila sie sama przez tygodnie — a silnik czytal to jako „mial zapas
+     czterech powtorzen przez caly trening" i na tej podstawie proponowal ciezar.
+     Lepiej zapytac raz na cwiczenie, niz miec liczbe, ktora wyglada na dane. */
+  if(f === 'rpe') return '';
   if(e.sug&&e.sug.w!=null){ if(f==='w') return e.sug.w; if(f==='r') return e.sug.r; return ''; }
   const last=lastFor(e.name);
   if(last) return last.sets[0][f] ?? '';
@@ -5801,6 +5870,13 @@ function addSet(i, rozgrzewka){
   const r=parseInt(document.getElementById('ir'+i).value)||0;
   const rpe=parseFloat(document.getElementById('irpe'+i).value)||null;
   if(!r){ toast('Wpisz liczbę powtórzeń'); return; }
+  /* Pierwsza seria robocza bez RPE to cwiczenie bez punktu odniesienia —
+     nastepnym razem nie ma z czego policzyc ciezaru. Kolejne serie moga
+     odziedziczyc wartosc z poprzedniej, bo ta byla juz swiadomie wybrana. */
+  if(!rozgrzewka && !rpe && !e.sets.some(x => !x.wu)){
+    toast('Zaznacz RPE — od niego zależy następny ciężar');
+    return;
+  }
   const s={w:w,r:r,rpe:rozgrzewka?null:rpe};
   if(rozgrzewka) s.wu=true;
   e.sets.push(s); e._open=true;
@@ -6947,57 +7023,103 @@ function eanZRunow(runy, odCzarnego){
   return null;
 }
 
+/* Runy czarno-bialych pasm przy zadanym progu. Prog moze byc rozny dla
+   kazdego piksela - stad funkcja, a nie liczba. */
+function eanZProgu(piksele, prog){
+  const n = piksele.length;
+  const runy = []; let kolor = piksele[0] < prog(0), dl = 0;
+  for(let i = 0; i < n; i++){
+    const c = piksele[i] < prog(i);
+    if(c === kolor) dl++;
+    else { runy.push(dl); kolor = c; dl = 1; }
+  }
+  runy.push(dl);
+  /* Kod bywa sfotografowany do gory nogami - wtedy ten sam wiersz
+     czyta sie od konca, a kolor pierwszego paska to kolor ostatniego. */
+  return eanZRunow(runy, piksele[0] < prog(0))
+      || eanZRunow(runy.slice().reverse(), kolor);
+}
+
 function eanZWiersza(piksele){
+  const n = piksele.length;
   let min = 255, max = 0;
-  for(let i = 0; i < piksele.length; i++){
+  for(let i = 0; i < n; i++){
     const p = piksele[i];
     if(p < min) min = p;
     if(p > max) max = p;
   }
   if(max - min < 40) return null;              /* wiersz bez kontrastu */
-  const prog = (min + max) / 2;
 
-  const runy = []; let kolor = piksele[0] < prog, dl = 0;
-  for(let i = 0; i < piksele.length; i++){
-    const c = piksele[i] < prog;
-    if(c === kolor) dl++;
-    else { runy.push(dl); kolor = c; dl = 1; }
+  /* Prog globalny wystarcza przy rownym swietle. */
+  const srodek = (min + max) / 2;
+  const a = eanZProgu(piksele, () => srodek);
+  if(a) return a;
+
+  /* Prog ruchomy: srednia z okna szerokosci ~1/12 wiersza, minus margines.
+     To jest roznica miedzy skanerem, ktory dziala w laboratorium, a takim,
+     ktory dziala w sklepie: odblask lampy albo cien palca na polowie
+     opakowania przesuwa jasnosc tak, ze jeden prog dla calego wiersza
+     zamienia polowe paskow w jedna plame. */
+  const okno = Math.max(9, Math.round(n / 12)) | 1;
+  const suma = new Float64Array(n + 1);
+  for(let i = 0; i < n; i++) suma[i + 1] = suma[i] + piksele[i];
+  const pol = okno >> 1;
+  const prog = new Float64Array(n);
+  for(let i = 0; i < n; i++){
+    const od = Math.max(0, i - pol), do_ = Math.min(n, i + pol + 1);
+    prog[i] = (suma[do_] - suma[od]) / (do_ - od) - 3;
   }
-  runy.push(dl);
+  return eanZProgu(piksele, i => prog[i]);
+}
+/* Kilkanaście wierszy ze środka obrazu, wygrywa najczęstszy odczyt. */
+function eanZDanych(dane, w, h){
+  const glosy = {}, ILE = 31;
+  const wiersz = new Uint8Array(w);
+  const jasnosc = (i) => (dane[i] * 299 + dane[i+1] * 587 + dane[i+2] * 114) / 1000;
 
-  /* Kod bywa sfotografowany do góry nogami — wtedy ten sam wiersz
-     czyta się od końca, a kolor pierwszego paska to kolor ostatniego. */
-  return eanZRunow(runy, piksele[0] < prog)
-      || eanZRunow(runy.slice().reverse(), kolor);
+  for(let k = 0; k < ILE; k++){
+    const y = Math.round(h * (0.10 + 0.80 * k / (ILE - 1)));
+    const baza = y * w * 4;
+    /* jasnosc, nie sama zielen - kody bywaja na kolorowym tle */
+    for(let x = 0; x < w; x++) wiersz[x] = jasnosc(baza + x * 4);
+    const kod = eanZWiersza(wiersz);
+    if(kod) glosy[kod] = (glosy[kod] || 0) + 1;
+  }
+
+  /* Linie ukosne. Zdjecie z reki nigdy nie jest idealnie proste, a przy
+     przechyle o kilka stopni poziomy wiersz przecina paski pod katem i
+     mierzy je za szerokie. Tanszy sposob niz obracanie calego obrazu:
+     czytac po skosie w druga strone. */
+  for(const nachyl of [-0.14, -0.07, 0.07, 0.14]){
+    for(let k = 0; k < 5; k++){
+      const y0 = h * (0.25 + 0.5 * k / 4);
+      for(let x = 0; x < w; x++){
+        const y = Math.round(y0 + (x - w / 2) * nachyl);
+        wiersz[x] = (y < 0 || y >= h) ? 255 : jasnosc((y * w + x) * 4);
+      }
+      const kod = eanZWiersza(wiersz);
+      if(kod) glosy[kod] = (glosy[kod] || 0) + 1;
+    }
+  }
+
+  const naj = Object.keys(glosy).sort((a, b) => glosy[b] - glosy[a])[0];
+  return naj || null;
 }
 
-/* Kilkanaście wierszy ze środka obrazu, wygrywa najczęstszy odczyt. */
+function eanZPlotna(c){
+  const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+  return eanZDanych(d, c.width, c.height);
+}
+
+/* Kilkadziesiat linii przez obraz, wygrywa najczestszy odczyt. */
 function eanZObrazu(img, maxBok){
   const sk = Math.min(1, (maxBok || 1600) / Math.max(img.width, img.height));
   const c = document.createElement('canvas');
   c.width = Math.max(1, Math.round(img.width * sk));
   c.height = Math.max(1, Math.round(img.height * sk));
-  const ctx = c.getContext('2d');
-  ctx.drawImage(img, 0, 0, c.width, c.height);
-  const dane = ctx.getImageData(0, 0, c.width, c.height).data;
-
-  const glosy = {}, ILE = 25;
-  const wiersz = new Uint8Array(c.width);
-  for(let k = 0; k < ILE; k++){
-    const y = Math.round(c.height * (0.15 + 0.7 * k / (ILE - 1)));
-    const baza = y * c.width * 4;
-    for(let x = 0; x < c.width; x++){
-      const i = baza + x * 4;
-      /* jasność, nie sama zieleń — kody bywają na kolorowym tle */
-      wiersz[x] = (dane[i] * 299 + dane[i+1] * 587 + dane[i+2] * 114) / 1000;
-    }
-    const kod = eanZWiersza(wiersz);
-    if(kod) glosy[kod] = (glosy[kod] || 0) + 1;
-  }
-  const naj = Object.keys(glosy).sort((a, b) => glosy[b] - glosy[a])[0];
-  return naj || null;
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return eanZPlotna(c);
 }
-
 /* ---- JEDZENIE → GRAMY BIAŁKA -------------------------------------------
    Model dostaje jedno zadanie i ma odpowiedzieć samym JSON-em. Nawet jeśli
    odpowie zdaniem dookoła, wyłuskujemy pierwszy nawias klamrowy — to tańsze
@@ -7370,6 +7492,101 @@ function wczytajObrazek(plik){
   });
 }
 
+/* ============================================================
+   SKANER KODU NA ZYWO
+
+   Pojedyncze zdjecie daje jedno podejscie: zla ostrosc, odblask albo
+   przechyl i po sprawie. Podglad z kamery daje kilkanascie podejsc na
+   sekunde, a czlowiek widzi, co robi, i sam poprawia odleglosc. To jest
+   cala roznica miedzy "nie czyta" a "czyta".
+
+   Kod przyjmujemy dopiero, gdy ta sama liczba wyjdzie z DWOCH roznych
+   klatek. Suma kontrolna EAN odrzuca wiekszosc smieci, ale nie wszystkie -
+   drugie potwierdzenie zamyka te reszte.
+   ============================================================ */
+let SKANER = null;
+
+function skanerZamknij(){
+  if(!SKANER) return;
+  const s = SKANER; SKANER = null;
+  try { if(s.klatka) cancelAnimationFrame(s.klatka); } catch(e){}
+  try { s.strum.getTracks().forEach(t => t.stop()); } catch(e){}
+  try { if(s.el && s.el.parentNode) s.el.parentNode.removeChild(s.el); } catch(e){}
+}
+
+function skanerZeZdjecia(){
+  skanerZamknij();
+  const el = document.getElementById('jedzenieKod');
+  if(el) el.click();
+}
+
+async function skanujNaZywo(){
+  if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
+    skanerZeZdjecia(); return;
+  }
+  let strum;
+  try {
+    strum = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' },
+               width: { ideal: 1920 }, height: { ideal: 1080 } }
+    });
+  } catch(e){
+    /* Odmowa dostepu albo brak kamery - zdjecie dalej dziala. */
+    toast('Brak dostepu do aparatu - robimy ze zdjecia');
+    skanerZeZdjecia(); return;
+  }
+
+  const el = document.createElement('div');
+  el.className = 'skaner';
+  el.innerHTML =
+    '<video playsinline autoplay muted></video>' +
+    '<div class="skaner-ramka"></div>' +
+    '<div class="skaner-info">Kod poziomo w ramce, 10-15 cm od obiektywu</div>' +
+    '<div class="skaner-dol">' +
+      '<button class="btn ghost sm" onclick="skanerZamknij()">Anuluj</button>' +
+      '<button class="btn ghost sm" onclick="skanerZamknij();wpiszKod()">Wpisz cyfry</button>' +
+    '</div>';
+  document.body.appendChild(el);
+
+  const v = el.querySelector('video');
+  v.setAttribute('playsinline', ''); v.muted = true; v.srcObject = strum;
+  try { await v.play(); } catch(e){}
+
+  const c = document.createElement('canvas');
+  const info = el.querySelector('.skaner-info');
+  SKANER = { strum, el, glosy: {}, start: Date.now(), klatka: 0 };
+
+  const krok = () => {
+    if(!SKANER) return;
+    if(v.videoWidth){
+      /* Wiecej niz 1280 px szerokosci nie pomaga, a kosztuje czas na kazdej
+         klatce - paski w kadrze i tak maja wtedy po kilka pikseli. */
+      const sk = Math.min(1, 1280 / v.videoWidth);
+      c.width = Math.round(v.videoWidth * sk);
+      c.height = Math.round(v.videoHeight * sk);
+      c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+      let kod = null;
+      try { kod = eanZPlotna(c); } catch(e){ kod = null; }
+      if(kod){
+        SKANER.glosy[kod] = (SKANER.glosy[kod] || 0) + 1;
+        if(SKANER.glosy[kod] >= 2){
+          const znaleziony = kod;
+          skanerZamknij();
+          try { navigator.vibrate && navigator.vibrate(60); } catch(e){}
+          pokazProdukt(znaleziony);
+          return;
+        }
+      }
+    }
+    if(Date.now() - SKANER.start > 12000){
+      info.textContent = 'Nie idzie - sprobuj blizej, bez odblasku, albo wpisz cyfry';
+      SKANER.start = Date.now();
+    }
+    SKANER.klatka = requestAnimationFrame(krok);
+  };
+  krok();
+}
+
 async function skanujKod(ev){
   const plik = ev.target.files && ev.target.files[0];
   ev.target.value = '';
@@ -7718,6 +7935,42 @@ function usunPosilek(id){
   odswiezWidok();
 }
 
+/* POWTORZ POSILEK — te same rzeczy wracaja co kilka dni.
+
+   Dwanascie wpisow przez szesc tygodni to nie brak checi, tylko koszt:
+   za kazdym razem trzeba opisac to samo slowami i poczekac na model.
+   Lista ostatnich roznych posilkow zamienia to w jedno dotkniecie. */
+function ostatniePosilki(ile){
+  const widziane = {}, out = [];
+  const lista = (DB.posilki || []).slice().reverse();
+  for(const p of lista){
+    const k = String(p.opis || '').toLowerCase().trim();
+    if(!k || widziane[k]) continue;
+    widziane[k] = 1;
+    out.push(p);
+    if(out.length >= (ile || 6)) break;
+  }
+  return out;
+}
+
+function powtorzPosilek(id){
+  const p = (DB.posilki || []).find(x => x.id === id);
+  if(!p){ toast('Nie mam tego posiłku'); return; }
+  dodajMakro({bialko: p.bialko, wegle: p.wegle, tluszcz: p.tluszcz, kcal: p.kcal}, p.opis);
+  toast('Dodane: ' + p.opis);
+}
+
+function chipyPosilkow(){
+  const lista = ostatniePosilki(6);
+  if(!lista.length) return '';
+  return '<div style="margin-top:12px" onclick="event.stopPropagation()">'+
+    '<div class="etyk" style="margin-bottom:2px">POWTÓRZ</div>'+
+    '<div class="chipy">'+ lista.map(x =>
+      '<button class="chip" onclick="powtorzPosilek(\''+x.id+'\')">'+
+        esc(String(x.opis).slice(0, 28)) + '<small>'+x.kcal+' kcal</small></button>'
+    ).join('') +'</div></div>';
+}
+
 function listaPosilkow(){
   const lista = posilkiDnia();
   if(!lista.length) return '';
@@ -7983,8 +8236,7 @@ function renderBialko(){
             '<button class="btn ghost sm" '+
               'onclick="document.getElementById(\'jedzenieFoto\').click()">'+
               (JEDZENIE_ZDJECIE ? 'Zmień zdjęcie' : 'Zdjęcie talerza')+'</button>'+
-            '<button class="btn ghost sm" '+
-              'onclick="document.getElementById(\'jedzenieKod\').click()">'+
+            '<button class="btn ghost sm" onclick="skanujNaZywo()">'+
               'Kod kreskowy</button>'+
           '</div>'+
           /* Kod kreskowy to jedyna droga w tej aplikacji, która nie zgaduje:
@@ -8017,6 +8269,7 @@ function renderBialko(){
       (dzis > 0 ? ' <a href="javascript:void(0)" onclick="event.stopPropagation();wyzerujBialko()">Wyzeruj dziś</a>' : '')+
       '</div>';
 
+  h += chipyPosilkow();
   h += listaPosilkow();
 
   const sr = bialkoSrednia(7);
