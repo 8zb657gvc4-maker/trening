@@ -18,24 +18,12 @@
 
    Niebieski został jako `--info` przy rzeczach neutralnych, żeby wykresy
    nie zlewały się z sygnałem „dobrze". */
-/* KINETIC OBSIDIAN — paleta z makiety Stitcha (wrzesien 2026).
-
-   Zmienne zostaly te same, wiec caly plik dalej czyta `var(--acc)` i nie
-   trzeba bylo dotykac zadnej logiki. Zmienily sie wylacznie wartosci:
-
-   - akcent z zieleni na limonke #CCFF00 — ta sama rola („w normie / zrobione /
-     zrob to"), tylko mocniejsza na ciemnym tle i czytelna katem oka,
-   - doszedl cyjan #00E5FF jako kolor TELEMETRII: timer, tetno, zegary.
-     Rozdzielenie jest celowe — limonka znaczy „dzialaj", cyjan „patrz",
-   - czerwien przesunieta na #FF3366, bo stara gubila sie przy limonce,
-   - tlo #0D0F12 zamiast granatowego: na OLED-zie iPhone'a czern jest
-     wygaszonym pikselem, wiec karty odcinaja sie bez zadnej ramki. */
 :root{
-  --bg:#0d0f12; --card:#161a1f; --card2:#1e232b; --line:rgba(255,255,255,.08);
-  --txt:#ffffff; --dim:#9ba3af; --dim2:#525b6a;
-  --acc:#ccff00; --acc2:#abd600; --on-acc:#0d0f12;
-  --ok:#ccff00; --warn:#ffc53d; --bad:#ff3366; --run:#7c5cff;
-  --info:#00e5ff; --cyan:#00e5ff;
+  --bg:#070b12; --card:rgba(19,28,40,.62); --card2:#131c28; --line:#1c2836;
+  --txt:#e6edf7; --dim:#5d6b80;
+  --acc:#3ddc84; --acc2:#2fb56b;
+  --ok:#3ddc84; --warn:#ffc53d; --bad:#e5484d; --run:#7c5cff;
+  --info:#4a9eff;
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
 *{box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -57,7 +45,7 @@ button,.hub,.rpeb,.btn{transition:transform .12s,filter .12s}
 
 /* Świeżo dodana seria błyska na zielono — to jedyne potwierdzenie, jakie
    naprawdę jest potrzebne: „zapisało się". */
-@keyframes blysk{0%{background:rgba(204,255,0,.30)}100%{background:transparent}}
+@keyframes blysk{0%{background:rgba(62,207,142,.42)}100%{background:transparent}}
 .srow.nowa{animation:blysk .55s ease-out}
 
 body{margin:0;padding:0;background:var(--bg);color:var(--txt);
@@ -98,7 +86,7 @@ header{flex:0 0 auto;z-index:50;background:var(--bg);
 .hrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .htitle{font-size:17px;font-weight:700;letter-spacing:-.3px}
 .hsub{font-size:12px;color:var(--dim);margin-top:2px}
-.badge{background:var(--acc);color:var(--on-acc);font-size:11px;font-weight:800;
+.badge{background:var(--acc);color:#04140a;font-size:11px;font-weight:800;
   padding:4px 9px;border-radius:20px;letter-spacing:.3px;flex-shrink:0}
 .back{background:var(--card2);border:1px solid var(--line);border-radius:9px;
   padding:7px 11px;font-size:13px;font-weight:650;flex-shrink:0}
@@ -176,26 +164,18 @@ h2:first-child{margin-top:0}
   padding:0;border-radius:9px;color:#7d8a9c}
 .sdel:active{background:rgba(255,107,107,.18);color:var(--bad)}
 
-/* Dwie kolumny, nie trzy. Pol w tym wierszu sa DWA — ciezar i powtorzenia —
-   a siatka miala trzy kolumny jeszcze z czasow, gdy RPE bylo trzecim licznikiem.
-   Kazde pole dostawalo przez to trzecia szerokosci karty: dwa przyciski po 46 px
-   zjadaly z niej prawie wszystko i na wpisana liczbe zostawalo kilkanascie
-   pikseli. Filip zglosil to wprost: „guziki zaslaniaja liczby". */
-.inrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:12px}
+.inrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
 .fld label{display:block;font-size:10.5px;color:var(--dim);margin-bottom:4px;
   text-transform:uppercase;letter-spacing:.5px;font-weight:700}
 .step{display:flex;align-items:center;gap:0}
-.step button{width:44px;height:46px;background:var(--card2);border:1px solid var(--line);
+.step button{width:46px;height:46px;background:var(--card2);border:1px solid var(--line);
   font-size:19px;color:var(--acc);flex-shrink:0;font-weight:600}
 .step button:first-child{border-radius:10px 0 0 10px}
 .step button:last-child{border-radius:0 10px 10px 0}
-/* `flex:1` z `min-width:0` — bez tego pole liczbowe trzyma domyslna
-   szerokosc przegladarki i wypycha przyciski poza karte zamiast sie zwezic. */
-.step input{border-radius:0;text-align:center;padding:11px 2px;height:46px;
-  flex:1;min-width:0;width:100%;font-size:18px;font-weight:700;
+.step input{border-radius:0;text-align:center;padding:11px 2px;height:44px;
   border-left:none;border-right:none;font-variant-numeric:tabular-nums}
 
-.btn{background:var(--acc);color:var(--on-acc);font-weight:800;padding:13px;
+.btn{background:var(--acc);color:#04140a;font-weight:800;padding:13px;
   border-radius:11px;width:100%;font-size:15px}
 
 
@@ -238,7 +218,7 @@ h2:first-child{margin-top:0}
   border-radius:12px;padding:4px;margin:10px 0 14px}
 .segm button{flex:1;background:transparent;color:var(--dim);border:0;padding:9px 4px;
   border-radius:9px;font-size:12px;font-weight:700;letter-spacing:.2px}
-.segm button.on{background:var(--acc);color:var(--on-acc)}
+.segm button.on{background:var(--acc);color:#04140a}
 
 
 /* Kafelek-stepper: duża liczba, dwa szerokie przyciski. Cel dotykowy ma
@@ -353,7 +333,7 @@ h2:first-child{margin-top:0}
 .dzien .liczby span{display:block;font-size:8.5px;color:var(--dim);
   letter-spacing:.5px;margin-top:3px}
 .dzien .dol{padding:12px 13px 13px}
-.dzien .start{width:100%;background:var(--dzien-a);color:var(--on-acc);border:0;
+.dzien .start{width:100%;background:var(--dzien-a);color:#05130a;border:0;
   border-radius:14px;padding:15px;font-size:14px;font-weight:800;letter-spacing:.3px}
 
 /* Pasek tygodnia w segmentach — jeden na każdy dzień planu. */
@@ -404,7 +384,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 /* --- TIMER --- */
 .tbar{flex:0 0 auto;position:relative;align-self:center;
   width:calc(100% - 24px);max-width:616px;margin:0 auto 9px;
-  background:var(--acc);color:var(--on-acc);border-radius:15px;padding:13px 15px;
+  background:var(--acc);color:#04140a;border-radius:15px;padding:13px 15px;
   display:none;align-items:center;gap:12px;
   box-shadow:0 6px 24px rgba(0,0,0,.5)}
 .tbar.on{display:flex}
@@ -432,7 +412,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .preset{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
 .preset button{background:var(--card2);border:1px solid var(--line);border-radius:11px;
   padding:14px 4px;font-weight:750;font-size:15px}
-.preset button.on{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
+.preset button.on{background:var(--acc);color:#04140a;border-color:var(--acc)}
 
 .kv{display:flex;justify-content:space-between;padding:9px 0;
   border-bottom:1px solid var(--line);font-size:14px;gap:12px}
@@ -640,154 +620,6 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .imgbrak{margin:9px 0 4px;padding:11px;border:1px dashed var(--line);border-radius:12px;
   color:var(--dim);font-size:12.5px;line-height:1.45}
 .imgbrak a{color:var(--acc)}
-
-/* SKANER NA ZYWO --------------------------------------------------------
-   Pelny ekran nad aplikacja. Ramka nie kadruje niczego w kodzie - sluzy
-   wylacznie temu, zeby czlowiek wiedzial, gdzie trzymac opakowanie. */
-.skaner{position:fixed;inset:0;z-index:9000;background:#000;display:flex;
-  align-items:center;justify-content:center;overflow:hidden}
-.skaner video{width:100%;height:100%;object-fit:cover}
-.skaner-ramka{position:absolute;left:8%;right:8%;top:38%;height:24%;
-  border:2px solid rgba(255,255,255,.85);border-radius:10px;
-  box-shadow:0 0 0 9999px rgba(0,0,0,.35)}
-.skaner-ramka:after{content:'';position:absolute;left:4px;right:4px;top:50%;
-  height:2px;background:var(--dzien-a,#4ade80);opacity:.9}
-.skaner-info{position:absolute;left:0;right:0;top:calc(38% - 42px);
-  text-align:center;color:#fff;font-size:14px;text-shadow:0 1px 3px #000;padding:0 16px}
-.skaner-dol{position:absolute;left:12px;right:12px;bottom:calc(18px + env(safe-area-inset-bottom,0px));
-  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
-.skaner-dol .btn{width:100%;background:rgba(20,20,20,.85);color:#fff;border-color:rgba(255,255,255,.35)}
-
-/* Powtarzanie posilkow — male guziki, ciasno, bo jest ich kilka. */
-.chipy{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
-.chip{background:var(--card2);border:1px solid var(--line);color:var(--txt);
-  border-radius:999px;padding:8px 12px;font-size:12.5px;font-weight:700;
-  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chip small{color:var(--dim);font-weight:600;margin-left:5px}
-
-
-/* ============================================================
-   KINETIC OBSIDIAN — warstwa wygladu
-
-   Osobny blok na koncu arkusza, a nie poprawki rozsiane po czterdziestu
-   regulach wyzej. Powod jest prosty: gdyby ten wyglad sie nie sprawdzil,
-   wystarczy usunac ten jeden blok i wrocic do poprzedniego.
-
-   Trzy rzeczy robia tu caly efekt makiety:
-   1. PIGULKI — wszystko, co sie dotyka, ma promien 999px. To jedyna
-      najmocniejsza sygnatura tego stylu.
-   2. WIEKSZE PROMIENIE KART — 20-24 px zamiast 14-16.
-   3. POSWIATA ZAMIAST CIENIA — cien na czarnym tle robi sie bloto,
-      wiec glebokosc buduje swiatlo wokol elementu aktywnego.
-   ============================================================ */
-
-/* --- typografia: wersaliki HUD i cyfry tabelaryczne --- */
-body{font-feature-settings:'tnum' 1,'cv01' 1;letter-spacing:-.01em}
-h2,.etyk,.mala,.slab{text-transform:uppercase;letter-spacing:.08em;
-  font-weight:800;color:var(--dim)}
-h2{font-size:11px}
-.duza,.liczby b,.dzien .nazwa,.stp .val,.tv,.kafel2 text{
-  font-variant-numeric:tabular-nums;letter-spacing:-.03em}
-/* Nazwa cwiczenia nigdy ponizej 16 px — telefon lezy na lawce metr od oczu. */
-.exn{font-size:16px;font-weight:700}
-
-/* --- karty: wieksze promienie, plaskie tlo --- */
-.card,.hub,.kafel2,.dbtn,.ex,.stp{border-radius:20px;background:var(--card);
-  border:1px solid var(--line)}
-.card,.ex,.hub{margin-bottom:13px}
-.card{-webkit-backdrop-filter:none;backdrop-filter:none}
-.dzien{border-radius:24px}
-.ex.done{border-color:rgba(204,255,0,.45)}
-
-/* --- przyciski: pigulki --- */
-.btn{border-radius:999px;background:var(--acc);color:var(--on-acc);
-  padding:15px;font-weight:800;letter-spacing:.02em;
-  box-shadow:0 0 24px -6px rgba(204,255,0,.45)}
-.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.12);
-  color:var(--dim);box-shadow:none}
-.btn.sm{padding:12px}
-.back,.pill,.badge,.rpeb,.chip,.segm button,.mini,.tbtn{border-radius:999px}
-.badge{background:var(--acc);color:var(--on-acc);letter-spacing:.06em}
-.back{background:var(--card2);border:1px solid var(--line);padding:9px 14px}
-.mini{border-radius:999px;border:1px solid rgba(255,255,255,.12);
-  background:transparent;padding:10px 16px}
-.tip .btn.ghost,.tip .btn.sm{padding:11px 18px;width:auto;min-width:160px}
-
-/* --- glowny przycisk dnia: pigulka z poswiata --- */
-.dzien .start{border-radius:999px;padding:17px;letter-spacing:.06em;
-  box-shadow:0 0 28px -6px var(--dzien-a)}
-
-/* --- RPE: rzad pigulek --- */
-.rpeb{border-radius:16px;background:var(--card2);border:1px solid var(--line)}
-.rpeb.on{background:rgba(204,255,0,.15);border-color:var(--acc);color:var(--acc);
-  box-shadow:0 0 18px -6px rgba(204,255,0,.6)}
-
-/* --- pola liczbowe: ciemniejsze niz karta, jak w makiecie --- */
-.step button{background:var(--card2);color:var(--acc);border-color:var(--line)}
-.step button:first-child{border-radius:16px 0 0 16px}
-.step button:last-child{border-radius:0 16px 16px 0}
-.step input{background:var(--card2);border-color:var(--line);color:var(--txt)}
-.step input:focus{border-color:var(--cyan);outline:none;
-  box-shadow:0 0 0 1px var(--cyan)}
-
-/* --- TELEMETRIA JEST CYJANOWA, NIE LIMONKOWA.
-       Limonka znaczy „zrob to", cyjan „popatrz na to". Timer odpoczynku
-       nie jest wezwaniem do dzialania — jest zegarem, wiec zmienia kolor. --- */
-.tbar{background:var(--cyan);color:#001b1f;border-radius:24px;
-  box-shadow:0 0 26px -6px rgba(0,229,255,.55)}
-.tbar.done{background:var(--acc);color:var(--on-acc);
-  box-shadow:0 0 26px -6px rgba(204,255,0,.6)}
-.tbtn{background:rgba(0,0,0,.18)}
-
-/* --- nawigacja: szklana, aktywna pozycja swieci --- */
-nav{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
-  backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.07)}
-nav button{letter-spacing:.08em;text-transform:uppercase;font-size:9.5px}
-nav button.on{color:var(--acc)}
-nav button.on svg{filter:drop-shadow(0 0 7px rgba(204,255,0,.55))}
-header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
-  backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.07)}
-
-/* --- ramki informacyjne ---
-
-   LIMONKA MA BYC RZADKA. W makiecie na calym ekranie swieci jedna rzecz:
-   przycisk „Rozpocznij trening". Gdy kazda ramka dostala limonkowy pasek,
-   ekran zaczal krzyczec w calosci, czyli nie krzyczal wcale — a to jest
-   dokladnie ten sam blad, ktory popelnia zolte ostrzezenie wiszace zawsze.
-   Domyslna ramka jest wiec neutralna, a kolor dostaje tylko ta, ktora
-   naprawde cos znaczy. */
-.tip{background:var(--card);border:1px solid var(--line);
-  border-left:3px solid rgba(255,255,255,.14);
-  border-radius:4px 16px 16px 4px;color:#d7dbe2;margin-bottom:13px}
-.tip.ok{background:var(--card);border-left-color:var(--acc);color:#e4eccd}
-.tip.warn{background:rgba(255,197,61,.08);border-left-color:var(--warn);color:#ffe3ad}
-.tip.bad{background:rgba(255,51,102,.09);border-left-color:var(--bad);color:#ffc2d1}
-.tip.rn{background:rgba(124,92,255,.1);border-left-color:var(--run);color:#dcc9ff}
-
-/* --- przelacznik sekcji raportu --- */
-.segm{border-radius:999px}
-.segm button.on{background:var(--acc);color:var(--on-acc)}
-
-/* --- DRUGI PLAN JEST CYJANOWY.
-       W makiecie przyciski pomocnicze („Dodaj cwiczenie") sa cyjanowe:
-       przezroczyste tlo, cyjanowa ramka i tekst. Limonka zostaje wylacznie
-       dla akcji glownej, zeby na ekranie swiecila jedna rzecz naraz. --- */
-.wu{background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.16);
-  border-radius:16px;color:#c8e9ee;padding:10px 12px}
-.wubtn{background:rgba(0,229,255,.10);border:1.5px solid rgba(0,229,255,.40);
-  border-radius:999px;color:var(--cyan);padding:11px;font-size:12.5px;
-  letter-spacing:.02em}
-.srow.wus .sn{color:var(--cyan)}
-
-/* --- PRZYCISK STARTU ZAWSZE LIMONKOWY.
-       Kolor dnia zostaje na ramce karty, nazwie i sylwetce — czyli tam, gdzie
-       sluzy rozpoznaniu dnia. Ale akcja glowna ma byc w kazdym dniu tym samym
-       kolorem, inaczej „zielony przycisk" przestaje cokolwiek znaczyc. --- */
-.dzien .start{background:var(--acc);color:var(--on-acc);
-  box-shadow:0 0 28px -6px rgba(204,255,0,.5)}
-
-/* --- kafelki z pierscieniem: etykieta w wersalikach pod spodem --- */
-.kafel2 .etyk{font-size:10px;letter-spacing:.09em;margin-top:6px}
 </style>
 </head>
 <body>
@@ -868,8 +700,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
     <div id="skrotBox"></div>
     <div id="korektaBox"></div>
     <div id="exList"></div>
-    <button class="btn ghost sm" onclick="addCustom()" style="margin-bottom:11px">+ Dodaj ćwiczenie</button>
-    <div id="dodajBox"></div>
+    <button class="btn ghost sm" onclick="addCustom()" style="margin-bottom:11px">+ Inne ćwiczenie</button>
     <div class="fld" style="margin-bottom:11px">
       <label>Notatka do treningu</label>
       <input type="text" id="sesNote" placeholder="np. bolało kolano, hałas, mało czasu"
@@ -883,22 +714,14 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 
 <!-- ================= DZIENNIK ================= -->
 <div class="view" id="v-daily">
-  <!-- Cztery linijki wykladu o tym, skad biora sie dane, stały tu codziennie.
-       Przeczytac warto raz; potem to juz tylko przewijanie. Zostaje jedno
-       zdanie i przycisk, a pelne wyjasnienie chowa sie pod znakiem zapytania. -->
-  <div class="tip" style="display:flex;align-items:center;gap:10px">
-    <button class="btn ghost sm" style="flex:1;width:auto;margin:0"
-            onclick="garminTeraz()">Pobierz z zegarka</button>
-    <button class="btn ghost sm" style="width:44px;flex:none;margin:0"
-            onclick="pomocZegarek()" aria-label="Skąd te dane">?</button>
-  </div>
+  <div class="tip">Sen, tętno, HRV i Body Battery wchodzą tu same z zegarka.
+    Jeśli dopiero wstałeś, dotknij „Pobierz z zegarka" — dane o śnie pojawiają się
+    w Garmin Connect dopiero po tym, jak zegarek zsynchronizuje się po przebudzeniu.
+    <button class="btn ghost sm" style="margin-top:9px;width:100%"
+            onclick="garminTeraz()">Pobierz z zegarka</button></div>
   <div class="card">
     <div class="fld" style="margin-bottom:12px">
       <label>Data</label><input type="date" id="dDate" onchange="renderDaily()">
-      <!-- iPhone rysuje pole daty w formacie swojego regionu — u Filipa
-           wychodzilo „09/15/2026". Formatu natywnego pola nie da sie narzucic
-           ze strony, wiec dopisujemy pod spodem date po polsku. -->
-      <div class="hm" id="dDateOpis" style="margin-top:5px"></div>
     </div>
     <div class="note" style="margin-bottom:8px"><b>Rano, zaraz po przebudzeniu.</b>
       Na nich liczy się dzisiejsza gotowość.</div>
@@ -943,10 +766,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 <!-- ================= DANE ================= -->
 <div class="view" id="v-data">
   <h2>Kopia zapasowa</h2>
-  <!-- Stale zolte ostrzezenie wisialo tu takze wtedy, gdy synchronizacja
-       z Workerem dzialala od tygodni. Ostrzezenie, ktore klamie, przestaje
-       byc czytane — wiec teraz pokazuje stan faktyczny. -->
-  <div id="kopiaStan"></div>
+  <div class="tip warn">Dane są tylko w tym telefonie. Eksportuj co niedzielę.</div>
   <div class="card">
     <div class="btn2">
       <button class="btn sm" onclick="exportData()">Wyślij do iCloud</button>
@@ -971,7 +791,6 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
     <button class="btn sm" onclick="srvZapiszUstawienia()">Zapisz ustawienia</button>
     <button class="btn ghost sm" style="margin-top:9px" onclick="srvSync()">Synchronizuj teraz</button>
     <div class="note" style="margin-top:11px">Token zostaje w telefonie i nie trafia do eksportu.</div>
-    <div id="pushBox" style="margin-top:13px"></div>
   </div>
 
   <h2>Plan treningowy</h2>
@@ -1194,7 +1013,7 @@ const DOMYSLNA_LIB = {
   'Ściąganie drążka':            {inc:2.5, mus:{plecy_pion:1, biceps_dluga:.3, biceps_krotka:.3, ramienny:.2}},
   'Ściąganie wąsko podchwytem':  {inc:2.5, mus:{plecy_pion:.9, biceps_dluga:.5, biceps_krotka:.5, ramienny:.3}},
   'Wiosłowanie sztangą':         {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.4, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3, prostowniki:.4}},
-  'Wiosłowanie hantlem':         {hantle:true, inc:2.5, strona:'rękę', mus:{plecy_poziom:1, plecy_pion:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3}},
+  'Wiosłowanie hantlem':         {hantle:true, inc:2.5, mus:{plecy_poziom:1, plecy_pion:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3}},
   'Wiosłowanie na maszynie':     {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3}},
   'Wiosłowanie na wyciągu':      {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3}},
 
@@ -1210,7 +1029,7 @@ const DOMYSLNA_LIB = {
                                   cue:'Unosisz barki prosto w górę, bez krążenia. Sekunda przytrzymania u góry — to ona robi robotę.'},
   'Szrugsy z hantlami':          {hantle:true, inc:2.5, rr:[12,20], mus:{plecy_gora:1, przedramie:.5},
                                   cue:'Hantle wzdłuż tułowia. Pełny zakres: barki nisko, potem najwyżej jak się da.'},
-  'Odwodzenie nogi w bok':       {inc:2.5, rr:[15,25], strona:'nogę', mus:{posladki_sr:1, posladki:.3},
+  'Odwodzenie nogi w bok':       {inc:2.5, rr:[15,25], mus:{posladki_sr:1, posladki:.3},
                                   cue:'Stojąc albo leżąc na boku, noga prosta, unosisz ją w bok bez skręcania miednicy. Guma albo linka wyciągu.'},
   'Chód boczny z gumą':          {bw:true, rr:[15,25], mus:{posladki_sr:1, posladki:.2},
                                   cue:'Guma nad kolanami, półprzysiad, kroki w bok. Kolana cały czas rozpychają gumę.'},
@@ -1227,36 +1046,12 @@ const DOMYSLNA_LIB = {
   'Uginanie na modlitewniku':    {inc:2.5, mus:{biceps_krotka:1, biceps_dluga:.4, ramienny:.4}},
   'Uginanie na wyciągu':         {inc:2.5, mus:{biceps_dluga:.9, biceps_krotka:.8, ramienny:.3}},
 
-  /* CZTERY DOPISANE PRZY PRZEBUDOWIE PLANU (wrzesien 2026).
-
-     Pierwsze trzy zamykaja dziury, ktore widac bylo w pokryciu: biceps mial
-     same cwiczenia z ramieniem przy tulowiu (glowa dluga pracuje dopiero, gdy
-     ramie jest COFNIETE za tulow), a triceps — same izolacje, wiec nie dalo sie
-     go obciazyc ciezarem, ktorego izolacja nie uniesie.
-
-     Czwarte, spider curl, Filip wpisal recznie 16 wrzesnia. Bez pozycji
-     w bibliotece nie mialo mapowania na miesnie, wiec liczylo sie donikad —
-     dokladnie ten sam blad co „Facepull" kontra „Face pull". */
-  'Uginanie hantlami na skosie': {hantle:true, inc:2.5, rr:[8,14],
-                                  mus:{biceps_dluga:1, biceps_krotka:.4, ramienny:.3},
-                                  cue:'Oparcie na jakieś 60°, ramiona zwisają ZA tułowiem — to rozciągnięcie robi głowę długą. Łokcie nie jadą do przodu.'},
-  'Uginanie odwrotne':           {inc:2.5, rr:[10,15],
-                                  mus:{przedramie:1, ramienny:.8, biceps_dluga:.3},
-                                  cue:'Chwyt nachwytem. Ciężar mniejszy niż przy młotkowych — to normalne, pracuje słabszy mięsień.'},
-  'Spider curl':                 {hantle:true, inc:2.5, rr:[8,14],
-                                  mus:{biceps_krotka:1, biceps_dluga:.5, ramienny:.3},
-                                  cue:'Klatka oparta o skos, ramiona pionowo w dół. Nie da się oszukać plecami — dlatego ciężar jest mały.'},
-  'Wyciskanie wąsko':            {inc:2.5, rr:[6,12],
-                                  mus:{triceps_bocz:1, triceps_przysr:.8, triceps_dluga:.5,
-                                       klatka_srodek:.5, bark_przod:.3},
-                                  cue:'Chwyt na szerokość barków, nie węziej — węższy boli nadgarstki, a tricepsowi nic nie dodaje. Łokcie przy tułowiu.'},
-
   /* --- nogi --- */
   'Przysiad ze sztangą':         {inc:5,   mus:{czworoglowe:1, udo_proste:.3, posladki:.6, prostowniki:.4}},
   'Wypychanie nogami':           {inc:5,   mus:{czworoglowe:1, udo_proste:.3, posladki:.5}},
   'Hack squat':                  {inc:5,   mus:{czworoglowe:1, udo_proste:.3, posladki:.3}},
-  'Przysiad bułgarski':          {hantle:true, inc:2.5, strona:'nogę', mus:{czworoglowe:.8, udo_proste:.3, posladki:1, posladki_sr:.5}},
-  'Wykroki chodzone':            {hantle:true, inc:2.5, strona:'nogę', mus:{czworoglowe:.7, udo_proste:.3, posladki:1, posladki_sr:.4}},
+  'Przysiad bułgarski':          {hantle:true, inc:2.5, mus:{czworoglowe:.8, udo_proste:.3, posladki:1, posladki_sr:.5}},
+  'Wykroki chodzone':            {hantle:true, inc:2.5, mus:{czworoglowe:.7, udo_proste:.3, posladki:1, posladki_sr:.4}},
   'Prostowanie nóg':             {inc:2.5, mus:{czworoglowe:1, udo_proste:1}},
   'Martwy ciąg klasyczny':       {inc:5,   mus:{posladki:1, posladki_sr:.2, prostowniki:1, dwuglowe:.8, dwuglowe_kol:.1, plecy_gora:.4, glebokie:.5}},
   'Martwy ciąg rumuński':        {inc:5,   mus:{dwuglowe:1, dwuglowe_kol:.2, posladki:.8, prostowniki:.6}},
@@ -1277,7 +1072,7 @@ const DOMYSLNA_LIB = {
      więc mieszka w bibliotece głównej, nie w puli wyjazdowej. Wcześniej
      siedziało w KALIS_LIB, a odwoływał się do niego slot siłowni C5 —
      walidacja planu to wychwyciła. */
-  'Wspięcia na palce jednonóż':   {bw:true, rr:[15,25], strona:'nogę', mus:{lydki_stoj:1},
+  'Wspięcia na palce jednonóż':   {bw:true, rr:[15,25], mus:{lydki_stoj:1},
                                   cue:'Jedna noga, druga zahaczona z tyłu. Pełny zakres: pięta nisko, potem najwyżej jak się da.'},
   'Wspięcia siedząc z obciążeniem': {bw:true, rr:[15,25], mus:{lydki_sied:1},
                                   cue:'Siedzisz, ciężar na kolanach, unosisz pięty. Zgięte kolano wyłącza brzuchaty i całą pracę bierze płaszczkowaty.'},
@@ -1303,9 +1098,9 @@ const DOMYSLNA_LIB = {
      `stare:true` trzyma je z dala od planowania. */
   'Plank / ab wheel':            {inc:0, time:true, stare:true, mus:{glebokie:1, brzuch:.6}},
   'Unoszenie nóg w zwisie':      {inc:0, bw:true, rr:[8,15], mus:{brzuch:1}},
-  'Deska bokiem':                {bw:true, time:true, rr:[25,50], strona:'stronę', mus:{skosne:1, glebokie:.7, prostowniki:.2},
+  'Deska bokiem':                {bw:true, time:true, rr:[25,50], mus:{skosne:1, glebokie:.7, prostowniki:.2},
                                   cue:'Biodro wysoko, ciało w jednej linii. Na każdą stronę osobno.'},
-  'Skłon boczny z hantlem':      {hantle:true, inc:2.5, rr:[12,20], strona:'stronę', mus:{skosne:1, glebokie:.4},
+  'Skłon boczny z hantlem':      {hantle:true, inc:2.5, rr:[12,20], mus:{skosne:1, glebokie:.4},
                                   cue:'Hantel w jednej ręce, schylasz się w JEGO stronę i prostujesz. Druga ręka za głową. Bez rotacji.'},
   'Allahy na wyciągu':           {inc:2.5, rr:[12,20], mus:{brzuch:1}}
 };
@@ -1327,7 +1122,7 @@ const DOMYSLNY_PLAN = {
      pozycji zamiast sześciu, bo przy jednej sesji na tydzień nie ma drugiej
      szansy w razie potknięcia. Tułów przeniesiony do dni góry — na nogach
      i tak nie zostaje siła na deskę. */
-  A: { name:'Nogi (wycofany)', grp:'nogi', wycofany:true, slots:[
+  A: { name:'Nogi', grp:'nogi', slots:[
     {id:'A1', lab:'Główny bój', fixed:'Przysiad ze sztangą',
      t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
      s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
@@ -1363,7 +1158,7 @@ const DOMYSLNY_PLAN = {
   ]},
 
   /* --- B: PUSH pierwszy. Główny bój: wyciskanie leżąc. ------------------ */
-  B: { name:'Push — wyciskanie (wycofany)', grp:'push', wycofany:true, slots:[
+  B: { name:'Push — wyciskanie', grp:'push', slots:[
     {id:'B1', lab:'Główny bój', fixed:'Wyciskanie leżąc',
      t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
      s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
@@ -1436,7 +1231,7 @@ const DOMYSLNY_PLAN = {
   ]},
 
   /* --- D: PULL pierwszy. Główny bój: podciąganie. ------------------------ */
-  D: { name:'Pull — podciąganie (wycofany)', grp:'pull', wycofany:true, slots:[
+  D: { name:'Pull — podciąganie', grp:'pull', slots:[
     {id:'D1', lab:'Główny bój', fixed:'Podciąganie',
      t:['3×6-8 RPE6','3×6-10 RPE8','2×6 RPE5','3×5-8 + obciążenie'],
      s:[3,3,2,3], rr:[[6,8],[6,10],[6,6],[5,8]]},
@@ -1469,7 +1264,7 @@ const DOMYSLNY_PLAN = {
      Drugi dzień push nie jest powtórką pierwszego. Tam sztanga leży
      poziomo i pracuje środek klatki, tu idzie nad głowę i pracuje bark
      przedni — inny kąt, inny główny bój, inna progresja do śledzenia. */
-  E: { name:'Push — barki (wycofany)', grp:'push', wycofany:true, slots:[
+  E: { name:'Push — barki', grp:'push', slots:[
     {id:'E1', lab:'Główny bój', fixed:'Wyciskanie żołnierskie',
      t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×5-6 RPE8'],
      s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[5,6]]},
@@ -1502,7 +1297,7 @@ const DOMYSLNY_PLAN = {
      w rotacji B, D, A, E, F dzień F wypada trzy dni po przysiadzie, więc
      dwa najcięższe boje nie stoją obok siebie. Gdyby martwy ciąg został
      na nogach, wypadałby w tej samej sesji co przysiad. */
-  F: { name:'Pull — martwy ciąg (wycofany)', grp:'pull', wycofany:true, slots:[
+  F: { name:'Pull — martwy ciąg', grp:'pull', slots:[
     {id:'F1', lab:'Główny bój', fixed:'Martwy ciąg klasyczny',
      t:['3×5 RPE6','3×5 RPE7','2×5 RPE5','3×3-5 RPE8'],
      s:[3,3,2,3], rr:[[5,5],[5,5],[5,5],[3,5]]},
@@ -1525,195 +1320,6 @@ const DOMYSLNY_PLAN = {
     /* Chwyt puszcza wcześniej niż plecy i to on ogranicza martwy ciąg,
        nie siła. Dlatego stoi w tym samym dniu, na końcu. */
     {id:'F6', lab:'Chwyt', pool:['Utrzymanie sztangi','Utrzymanie hantli'],
-     t:['2×30s','2×40s','1×30s','2×45s'],
-     s:[2,2,1,2], rr:[[30,30],[40,40],[30,30],[45,45]]}
-  ]}
-,
-  /* ============================================================
-     ROTACJA PPL + GORA/DOL — od 17 wrzesnia 2026
-
-     Powod zmiany jest w danych: 12 treningow w 44 dni, z tego dzien B cztery
-     razy, D cztery, A dwa, E raz, F raz. Piec dni przy niecalych dwoch
-     sesjach w tygodniu to 17 dni na pelne kolo — Filip nigdy nie dochodzil
-     do konca rotacji, wiec nogi i martwy ciag praktycznie nie istnialy.
-
-     Nowy uklad to piec dni, ale kazda partia dostaje DWA uderzenia na cykl:
-     raz w bloku ciezkim (P/G/N), raz w bloku objetosciowym (U/L). Przy
-     zapowiadanych 4-5 treningach tygodniowo kolo domyka sie w tydzien.
-
-     Trzy rzeczy rozstrzygniete swiadomie:
-
-     1. CZTERY ciezkie boje sztangowe w tygodniu, nie siedem: lawka, podciaganie,
-        przysiad, martwy ciag. Reszta wielostawowych idzie na hantlach, maszynie
-        i wyciagu przy RPE 7-8. Filip sam to zauwazyl: „za duzo wielostawowych,
-        za bardzo bede obciazal uklad nerwowy". Proporcja wielostawowe:izolowane
-        wyszla 17:16, wczesniej 17:14.
-     2. Przysiad w dniu N, martwy ciag w dniu L — trzy dni odstepu. Rumunski
-        wypadl calkiem: wzorzec hinge robi martwy ciag, a biodra dostaja hip
-        thrust, ktory nie obciaza kregoslupa.
-     3. `upadek:true` na slotach izolacyjnych. Filip ma 90 serii oznaczonych
-        RPE 6 i martwy ciag 60 kg na 10 przy RPE 6 — czyli oszczedza sie
-        wszedzie. Ale upadek na przysiadzie psuje technike przed miesniem,
-        wiec do upadku schodzi wylacznie izolacja, i tylko w ostatniej serii.
-     ============================================================ */
-  P: { name:'Push — klata, barki, triceps', grp:'push', slots:[
-    {id:'P1', lab:'Główny bój', fixed:'Wyciskanie leżąc',
-     t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
-     s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
-    /* Zolnierskie zostaja w puli, ale nie jako pierwsze: dwa ciezkie
-       wyciskania ze sztangi w jednym dniu to byl najciezszy punkt planu. */
-    {id:'P2', lab:'Bark — wyciskanie',
-     pool:['Wyciskanie hantli nad głowę','Arnold press','Wyciskanie żołnierskie'],
-     t:['3×10 RPE6','3×8-10 RPE7','2×10 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    {id:'P3', lab:'Klatka — góra',
-     pool:['Wyciskanie hantli, skos','Wyciskanie sztangą, skos','Brama dół→góra'],
-     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    {id:'P4', lab:'Bark — bok', upadek:true,
-     pool:['Unoszenie hantli bokiem','Unoszenie bokiem na wyciągu','Unoszenie bokiem na maszynie'],
-     t:['3×15','3×15-20','2×15','3×15-20'],
-     s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
-    {id:'P5', lab:'Klatka dół + triceps',
-     pool:['Dipy','Wyciskanie, skos ujemny'],
-     t:['3×10 RPE6','3×8-12 RPE8','2×10 RPE5','3×8-12 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,12],[10,10],[8,12]]},
-    {id:'P6', lab:'Triceps — głowa długa', upadek:true,
-     pool:['Francuskie zza głowy','Prostowanie zza głowy wyciąg'],
-     t:['3×12','3×10-12','2×12','3×10-12'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]}
-  ]},
-
-  G: { name:'Pull — plecy, biceps', grp:'pull', slots:[
-    {id:'G1', lab:'Główny bój', fixed:'Podciąganie',
-     t:['3×6-8 RPE6','3×6-10 RPE8','2×6 RPE5','3×5-8 + obciążenie'],
-     s:[3,3,2,3], rr:[[6,8],[6,10],[6,6],[5,8]]},
-    /* Wioslowanie sztanga zeszlo na koniec puli: podciaganie jest juz bojem
-       tego dnia, a sztanga dokladala czwarty ciezki ruch kregoslupowy. */
-    {id:'G2', lab:'Ciąg poziomy',
-     pool:['Wiosłowanie na maszynie','Wiosłowanie na wyciągu','Wiosłowanie hantlem','Wiosłowanie sztangą'],
-     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    {id:'G3', lab:'Ciąg pionowy',
-     pool:['Ściąganie drążka','Ściąganie wąsko podchwytem'],
-     t:['3×10','3×10-12','2×10','3×8-10'],
-     s:[3,3,2,3], rr:[[10,10],[10,12],[10,10],[8,10]]},
-    /* Cztery serie, nie trzy: w audycie tyl barku wyszedl na 3 przy normie
-       3-10, czyli na samym dnie — a przy pieciu slotach klatki na rotacje
-       to jest partia, ktora powinna raczej rosnac. */
-    {id:'G4', lab:'Tył barku', upadek:true,
-     pool:['Face pull','Odwrotne rozpiętki'],
-     t:['3×15','4×15-20','2×15','4×15-20'],
-     s:[3,4,2,4], rr:[[15,15],[15,20],[15,15],[15,20]]},
-    {id:'G5', lab:'Biceps — głowa długa', upadek:true,
-     pool:['Uginanie hantlami na skosie','Uginanie ramion'],
-     t:['3×12','3×10-12','2×12','3×8-10'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
-    {id:'G6', lab:'Mięsień ramienny', upadek:true,
-     pool:['Uginanie młotkowe','Uginanie odwrotne'],
-     t:['3×12','3×10-12','2×12','3×10-12'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]}
-  ]},
-
-  N: { name:'Nogi', grp:'nogi', slots:[
-    {id:'N1', lab:'Główny bój', fixed:'Przysiad ze sztangą',
-     t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
-     s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
-    {id:'N2', lab:'Czworogłowe — maszyna',
-     pool:['Wypychanie nogami','Hack squat'],
-     t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
-    /* Zamiast rumunskiego. Pelny wyprost bioder, posladki i dwuglowe od
-       strony biodra — a kregoslup nie dostaje nic, bo tulow lezy na lawce. */
-    {id:'N3', lab:'Biodra / pośladki',
-     pool:['Hip thrust','Hip thrust jednonóż'],
-     t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
-    {id:'N4', lab:'Dwugłowe — zginanie kolana', upadek:true,
-     pool:['Uginanie nóg leżąc','Uginanie nóg siedząc'],
-     t:['3×12','3×10-12','2×12','3×10-12'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
-    {id:'N5', lab:'Łydki — brzuchaty (stojąc)', upadek:true,
-     pool:['Wspięcia na palce stojąc','Wspięcia na palce jednonóż'],
-     t:['2×15','2×12-15','2×15','2×12-15'],
-     s:[2,2,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]},
-    {id:'N6', lab:'Tułów — brzuch', upadek:true,
-     pool:['Ab wheel','Allahy na wyciągu','Unoszenie nóg w zwisie','Plank'],
-     t:['3×40s','3×50s','2×40s','3×60s'],
-     s:[3,3,2,3], rr:[[40,40],[50,50],[40,40],[60,60]]}
-  ]},
-
-  /* Osiem slotow, ale nie po trzy serie kazdy: przy trzech wychodzilo 24
-     serie robocze w jednej sesji, czyli ponad 70 minut i wiecej niz
-     w jakimkolwiek innym dniu planu. Cztery sloty schodza do dwoch serii —
-     to drugie uderzenie w te partie w tygodniu, nie pierwsze. Razem 20. */
-  U: { name:'Góra — objętość', grp:'gora', slots:[
-    {id:'U1', lab:'Klatka — nacisk hantlami',
-     pool:['Wyciskanie hantlami płasko','Wyciskanie hantli, skos'],
-     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    {id:'U2', lab:'Ciąg poziomy',
-     pool:['Wiosłowanie na maszynie','Wiosłowanie na wyciągu','Wiosłowanie hantlem'],
-     t:['2×12 RPE6','2×10-12 RPE8','2×12 RPE5','2×10-12 RPE8'],
-     s:[2,2,2,2], rr:[[12,12],[10,12],[12,12],[10,12]]},
-    {id:'U3', lab:'Klatka — rozciąganie', upadek:true,
-     pool:['Rozpiętki płasko','Brama góra→dół','Rozpiętki na maszynie'],
-     t:['2×15','2×12-15','2×15','2×12-15'],
-     s:[2,2,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]},
-    {id:'U4', lab:'Ciąg pionowy',
-     pool:['Ściąganie wąsko podchwytem','Ściąganie drążka'],
-     t:['2×12','2×10-12','2×12','2×10-12'],
-     s:[2,2,2,2], rr:[[12,12],[10,12],[12,12],[10,12]]},
-    /* Jedyne wielostawowe na triceps w planie. Izolacja nie uniesie ciezaru,
-       ktory ten miesien realnie potrzebuje, zeby urosnac. */
-    {id:'U5', lab:'Triceps — wielostawowe',
-     pool:['Wyciskanie wąsko','Dipy'],
-     t:['3×10 RPE6','3×8-12 RPE8','2×10 RPE5','3×8-12 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,12],[10,10],[8,12]]},
-    {id:'U6', lab:'Triceps — izolacja', upadek:true,
-     pool:['Prostowanie zza głowy wyciąg','Prostowanie ramion wyciąg'],
-     t:['3×15','3×12-15','2×15','3×12-15'],
-     s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
-    {id:'U7', lab:'Biceps — głowa krótka', upadek:true,
-     pool:['Uginanie na modlitewniku','Spider curl'],
-     t:['3×12','3×10-12','2×12','3×10-12'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
-    {id:'U8', lab:'Biceps — wyciąg', upadek:true,
-     pool:['Uginanie na wyciągu','Uginanie ramion'],
-     t:['2×15','2×12-15','2×15','2×12-15'],
-     s:[2,2,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]}
-  ]},
-
-  L: { name:'Dół — martwy ciąg', grp:'nogi', slots:[
-    {id:'L1', lab:'Główny bój', fixed:'Martwy ciąg klasyczny',
-     t:['3×5 RPE6','3×5 RPE7','2×5 RPE5','3×3-5 RPE8'],
-     s:[3,3,2,3], rr:[[5,5],[5,5],[5,5],[3,5]]},
-    {id:'L2', lab:'Jednonóż / stabilizacja miednicy',
-     pool:['Przysiad bułgarski','Wykroki chodzone'],
-     t:['2×10 RPE6','3×8-10 RPE8','2×10 RPE5','2×8-10 RPE8'],
-     s:[2,3,2,2], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    /* Odwrotna kolejnosc puli niz w dniu N — zeby w tygodniu wyszly dwie
-       rozne maszyny na czworoglowe, a nie dwa razy ta sama. */
-    {id:'L3', lab:'Czworogłowe — maszyna',
-     pool:['Hack squat','Wypychanie nogami'],
-     t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
-    {id:'L4', lab:'Dwugłowe — zginanie kolana', upadek:true,
-     pool:['Uginanie nóg siedząc','Uginanie nóg leżąc'],
-     t:['3×12','3×10-12','2×12','3×10-12'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
-    /* Bark w dniu dolnym nie jest pomylka: to drugie uderzenie w bok barku
-       w tygodniu, a najdalej od dnia P, jak sie w tej rotacji da. */
-    {id:'L5', lab:'Bark — bok', upadek:true,
-     pool:['Unoszenie bokiem na maszynie','Unoszenie bokiem na wyciągu','Unoszenie hantli bokiem'],
-     t:['3×15','3×15-20','2×15','3×15-20'],
-     s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
-    {id:'L6', lab:'Łydki — płaszczkowaty (siedząc)', upadek:true,
-     pool:['Wspięcia na palce siedząc','Wspięcia siedząc z obciążeniem'],
-     t:['2×15','2×15-20','2×15','2×15-20'],
-     s:[2,2,2,2], rr:[[15,15],[15,20],[15,15],[15,20]]},
-    {id:'L7', lab:'Chwyt', upadek:true,
-     pool:['Utrzymanie sztangi','Utrzymanie hantli'],
      t:['2×30s','2×40s','1×30s','2×45s'],
      s:[2,2,1,2], rr:[[30,30],[40,40],[30,30],[45,45]]}
   ]}
@@ -1788,7 +1394,7 @@ const LIB_MASA_WLASNA = {
    wykonanym treningu push — przestawienie liter zmieniłoby opis treningów
    sprzed miesiąca i nikt by już nie wiedział, co naprawdę zrobił. Dlatego
    dochodzą nowe litery E i F, a C zostaje jako wycofany. */
-const DOMYSLNY_ORDER = ['P','G','N','U','L'];
+const DOMYSLNY_ORDER = ['B','D','A','E','F'];
 
 const DOMYSLNE_PHASES = [
   {n:'Reaktywacja',    rpe:6, skala:1,   d:'Tygodnie 1–2, raz na początku. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
@@ -2011,8 +1617,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '73';
-const WERSJA_DATA = '2026-09-15';
+const WERSJA = '61';
+const WERSJA_DATA = '2026-09-07';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 let DB = null, SES = null, SUB = 'hub';
@@ -2221,280 +1827,6 @@ async function garminPoOtwarciu(){
   await garminTeraz(true);
 }
 
-/* ============================================================
-   POWIADOMIENIA NA TELEFON
-
-   Warunek, o który rozbija się większość prób: na iPhonie Push API
-   ISTNIEJE WYŁĄCZNIE w aplikacji dodanej do ekranu głównego. W karcie
-   Safari nie ma go wcale — i to nie jest usterka do obejścia, tylko
-   decyzja Apple'a. Dlatego zanim cokolwiek zaproponujemy, sprawdzamy
-   `display-mode: standalone` i mówimy wprost, czego brakuje.
-
-   Drugi warunek: zgodę wolno zapytać tylko w odpowiedzi na dotknięcie.
-   Stąd guzik, a nie pytanie przy starcie.
-
-   Adres i token zapisujemy dodatkowo w IndexedDB, bo service worker —
-   ten, który obsłuży powiadomienie, gdy aplikacja jest zamknięta — nie
-   widzi `localStorage`.
-   ============================================================ */
-function pwaNaEkranie(){
-  try {
-    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
-      || navigator.standalone === true;
-  } catch(e){ return false; }
-}
-function pushMozliwe(){
-  return typeof Notification !== 'undefined' && 'serviceWorker' in navigator
-      && 'PushManager' in window;
-}
-function pushStan(){
-  if(!pushMozliwe()) return 'brak';
-  if(!pwaNaEkranie()) return 'wKarcie';
-  try { return Notification.permission; } catch(e){ return 'brak'; }
-}
-
-/* IndexedDB zamiast localStorage — patrz komentarz wyżej. */
-function pushZapiszDlaSW(dane){
-  return new Promise(zwroc => {
-    let gotowe = false;
-    const koniec = () => { if(!gotowe){ gotowe = true; zwroc(); } };
-    try {
-      const zad = indexedDB.open('trening-push', 1);
-      zad.onupgradeneeded = () => zad.result.createObjectStore('ust');
-      zad.onerror = koniec;
-      zad.onsuccess = () => {
-        try {
-          const t = zad.result.transaction('ust', 'readwrite');
-          t.objectStore('ust').put(dane, 'serwer');
-          t.oncomplete = koniec; t.onerror = koniec;
-        } catch(e){ koniec(); }
-      };
-    } catch(e){ koniec(); }
-    setTimeout(koniec, 3000);
-  });
-}
-
-function pushKluczNaBajty(b64){
-  const t = b64.replace(/-/g, '+').replace(/_/g, '/');
-  const bin = atob(t + '='.repeat((4 - t.length % 4) % 4));
-  const b = new Uint8Array(bin.length);
-  for(let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
-  return b;
-}
-
-/** Subskrypcja z przeglądarki — albo null, gdy telefon jej nie ma. */
-async function pushSubskrypcja(){
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    return await reg.pushManager.getSubscription();
-  } catch(e){ return null; }
-}
-
-/** Pełna rejestracja: klucz z Workera → subskrypcja → zapis na serwerze.
-    Wołana i przy pierwszym włączeniu, i przy naprawie. */
-async function pushZarejestruj(odNowa){
-  const r = await fetch(srvUrl('push/klucz'), {headers: srvNaglowki({'Accept':'application/json'})});
-  const d = await r.json().catch(() => ({}));
-  if(!r.ok || !d.klucz) throw new Error(d.blad || 'Worker nie ma kluczy VAPID');
-
-  const reg = await navigator.serviceWorker.ready;
-  let sub = await reg.pushManager.getSubscription();
-  /* Subskrypcja wystawiona na stary klucz VAPID da 403 przy wysyłce —
-     wtedy trzeba ją wyrzucić i poprosić o nową. */
-  if(sub && odNowa){ try { await sub.unsubscribe(); } catch(e){} sub = null; }
-  if(!sub){
-    sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: pushKluczNaBajty(d.klucz)
-    });
-  }
-  const w = await fetch(srvUrl('push/zapis'), {
-    method: 'POST', headers: srvNaglowki({'Content-Type':'application/json'}),
-    body: JSON.stringify(sub)
-  });
-  if(!w.ok) throw new Error('nie udało się zapisać na serwerze');
-  await pushZapiszDlaSW({adres: SRV.adres, token: SRV.token});
-  return sub;
-}
-
-/** Ostrzeżenie pod „Włączone", gdy zgoda jest, a subskrypcji nie ma. */
-async function pushDiagnoza(){
-  const el = document.getElementById('pushStanSerwer');
-  if(!el) return;
-  const sub = await pushSubskrypcja();
-  if(sub){ el.innerHTML = ''; return; }
-  el.innerHTML = '<div class="tip warn" style="margin-top:8px"><b>Telefon nie jest '+
-    'zapisany na serwerze</b><div class="hm" style="margin-top:4px">Zgoda jest, ale '+
-    'brakuje subskrypcji — serwer nie ma dokąd wysłać powiadomienia.</div>'+
-    '<button class="btn ghost sm" style="margin-top:8px;width:100%" '+
-    'onclick="naprawPowiadomienia()">Dokończ włączanie</button></div>';
-}
-
-async function naprawPowiadomienia(){
-  if(!srvGotowy()){ toast('Najpierw ustaw serwer wyżej'); return; }
-  toast('Zapisuję telefon…');
-  try {
-    await pushZarejestruj(true);
-    await pushWyslijTresc(true);
-    toast('Gotowe — telefon zapisany');
-  } catch(e){ toast('Nie udało się: ' + (e.message || e)); }
-  renderData();
-}
-
-function renderPush(){
-  const el = document.getElementById('pushBox');
-  if(!el) return;
-  const stan = pushStan();
-  const naglowek = '<div class="etyk" style="margin:0 0 6px">POWIADOMIENIA</div>';
-
-  if(stan === 'brak'){
-    el.innerHTML = naglowek + '<div class="note">Ta przeglądarka nie obsługuje '+
-      'powiadomień. Na iPhonie działają w Safari, od iOS 16.4.</div>';
-    return;
-  }
-  if(stan === 'wKarcie'){
-    /* Najczęstszy powód, dla którego „nie działa": aplikacja otwarta jako
-       strona, a nie jako ikona. Mówimy to wprost, zamiast pokazywać guzik,
-       który i tak nic nie da. */
-    el.innerHTML = naglowek + '<div class="tip warn"><b>Najpierw dodaj aplikację '+
-      'do ekranu głównego</b><div class="hm" style="margin-top:4px">iPhone wysyła '+
-      'powiadomienia tylko z aplikacji uruchamianej z ikony — w karcie Safari ta '+
-      'możliwość nie istnieje. Przycisk udostępniania → „Dodaj do ekranu początkowego", '+
-      'potem otwórz z ikony i wróć tutaj.</div></div>';
-    return;
-  }
-  if(stan === 'granted'){
-    el.innerHTML = naglowek +
-      '<div class="note">Włączone. Powiadomienie przychodzi rano, razem z danymi '+
-      'z zegarka — treść składa aplikacja przy ostatniej synchronizacji.</div>'+
-      '<div id="pushStanSerwer"></div>'+
-      '<div class="btn2" style="margin-top:8px">'+
-        '<button class="btn ghost sm" onclick="pushProba()">Wyślij próbne</button>'+
-        '<button class="btn ghost sm" onclick="wylaczPowiadomienia()">Wyłącz</button>'+
-      '</div>';
-    /* Zgoda iPhone'a to dopiero połowa. Druga połowa — subskrypcja zapisana
-       na Workerze — potrafi zniknąć (nowa instalacja z ekranu głównego, zmiana
-       kluczy VAPID, przerwane włączanie). Wtedy ekran mówił „Włączone", a serwer
-       nie miał dokąd wysłać. Sprawdzamy to osobno i dajemy przycisk naprawy. */
-    setTimeout(pushDiagnoza, 0);
-    return;
-  }
-  if(stan === 'denied'){
-    el.innerHTML = naglowek + '<div class="tip warn"><b>Zgoda odrzucona</b>'+
-      '<div class="hm" style="margin-top:4px">Włączysz ją w Ustawieniach iPhone’a → '+
-      'Powiadomienia → Trening. Z poziomu aplikacji nie da się o nią zapytać drugi raz.</div></div>';
-    return;
-  }
-  el.innerHTML = naglowek +
-    '<div class="note">Jedno powiadomienie rano: co dziś robisz i jaka jest gotowość. '+
-    'Treść składa aplikacja, serwer tylko budzi telefon.</div>'+
-    '<button class="btn ghost sm" style="margin-top:8px;width:100%" '+
-    'onclick="wlaczPowiadomienia()">Włącz powiadomienia</button>';
-}
-
-async function pushTeraz(){
-  const r = await fetch(srvUrl('push/teraz'), {headers: srvNaglowki({'Accept':'application/json'})});
-  const d = await r.json().catch(() => ({}));
-  if(!r.ok && !d.blad) d.blad = 'HTTP ' + r.status;
-  return d;
-}
-
-async function pushProba(){
-  if(!srvGotowy()){ toast('Najpierw ustaw serwer'); return; }
-  toast('Wysyłam…');
-  await pushWyslijTresc(true);
-  try {
-    let d = await pushTeraz();
-    /* Dwie awarie naprawiają się same: brak subskrypcji (telefon nigdy się
-       nie zapisał) i 403 (subskrypcja na stary klucz VAPID). W obu wypadkach
-       rejestrujemy telefon od nowa i próbujemy raz jeszcze, zamiast kazać
-       użytkownikowi zgadywać, co poszło nie tak. */
-    const trzebaNaprawic = (d.status && /brak subskrypcji|wygasła/.test(d.status))
-      || (d.blad && /40[34]|410/.test(String(d.blad)));
-    if(trzebaNaprawic && pushStan() === 'granted'){
-      toast('Zapisuję telefon na serwerze…');
-      await pushZarejestruj(true);
-      d = await pushTeraz();
-    }
-    toast(d.blad ? ('Błąd: ' + d.blad) : ('Serwer: ' + (d.status || 'wysłane')));
-  } catch(e){ toast('Nie udało się: ' + (e.message || e)); }
-  renderData();
-}
-
-async function wlaczPowiadomienia(){
-  if(!srvGotowy()){ toast('Najpierw ustaw serwer wyżej'); return; }
-  const stan = pushStan();
-  if(stan === 'brak'){ toast('Ta przeglądarka nie obsługuje powiadomień'); return; }
-  if(stan === 'wKarcie'){
-    alert('Powiadomienia działają tylko z aplikacji dodanej do ekranu głównego.\n\n' +
-          'W Safari: przycisk udostępniania → „Dodaj do ekranu początkowego". ' +
-          'Potem otwórz aplikację z ikony i wróć tutaj.');
-    return;
-  }
-  try {
-    const zgoda = await Notification.requestPermission();
-    if(zgoda !== 'granted'){
-      toast(zgoda === 'denied'
-        ? 'Odmówiłeś — zgodę włączysz w Ustawieniach iPhone’a'
-        : 'Bez zgody nie wyślę powiadomienia');
-      renderData();
-      return;
-    }
-    await pushZarejestruj(false);
-    await pushWyslijTresc(true);
-    toast('Powiadomienia włączone');
-  } catch(e){
-    toast('Nie udało się: ' + (e.message || e));
-  }
-  renderData();
-}
-
-async function wylaczPowiadomienia(){
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if(sub) await sub.unsubscribe();
-    if(srvGotowy()) await fetch(srvUrl('push/wypis'), {headers: srvNaglowki({})});
-    toast('Powiadomienia wyłączone');
-  } catch(e){ toast('Nie udało się wyłączyć'); }
-  renderData();
-}
-
-/* CO MA BYĆ W POWIADOMIENIU — składa aplikacja, bo tylko ona ma silnik.
-   Worker jest listonoszem: przechowuje ostatnie zdanie i budzi telefon.
-   Wysyłamy przy każdej synchronizacji, więc zdanie jest tak świeże,
-   jak ostatnie otwarcie aplikacji. */
-function trescPowiadomienia(){
-  const n = planDoPokazania();
-  if(n && n.dzien && PLAN[n.dzien]){
-    const g = gotowosc();
-    return {tytul: 'Dziś: ' + n.dzien + ' — ' + PLAN[n.dzien].name,
-            tekst: (g.nieznana ? 'Wpisz dane poranne i ruszaj.'
-                               : 'Gotowość ' + gotowoscDnia(n.dzien, g) + '/100.') +
-                   ' ' + n.cwiczenia.length + ' ćwiczeń.'};
-  }
-  const md = makroDnia(), cm = celeMakro();
-  if(md && md.kcal === 0)
-    return {tytul: 'Trening', tekst: 'Dziś wolne. Nie zapisałeś jeszcze nic z jedzenia — '+
-            'cel to ' + cm.b.min + ' g białka.'};
-  return {tytul: 'Trening', tekst: 'Dziś wolne. Zajrzyj wieczorem i wpisz dane dnia.'};
-}
-
-async function pushWyslijTresc(cicho){
-  if(!srvGotowy()) return false;
-  try {
-    const t = trescPowiadomienia();
-    const r = await fetch(srvUrl('push/tresc'), {
-      method: 'POST', headers: srvNaglowki({'Content-Type':'application/json'}),
-      body: JSON.stringify(t)
-    });
-    return r.ok;
-  } catch(e){
-    if(!cicho) toast('Nie udało się odświeżyć powiadomienia');
-    return false;
-  }
-}
-
 /* pobranie tego, co przysłał trener: raport, plan, odpowiedzi na pytania */
 async function srvPull(cicho){
   if(!srvGotowy()) return false;
@@ -2563,9 +1895,6 @@ async function srvPull(cicho){
        kończyła się komunikatem „Zsynchronizowano" i trening po cichu zostawał
        na telefonie. Najgorszy możliwy wynik: fałszywe potwierdzenie. */
     SRV.pobrano = new Date().toISOString(); SRV.bladPob = null; srvSave();
-    /* Zdanie do powiadomienia jest tak świeże, jak ostatnia synchronizacja —
-       a ta dzieje się przy każdym otwarciu aplikacji. */
-    pushWyslijTresc(true);
     if(!cicho) toast(zmiany.length ? 'Pobrano: '+zmiany.join(', ') : 'Nic nowego');
     return true;
   }catch(e){
@@ -3302,53 +2631,6 @@ function zastepstwoDlaSlotu(slot, zajete){
       'zamiast podsuwać Ci coś, czego nie masz.'};
 }
 
-/* ============================================================
-   BUDZET KREGOSLUPA
-
-   16 wrzesnia Filip zrobil dzien F: martwy ciag klasyczny, a zaraz po nim
-   wioslowanie sztanga. Po martwym ciagu dol plecow byl juz zmeczony, a
-   wioslowanie sztanga to kolejne kilkadziesiat sekund w sklonie z obciazeniem
-   — w puli tego slotu stoja obok siebie wioslowanie na maszynie i na wyciagu,
-   ktore trafiaja dokladnie w te same plecy BEZ prostownikow.
-
-   To nie jest kwestia objetosci, tylko kolejnosci: prostowniki i miesnie
-   glebokie sa stabilizatorem calego dnia, nie partia do wypelnienia. Gdy
-   glowny boj juz je obciazyl, kolejne sloty maja wybierac warianty podparte
-   — maszyna, wyciag, lawka — a nie drugi wolny ciezar w skłonie.
-
-   Dane do tej decyzji byly w bibliotece od poczatku: martwy ciag ma
-   prostowniki 1,0, wioslowanie sztanga 0,4, wioslowanie na maszynie zero. */
-const STABILIZATORY = {prostowniki: 1, glebokie: 0.6};
-
-function zuzyteStabilizatory(nazwy){
-  const out = {};
-  (nazwy || []).forEach(n => {
-    const mus = (LIB[n] || {}).mus || {};
-    Object.keys(STABILIZATORY).forEach(r => { out[r] = (out[r] || 0) + (mus[r] || 0); });
-  });
-  return out;
-}
-
-/** Ile punktow odjac kandydatowi za dokladanie do juz zmeczonego kregoslupa. */
-function karaZaKregoslup(name, juz){
-  const mus = (LIB[name] || {}).mus || {};
-  const zuzyte = zuzyteStabilizatory(juz);
-  let kara = 0;
-  Object.keys(STABILIZATORY).forEach(r => {
-    /* 0,9 to prog „byl dzis prawdziwy boj na te partie" — martwy ciag (1,0),
-       przysiad, dzien dobry. Samo wioslowanie (0,4) go nie przekracza, wiec
-       w dniu bez boju na plecy nic sie nie zmienia. */
-    if((zuzyte[r] || 0) >= 0.9 && (mus[r] || 0) > 0.2)
-      kara += (mus[r] || 0) * STABILIZATORY[r] * 1.5;
-  });
-  return kara;
-}
-
-function kregoslupZmeczony(juz){
-  const z = zuzyteStabilizatory(juz);
-  return Object.keys(STABILIZATORY).some(r => (z[r] || 0) >= 0.9);
-}
-
 function pickVariant(slot, zajete){
   if(slot.fixed){
     /* Główny bój też można odznaczyć — i to nie jest przypadek brzegowy:
@@ -3392,28 +2674,9 @@ function pickVariant(slot, zajete){
   let streak = 0;
   for(const h of hist){ if(h.name===cur) streak++; else break; }
 
-  /* Trzymanie wariantu ustepuje bezpieczenstwu: gdy kregoslup jest juz
-     obciazony przez boj, nie zostajemy przy wolnym ciezarze w skłonie
-     tylko dlatego, ze stal tu ostatnim razem. */
-  if(cur && pool.indexOf(cur)>=0 && streak < HOLD && !karaZaKregoslup(cur, juz)){
+  if(cur && pool.indexOf(cur)>=0 && streak < HOLD){
     return {name:cur, rot:'hold', streak,
       why:'Zostaje na kolejną sesję ('+(streak+1)+' z '+HOLD+'). Wariant trzymamy kilka sesji, żeby dało się sensownie dobrać ciężar.'};
-  }
-
-  /* KARA PUNKTOWA NIE WYSTARCZALA.
-
-     Pierwsza wersja odejmowala punkty za dokladanie do zmeczonego kregoslupa
-     i przegrywala z punktacja za pokrycie: wioslowanie sztanga trafia w wiecej
-     regionow naraz (prostowniki tez sa regionem!), wiec im bardziej byly
-     zaniedbane, tym mocniej wygrywalo mimo kary. To jest odwrotnie niz
-     powinno — zaniedbane prostowniki to nie powod, zeby dołozyc im PO martwym
-     ciagu. Wiec nie punktujemy, tylko zawezamy pule: jesli jest wariant
-     podparty, wybieramy wylacznie sposrod podpartych. Gdy cala pula obciaza
-     kregoslup (bo taki jest slot), zostaje jak byla — lepiej zrobic cwiczenie
-     niz wyciac je z dnia. */
-  if(kregoslupZmeczony(juz)){
-    const podparte = pool.filter(n => !karaZaKregoslup(n, juz));
-    if(podparte.length) pool = podparte;
   }
 
   const cov = regionSets(14);
@@ -3427,22 +2690,13 @@ function pickVariant(slot, zajete){
     });
     if(name === cur) sc -= 0.8;
     else if(hist.slice(0,2).some(h=>h.name===name)) sc -= 0.35;
-    const kara = karaZaKregoslup(name, juz);
-    sc -= kara;
-    return {name, sc, top, kara};
+    return {name, sc, top};
   });
   scored.sort((a,b)=> b.sc-a.sc || pool.indexOf(a.name)-pool.indexOf(b.name));
   const win = scored[0];
   const reg = win.top && REG[win.top] ? REG[win.top] : null;
   const have = win.top ? Math.round((cov[win.top]||0)*10)/10 : 0;
 
-  if(kregoslupZmeczony(juz) && !win.kara){
-    return {name:win.name, rot:'switch',
-      why:'Dziś w tym dniu stoi już bój obciążający dolny grzbiet, więc ten slot '+
-        'bierze wariant podparty — „'+win.name+'" trafia w te same plecy, ale nie '+
-        'dokłada do prostowników. Po ciężkim ciągu to one puszczają pierwsze, '+
-        'nie mięsień, który ćwiczysz.'};
-  }
   return {name:win.name, rot:'switch', why: reg
     ? 'Zmiana wariantu: „'+reg.n+'" ma '+fmtKg(have)+' serii w ostatnich 14 dniach przy celu '+reg.min+'–'+reg.max+'. To ćwiczenie łata tę dziurę.'
     : 'Zmiana wariantu po '+HOLD+' sesjach.'};
@@ -3522,7 +2776,7 @@ function przerwaSkala(dni){
    Tu liczymy go od nowa: z zakresu tego ćwiczenia i z jego jednostki. */
 function celCwiczenia(name, slot, phase, sug){
   const L = LIB[name] || {};
-  const [mn, mx] = zakresCwiczenia(name, slot, phase) || [8, 8];
+  const [mn, mx] = L.rr || slot.rr[phase] || [8, 8];
   const serie = (sug && sug.sets) || serieSlotu(slot, phase, weekNo()) || 3;
   /* Etykieta celu brała zakres ze SLOTU, a silnik osobno liczył swój.
      Po dwunastu dniach przerwy silnik prosił o 9 powtórzeń w dipach,
@@ -3537,66 +2791,7 @@ function celCwiczenia(name, slot, phase, sug){
     : (mn === mx ? String(mn) : mn + '-' + mx);
   const jedn = L.time ? ' s' : '';
   const rpe = (slot.t[phase] || '').match(/RPE\s*[\d,.]+/);
-  /* „2×10" przy przysiadzie bulgarskim znaczy dziesiec NA NOGE, ale w planie
-     stalo to tylko w tekscie slotu i gubilo sie przy skladaniu celu z silnika.
-     Dziesiec powtorzen zamiast dwudziestu to polowa treningu nog. */
-  const str = L.strona ? '/' + L.strona : '';
-  return serie + '×' + zakres + jedn + str + (rpe ? ' ' + rpe[0] : '');
-}
-
-/* ============================================================
-   ZAKRES POWTORZEN: SLOT KONTRA CWICZENIE
-
-   Slot ma jeden zakres dla calej puli i zmienia go z faza na faze —
-   to jest cala periodyzacja tej aplikacji. Cwiczenie ma wlasny zakres,
-   bo plank mierzy sie w sekundach, a ab wheel w powtorzeniach.
-
-   Do wersji 70 wlasny zakres cwiczenia po prostu KASOWAL zakres slotu.
-   Skutek: ab wheel pokazywal „3×8-12" w kazdej fazie — tak samo w deloadzie
-   jak w intensyfikacji. Periodyzacja dla tych cwiczen po prostu nie istniala,
-   a nikt tego nie widzial, bo liczby wygladaly sensownie.
-
-   Teraz zalezy to od tego, czy slot i cwiczenie mowia TA SAMA JEDNOSTKA:
-
-   - ta sama (np. chwyt na czas w slocie na czas): rzadzi slot, bo to on
-     wie, ktora to faza — przycinamy tylko do granic zdrowego rozsadku
-     dla tego cwiczenia,
-   - rozna albo pula mieszana (slot tulowia: plank obok ab wheel): zakres
-     slotu jest dla tego cwiczenia bez znaczenia, wiec bierzemy FRAGMENT
-     jego wlasnego zakresu odpowiadajacy fazie — dol w deloadzie, gora
-     w intensyfikacji.
-   ============================================================ */
-/* Ktora czesc wlasnego zakresu cwiczenia nalezy do ktorej fazy.
-   Kolejnosc jak w PHASES: reaktywacja, budowa, deload, intensyfikacja. */
-const FRAGMENT_FAZY = [[0, 0.6], [0.2, 1], [0, 0.35], [0.45, 1]];
-
-function fragmentFazy(rr, phase){
-  const f = FRAGMENT_FAZY[phase] || [0, 1];
-  const rozp = rr[1] - rr[0];
-  const a = Math.round(rr[0] + rozp * f[0]);
-  const b = Math.round(rr[0] + rozp * f[1]);
-  return [Math.min(a, b), Math.max(a, b)];
-}
-
-function zakresCwiczenia(name, slot, phase){
-  const L = LIB[name] || {};
-  const wlasny = L.rr;
-  const slotowy = slot && slot.rr && slot.rr[phase];
-  if(!wlasny) return slotowy || [8, 12];
-  if(!slotowy) return wlasny;
-
-  const pula = slot.fixed ? [slot.fixed] : (slot.pool || []);
-  const czasowe = pula.filter(n => (LIB[n] || {}).time).length;
-  /* Pula mieszana nie ma jednej jednostki, wiec zaden zakres slotu nie da
-     sie uczciwie zastosowac do wszystkich jej cwiczen. */
-  const zgodne = czasowe === 0 ? !L.time
-               : czasowe === pula.length ? !!L.time
-               : false;
-  if(!zgodne) return fragmentFazy(wlasny, phase);
-
-  const a = Math.max(wlasny[0], Math.min(wlasny[1], slotowy[0]));
-  const b = Math.max(wlasny[0], Math.min(wlasny[1], slotowy[1]));
-  return [Math.min(a, b), Math.max(a, b)];
+  return serie + '×' + zakres + jedn + (rpe ? ' ' + rpe[0] : '');
 }
 
 function suggestLoad(name, slot, phase, tydzien){
@@ -3606,7 +2801,8 @@ function suggestLoad(name, slot, phase, tydzien){
      plank (40 sekund) i po rozdzieleniu ćwiczeń zaproponował „Ab wheel 3×40" —
      czyli czterdzieści powtórzeń zamiast czterdziestu sekund. Ćwiczenie może
      więc podać własny zakres i on ma pierwszeństwo. */
-  const [mn,mx] = zakresCwiczenia(name, slot, phase);
+  const wlasny = (LIB[name] || {}).rr;
+  const [mn,mx] = wlasny || slot.rr[phase];
   if(!sets) return null;
 
   const L = LIB[name] || {inc:2.5, mus:{}};
@@ -4154,17 +3350,10 @@ function odradzamDzis(){
 /* Kolor akcentu zależy od tego, co dziś robisz. To nie jest ozdoba:
    trzy palety znaczą trzy rodzaje pracy i po tygodniu rozpoznajesz dzień
    po kolorze, zanim przeczytasz literę. */
-/* Barwy dni na palecie Kinetic Obsidian. Push dostaje limonke — ten sam
-   kolor co akcent aplikacji — bo to dzien, od ktorego zaczyna sie rotacja.
-   Pull cyjan, nogi pomarancz, gora fiolet: cztery odcinki kola barw, ktore
-   na czerni rozroznia sie katem oka, bez czytania litery dnia. */
 const BARWY_DNI = {
-  push: {a:'#ccff00', t:'rgba(204,255,0,.12)'},
-  pull: {a:'#00e5ff', t:'rgba(0,229,255,.13)'},
-  nogi: {a:'#ff8a3d', t:'rgba(255,138,61,.15)'},
-  /* Dzien „gora" laczy push i pull, wiec nie moze pozyczyc koloru zadnego
-     z nich — inaczej w pasku tygodnia dwa rozne dni wygladalyby tak samo. */
-  gora: {a:'#a78bfa', t:'rgba(167,139,250,.15)'}
+  push: {a:'#3ddc84', t:'rgba(61,220,132,.13)'},
+  pull: {a:'#7c5cff', t:'rgba(124,92,255,.15)'},
+  nogi: {a:'#ff8a3d', t:'rgba(255,138,61,.15)'}
 };
 function barwaDnia(d){
   const g = (PLAN[d] || {}).grp;
@@ -4345,20 +3534,7 @@ function renderDzis(){
      z pamięci pokazywała myślniki zamiast liczb, choć plan był kompletny. */
   const serie = gp ? gp.cwiczenia.reduce((a, e) =>
     a + (e.serie != null ? e.serie : ((e.sug && e.sug.sets) || 0)), 0) : 0;
-  /* GDY NIE MA JESZCZE GOTOWEGO PLANU, LICZYMY Z SAMEGO PLANU DNIA.
-
-     Do tej pory karta pokazywała wtedy trzy myślniki i pięć pustych pasków —
-     czyli miejsce po liczbach, ktore nigdy nie przyszly. A plan dnia jest
-     znany zawsze: wystarczy policzyc sloty z serii dla biezacej fazy.
-     Lepiej „5 cwiczen · 15 serii · 55 minut" niz „— — —". */
-  let ileP = ile, serieP = serie;
-  if(!ileP){
-    const fz = phaseOf(tydzienPlanu());
-    const sloty = ((PLAN[dzien] || {}).slots || []).filter(x => (x.s || [])[fz] > 0);
-    ileP = sloty.length;
-    serieP = sloty.reduce((a, x) => a + (x.s[fz] || 0), 0);
-  }
-  const minuty = serieP ? Math.round((serieP * 3 + 8) / 5) * 5 : 0;
+  const minuty = serie ? Math.round((serie * 3 + 8) / 5) * 5 : 0;
   const kropka = !maOdp ? 'var(--dim)'
     : g.pkt >= 85 ? 'var(--acc)' : g.pkt >= 55 ? '#ffc53d' : '#e5484d';
 
@@ -4371,23 +3547,18 @@ function renderDzis(){
           (gp && gp.zalegly ? ' · CZEKA '+gp.zalegly+' DNI' : '')+'</div>'+
         '<div class="nazwa" style="color:'+b.a+'">'+esc(dayName2(dzien))+'</div>'+
         '<div class="liczby">'+
-          '<div><b>'+(ileP || '—')+'</b><span>ĆWICZEŃ</span></div>'+
-          '<div><b>'+(serieP || '—')+'</b><span>SERII</span></div>'+
+          '<div><b>'+(ile || '—')+'</b><span>ĆWICZEŃ</span></div>'+
+          '<div><b>'+(serie || '—')+'</b><span>SERII</span></div>'+
           '<div><b>'+(minuty ? minuty : '—')+'</b><span>MINUT</span></div>'+
         '</div>'+
         pasekTygodnia()+
       '</div>'+
     '</div>'+
     '<div class="dol">'+
-      /* Liczba gotowosci stoi pierscien nizej, na kafelku GOTOWOSC. Tutaj
-         zostaje tylko kropka koloru i — gdy danych brak — zdanie, ktore mowi,
-         co z tym zrobic. Ta sama liczba w dwoch miejscach na jednym ekranie
-         nie dodaje nic poza szumem. */
       '<div class="hm" style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+
-        (g.nieznana
-          ? '<i style="width:7px;height:7px;border-radius:50%;background:'+kropka+';flex:none"></i>'+
-            '<b>Gotowość nieznana — wpisz dane poranne</b>'
-          : '')+
+        '<i style="width:7px;height:7px;border-radius:50%;background:'+kropka+';flex:none"></i>'+
+        (g.nieznana ? '<b>Gotowość nieznana — wpisz dane poranne</b>'
+                    : 'Gotowość '+g.pkt+'/100')+
         (gp ? '<span class="autor '+(gp.sprawdzony?'trener':'apka')+'" '+
               'style="margin-left:auto">'+(gp.sprawdzony?'TRENER':'APLIKACJA')+'</span>' : '')+
       '</div>'+
@@ -5501,10 +4672,6 @@ function kafelMakro(){
       '<span class="mkl">'+jest+'<span class="mkc">/'+c+' g</span></span>'+
     '</div>';
   }).join('');
-  /* „brakuje: bialko 113 g · weglowodany 403 g · tluszcze 57 g" powtarzalo
-     slowo w slowo to, co stoi w slupkach ponizej — trzeci raz ta sama rzecz
-     na jednym ekranie, licząc pierścień kalorii. Zostaje sam komunikat
-     o domknieciu dnia, bo tego w slupkach nie widac. */
   const brakuje = MAKRA
     .map(mk => [mk.n.toLowerCase(), Math.max(0, (cele[mk.k]||0) - Math.round(m[mk.k]||0))])
     .filter(x => x[1] > 0);
@@ -5514,7 +4681,8 @@ function kafelMakro(){
       '<div class="etyk" style="margin:0">MAKRO NA DZIŚ</div>'+
       '<div style="font-size:11px;font-weight:700;color:'+
         (brakuje.length ? 'var(--dim)' : 'var(--ok)')+'">'+
-        (brakuje.length ? '' : 'wszystko dowiezione')+'</div>'+
+        (brakuje.length ? 'brakuje: '+esc(brakuje.map(x => x[0]+' '+x[1]+' g').join(' · '))
+                        : 'wszystko dowiezione')+'</div>'+
     '</div>'+ wiersze +
     (m.niepelne ? '<div class="note" style="margin-top:8px">Ten dzień ma wpisane samo '+
       'białko — kalorie są policzone z tego, co znane, więc to dolna granica.</div>' : '')+
@@ -5546,16 +4714,12 @@ function renderHub(){
      czego użytkownik nie zobaczy w liczbach — i cicha korekta jest gorsza
      od błędu. Więc pokazujemy ją tylko wtedy, gdy naprawdę zachodzi. */
   const tp = tydzienPlanu(), stracone = przepadleTygodnie();
-  /* To byla karta na pol ekranu opisujaca stan, ktory nie zmienia sie
-     tygodniami — czyli dokladnie definicja tapety. Rozjazd miedzy kalendarzem
-     a planem dalej MUSI byc widoczny (cicha korekta jest gorsza od bledu),
-     ale wystarczy jedna szara linijka pod paskiem tygodnia. Pelne wyjasnienie
-     stoi w naglowku Raportu, gdzie i tak sie po nie siega. */
   const fazaBox = stracone > 0
-    ? '<div class="hm" style="margin:-2px 0 10px;opacity:.75">Tydzień '+w+
-      ' kalendarza · plan liczy '+tp+' — '+
-      (stracone===1?'tydzień':stracone+' tygodnie')+
-      ' bez siłowni nie przesuwa fazy.</div>'
+    ? '<div class="tip"><b>Kalendarz mówi tydzień '+w+', plan liczy '+tp+'</b>'+
+      '<div class="hm" style="margin-top:4px">'+
+      (stracone===1?'Jeden tydzień':stracone+' tygodnie')+
+      ' bez siłowni nie przesuwa fazy — nie było czego progresować. '+
+      'Wracasz tam, gdzie skończyłeś.</div></div>'
     : '';
   const s=suggestNext();
   /* BŁĄD, przez który cały ekran główny był pusty: usunąłem z HTML dwa
@@ -5681,11 +4845,11 @@ function renderHub(){
        jedno spojrzenie zamiast dwóch akapitów. Potem plan, potem obraz tygodnia.
        Proza (poranne pytania, braki danych, uwagi) siedzi pod dotknięciem
        kafelków albo niżej, gdzie nie zasłania rzeczy pilnych. */
-    fazaBox +
     renderZapis() + renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume +
     renderDzis() +
     '<div class="krata">' + kafelGotowosc() + kafelKalorii() + '</div>' +
     bezpieczneHtml('kafelMakro', kafelMakro) +
+    fazaBox +
     /* Rozwinięcie musi wyjść ZARAZ POD kafelkiem, który dotknąłeś. Wersja 40
        doklejała je na końcu ekranu — dotykało się pierścienia, a panel
        otwierał się kilka ekranów niżej i wyglądało to na brak reakcji. */
@@ -6059,7 +5223,6 @@ function renderSkrot(){
 
 function renderSession(){
   renderRozgrzewka();
-  bezpiecznie('renderDodaj', renderDodaj);
   bezpiecznie('renderSkrot', renderSkrot);
   bezpiecznie('renderKorekta', renderKorekta);
   /* Ile z zaplanowanych serii już zrobione — jedna liczba i pasek zamiast
@@ -6096,26 +5259,6 @@ function renderSession(){
               '<div class="mala">DOBIERZ</div></div>')+
         '</div>'
       : '<div class="extg">Cel: '+esc(e.target||'')+'</div>';
-    /* DO UPADKU CZY NIE — to musi stac na karcie, a nie w glowie.
-
-       Filip ma 90 serii oznaczonych RPE 6 i martwy ciag 60 kg na 10 przy
-       RPE 6, czyli oszczedza sie wszedzie. Ale odpowiedzia nie jest „upadek
-       zawsze": na przysiadzie i martwym ciagu technika psuje sie PRZED
-       miesniem, wiec ostatnie powtorzenie jest jednoczesnie najgorsze
-       i najbardziej ryzykowne. Do upadku schodzi wylacznie izolacja
-       (`upadek:true` na slocie) i tylko w ostatniej serii. */
-    /* `e.slot` bywa obiektem (swiezo zbudowana sesja) albo samym id
-       (sesja odtworzona z pamieci po zamknieciu aplikacji) — a wtedy
-       `e.slot.upadek` jest ciche undefined i podpowiedz znika akurat wtedy,
-       gdy Filip wraca do treningu po przerwie. */
-    const sl = (e.slot && typeof e.slot === 'object') ? e.slot : slotById(e.slot);
-    const doUpadku = sl && sl.upadek
-      ? '<div class="hm" style="margin-top:4px;color:var(--acc)">'+
-        '<b>Ostatnia seria do upadku</b> — dopóki idzie</div>'
-      : (sl && sl.fixed
-        ? '<div class="hm" style="margin-top:4px;opacity:.7">'+
-          'Bój — zostaw zapas, nie schodź do upadku</div>'
-        : '');
     const ostatnio = last
       ? '<div class="exost">'+esc(last.sets.map(fmtSet).join('  '))+'</div>'
       : '<div class="exost" style="color:var(--warn)">pierwszy raz</div>';
@@ -6141,7 +5284,7 @@ function renderSession(){
         '<div style="min-width:0"><div class="slab">'+esc(e.lab||'')+
           (bije?'<span class="prtag">REKORD</span>':'')+'</div>'+
         '<div class="exn">'+esc(e.name)+'</div>'+
-        cyfry + doUpadku + ostatnio + '</div>'+
+        cyfry + ostatnio + '</div>'+
         '<div class="exc">'+(robocze(e.sets).length
             ? '<b style="color:var(--ok)">'+robocze(e.sets).length+'</b> serii'+
               (e.sets.some(s=>s.wu)?'<br><span style="font-size:10px">+'+
@@ -6184,11 +5327,6 @@ function renderSession(){
             '<input type="number" inputmode="numeric" id="ir'+i+'" value="'+prefill(e,'r')+'">'+
             '<button onclick="bump('+i+',\'r\',1)">+</button></div></div>'+
         '</div>'+
-        (() => { const o = jakOstatnio(e); return o
-          ? '<button class="btn ghost sm" style="margin-top:8px" '+
-            'onclick="wpiszJakOstatnio('+i+')">Jak ostatnio: '+
-            (o.w ? fmtKg(o.w)+' kg × ' : '') + o.r + '</button>'
-          : ''; })()+
         /* RPE jako przyciski, nie licznik ze strzałkami. To jedyna wartość,
            która zmienia się prawie co serię, a przy strzałkach zejście z 9 na 6
            kosztowało trzy dotknięcia — w praktyce kończyło się zostawianiem
@@ -6217,11 +5355,6 @@ function renderSession(){
           '<button class="btn sm" onclick="addSet('+i+')">Dodaj serię</button>'+
           '<button class="btn ghost sm" onclick="addSet('+i+',true)">Rozgrzewkowa</button>'+
         '</div>'+
-        /* Kasowanie calego cwiczenia stoi osobno, na dole, drobnym drukiem
-           i w kolorze ostrzegawczym — zeby nie dalo sie w nie trafic kciukiem
-           siegajacym po „Dodaj serie". */
-        '<button class="mini" style="color:var(--bad);margin-top:9px" '+
-          'onclick="usunCwiczenie('+i+')">Usuń to ćwiczenie z treningu</button>'+
       '</div></div>';
   }).join('');
   przywrocWpisane();
@@ -6311,40 +5444,8 @@ function przywrocWpisane(){
   SES_WPISANE = null;
 }
 
-/* JAK OSTATNIO — jedno dotkniecie zamiast dwoch licznikow.
-
-   Miedzy seriami wpisuje sie te same liczby co poprzednio, po jednej
-   strzalce naraz. Bierzemy serie o tym samym numerze z poprzedniego
-   treningu tego cwiczenia; gdy bylo ich wtedy mniej, ostatnia. */
-function jakOstatnio(e){
-  const last = lastFor(e.name);
-  if(!last || !last.sets) return null;
-  const robocze = last.sets.filter(x => !x.wu);
-  if(!robocze.length) return null;
-  const nr = e.sets.filter(x => !x.wu).length;
-  return robocze[Math.min(nr, robocze.length - 1)] || null;
-}
-
-function wpiszJakOstatnio(i){
-  const e = SES.exercises[i], s = jakOstatnio(e);
-  if(!s){ toast('Nie mam poprzedniego wyniku'); return; }
-  const w = document.getElementById('iw' + i), r = document.getElementById('ir' + i);
-  if(w) w.value = s.w == null ? 0 : s.w;
-  if(r) r.value = s.r == null ? '' : s.r;
-  sygnal(18);
-}
-
 function prefill(e,f){
   if(e.sets.length) return e.sets[e.sets.length-1][f] ?? '';
-  /* RPE PIERWSZEJ SERII ZOSTAJE PUSTE.
-
-     Do wersji 67 brala sie tu wartosc z poprzedniego treningu. Efekt widac
-     bylo w danych: 90 serii oznaczonych jako RPE 6, a od 6 wrzesnia dwie cale
-     sesje po kolei bez jednego odstepstwa. Wystarczylo raz zostawic szostke
-     i przenosila sie sama przez tygodnie — a silnik czytal to jako „mial zapas
-     czterech powtorzen przez caly trening" i na tej podstawie proponowal ciezar.
-     Lepiej zapytac raz na cwiczenie, niz miec liczbe, ktora wyglada na dane. */
-  if(f === 'rpe') return '';
   if(e.sug&&e.sug.w!=null){ if(f==='w') return e.sug.w; if(f==='r') return e.sug.r; return ''; }
   const last=lastFor(e.name);
   if(last) return last.sets[0][f] ?? '';
@@ -6420,13 +5521,6 @@ function addSet(i, rozgrzewka){
   const r=parseInt(document.getElementById('ir'+i).value)||0;
   const rpe=parseFloat(document.getElementById('irpe'+i).value)||null;
   if(!r){ toast('Wpisz liczbę powtórzeń'); return; }
-  /* Pierwsza seria robocza bez RPE to cwiczenie bez punktu odniesienia —
-     nastepnym razem nie ma z czego policzyc ciezaru. Kolejne serie moga
-     odziedziczyc wartosc z poprzedniej, bo ta byla juz swiadomie wybrana. */
-  if(!rozgrzewka && !rpe && !e.sets.some(x => !x.wu)){
-    toast('Zaznacz RPE — od niego zależy następny ciężar');
-    return;
-  }
   const s={w:w,r:r,rpe:rozgrzewka?null:rpe};
   if(rozgrzewka) s.wu=true;
   e.sets.push(s); e._open=true;
@@ -6450,33 +5544,6 @@ function wpiszRozgrzewke(i){
   e._open=true; saveSes(); renderSession();
   toast(wu.length+' serie rozgrzewkowe dodane');
 }
-/* USUWANIE CWICZENIA Z TRWAJACEJ SESJI.
-
-   16 wrzesnia Filip dodal cwiczenie w trakcie treningu i nie mial jak go
-   zdjac — zostalo na ekranie do konca sesji. Kasowac dalo sie pojedyncze
-   serie, ale nie cale cwiczenie; „Dodaj cwiczenie" byla droga w jedna strone.
-
-   Cwiczenie z zapisanymi seriami pyta o potwierdzenie i wymienia, co przepada
-   — to jedyne dane w tej aplikacji, ktorych nie odtworzysz z niczego innego.
-   Puste znika od razu, bo nie ma czego tracic. */
-function usunCwiczenie(i){
-  const e = SES && SES.exercises && SES.exercises[i];
-  if(!e) return;
-  const robocze = e.sets.filter(x => !x.wu).length;
-  if(robocze){
-    const opis = e.sets.filter(x => !x.wu)
-      .map(x => (x.w ? fmtKg(x.w) + ' kg × ' : '') + x.r).join(', ');
-    if(!confirm('Usunąć „' + e.name + '" z tego treningu?\n\n' +
-                'Przepadnie ' + robocze + ' ' +
-                (robocze === 1 ? 'seria' : robocze < 5 ? 'serie' : 'serii') +
-                ': ' + opis)) return;
-  }
-  SES.exercises.splice(i, 1);
-  OSTATNIA_SERIA = null;
-  saveSes(); renderSession();
-  toast('Usunięte: ' + e.name);
-}
-
 function delSet(i,j){
   /* Krzyżyk stoi kilka milimetrów od ołówka notatki, a ekran obsługuje się
      spoconą ręką między seriami. Skasowanej serii nie da się odtworzyć —
@@ -6487,148 +5554,11 @@ function delSet(i,j){
   SES.exercises[i].sets.splice(j,1); SES.exercises[i]._open=true;
   saveSes(); renderSession();
 }
-/* DODAWANIE ĆWICZENIA ZACZYNA SIĘ OD BIBLIOTEKI, NIE OD PUSTEGO POLA.
-
-   Do wersji 61 „+ Inne ćwiczenie" było zwykłym `prompt()` na wolny tekst.
-   7 września Filip dopisał tak „Facepull", podczas gdy w bibliotece stoi
-   „Face pull" — i dostał komunikat „pierwszy raz w tym planie, dobierz ciężar",
-   choć robił to ćwiczenie cztery razy. Historia rozjechała się na dwie nazwy,
-   a przy okazji ćwiczenie spoza biblioteki NIE MA mapowania na mięśnie, więc
-   nie policzyło się ani na mapie partii, ani do norm tygodniowych.
-
-   Teraz najpierw dostajesz listę z biblioteki (z wyszukiwarką odporną na
-   spacje i ogonki), a wpis własny jest na końcu, jako wyjście awaryjne —
-   i jeszcze ostrzega, gdy wpisana nazwa to biblioteczna napisana inaczej. */
-let DODAJ = null;
-
-/* „facepull", „face pull", „FACE-PULL" i „Face pull" to ta sama rzecz. */
-function kluczNazwy(x){ return slugCwiczenia(x).replace(/-/g, ''); }
-
 function addCustom(){
-  if(!SES) return;
-  zbierzWpisane();
-  DODAJ = DODAJ ? null : {szukaj: ''};
-  renderSession();
-}
-function zamknijDodaj(){ DODAJ = null; renderSession(); }
-
-/* DWIE LISTY, NIE JEDNA POSORTOWANA.
-
-   Samo „czego brakuje" wypychało na górę wspięcia na palce i uginanie nóg —
-   bo łydki i dwugłowe stały pod normą — i to w dniu PULL. Prawdziwa
-   odpowiedź na „co najlepiej dziś dorzucić" ma dwie części: najpierw to,
-   co pasuje do dzisiejszego dnia, potem to, czego brakuje w ogóle.
-   Przy wpisanym szukaniu obie znikają — wtedy liczy się nazwa, nie ranking. */
-function kandydaciDoDodania(){
-  const juz = new Set((SES && SES.exercises || []).map(e => kluczNazwy(e.name)));
-  const brak = brakiRegionow();
-  const q = kluczNazwy((DODAJ && DODAJ.szukaj) || '');
-
-  const wolne = Object.keys(LIB)
-    .filter(n => !LIB[n].stare && LIB[n].mus && !isSkipped(n) && !juz.has(kluczNazwy(n)))
-    .map(n => ({n, w: potrzebaCwiczenia(n, brak), ost: lastFor(n)}));
-
-  if(q) return {szukane: wolne.filter(x => kluczNazwy(x.n).indexOf(q) >= 0)
-    .sort((a, b) => a.n.localeCompare(b.n, 'pl')).slice(0, 30)};
-
-  /* Ćwiczenia, które w ogóle mogą wypaść w dzisiejszym dniu — czyli te
-     z pul jego slotów. To jest „pasuje do dziś" liczone z planu, a nie
-     zgadywane z nazwy partii. */
-  const dnia = new Set();
-  const d = SES && PLAN[SES.day];
-  if(d) (d.slots || []).forEach(sl => (sl.fixed ? [sl.fixed] : (sl.pool || []))
-    .forEach(n => dnia.add(n)));
-
-  const wg = (a, b) => (b.w - a.w) || a.n.localeCompare(b.n, 'pl');
-  return {
-    doDnia: wolne.filter(x => dnia.has(x.n)).sort(wg),
-    brakujace: wolne.filter(x => !dnia.has(x.n)).sort(wg).slice(0, 12)
-  };
-}
-
-function renderDodajListe(){
-  const el = document.getElementById('dodajLista');
-  if(!el) return;
-  const poz = x => {
-    const L = LIB[x.n] || {};
-    const b = x.ost && bestSet(x.ost.sets, x.n);
-    const opis = b
-      ? 'ostatnio ' + (L.bw ? '' : fmtKg(b.w) + ' kg × ') + b.r + ' — ' + plDate(x.ost.date)
-      : 'jeszcze nie robione';
-    return '<button class="btn ghost sm" style="width:100%;text-align:left;margin-top:6px" '+
-      'onclick="dodajZBiblioteki(\''+esc(x.n).replace(/'/g,"\\'")+'\')">'+
-      esc(x.n)+'<div class="note" style="margin-top:2px">'+esc(opis)+'</div></button>';
-  };
-  const naglowek = t => '<div class="etyk" style="margin:12px 0 0">'+t+'</div>';
-  const k = kandydaciDoDodania();
-
-  if(k.szukane){
-    el.innerHTML = k.szukane.length ? k.szukane.map(poz).join('')
-      : '<div class="note" style="margin-top:8px">Nic takiego nie ma w bibliotece. '+
-        'Możesz dopisać własne przyciskiem niżej.</div>';
-    return;
-  }
-  el.innerHTML =
-    (k.doDnia.length ? naglowek('DO DZISIEJSZEGO DNIA') + k.doDnia.map(poz).join('') : '') +
-    (k.brakujace.length ? naglowek('NAJBARDZIEJ BRAKUJE (14 DNI)') + k.brakujace.map(poz).join('') : '');
-}
-
-function szukajCwiczenia(v){
-  if(!DODAJ) return;
-  DODAJ.szukaj = v;
-  renderDodajListe();          /* sama lista, żeby nie zabrać kursora z pola */
-}
-
-function renderDodaj(){
-  const el = document.getElementById('dodajBox');
-  if(!el) return;
-  if(!DODAJ || !SES){ el.innerHTML = ''; return; }
-  el.innerHTML = '<div class="card" style="margin-bottom:11px">'+
-    '<div class="fld"><label>Z biblioteki</label>'+
-      '<input type="text" id="dodajSzukaj" placeholder="szukaj: face pull, przysiad…" '+
-      'oninput="szukajCwiczenia(this.value)"></div>'+
-    '<div class="note" style="margin-top:6px">Na górze to, czego w ostatnich '+
-      '14 dniach było najmniej.</div>'+
-    '<div id="dodajLista"></div>'+
-    '<div style="display:flex;gap:8px;margin-top:11px">'+
-      '<button class="btn ghost sm" style="flex:1" onclick="dodajWlasne()">Nie ma na liście</button>'+
-      '<button class="btn ghost sm" style="flex:1" onclick="zamknijDodaj()">Zamknij</button>'+
-    '</div></div>';
-  renderDodajListe();
-}
-
-function dodajZBiblioteki(name){
-  if(!SES || !LIB[name]) return;
-  if(SES.exercises.some(e => kluczNazwy(e.name) === kluczNazwy(name))){
-    toast('To ćwiczenie już jest w sesji'); return;
-  }
-  const L = LIB[name] || {};
-  const ost = lastFor(name);
-  const e = {name, slot:null, lab:'dorzucone', target:'poza planem', sets:[], _open:true};
-  const b = ost && bestSet(ost.sets, name);
-  if(b) e.sug = {w: b.w, r: b.r, sets: ost.sets.length, tag:'hold',
-    why:'Ostatnio '+(L.bw ? '' : fmtKg(b.w)+' kg × ')+b.r+' powt. ('+plDate(ost.date)+'). '+
-        'Ten sam ciężar, celuj w tyle samo albo jedno więcej.'};
-  SES.exercises.push(e);
-  DODAJ = null; saveSes(); renderSession();
-  toast('Dodane: '+name);
-}
-
-function dodajWlasne(){
-  const n = prompt('Nazwa ćwiczenia spoza biblioteki:');
-  if(!n || !n.trim()) return;
-  const nazwa = n.trim();
-  /* Ostatni bezpiecznik przed „Facepull" obok „Face pull". */
-  const podobne = Object.keys(LIB).find(x => kluczNazwy(x) === kluczNazwy(nazwa));
-  if(podobne && podobne !== nazwa){
-    if(confirm('W bibliotece jest już „'+podobne+'".\n\nOK — dodaj z biblioteki (zachowasz historię '+
-               'i policzy się na mapie mięśni).\nAnuluj — zostaw moją nazwę.')){
-      dodajZBiblioteki(podobne); return;
-    }
-  }
-  SES.exercises.push({name:nazwa, slot:null, lab:'poza planem', target:'poza planem',
-                      sets:[], _open:true});
-  DODAJ = null; saveSes(); renderSession();
+  const n=prompt('Nazwa ćwiczenia:');
+  if(!n||!n.trim()) return;
+  SES.exercises.push({name:n.trim(), slot:null, lab:'poza planem', target:'poza planem', sets:[], _open:true});
+  saveSes(); renderSession();
 }
 function cancelSession(){
   if(setCount(SES)>0 && !confirm('Porzucić trening? Zapisane serie przepadną.')) return;
@@ -7117,16 +6047,10 @@ function przerwaDla(nazwa){
 function startTimer(sec, cwiczenie){
   T_LEN=sec||DB.settings.rest||90; T_END=Date.now()+T_LEN*1000;
   if(cwiczenie != null) T_CW = cwiczenie;
-  try{ localStorage.setItem(TIMKEY, JSON.stringify({end:T_END, len:T_LEN, cw:T_CW||''})); }catch(e){}
+  try{ localStorage.setItem(TIMKEY, JSON.stringify({end:T_END, len:T_LEN})); }catch(e){}
   const bar=document.getElementById('tbar'); bar.classList.add('on'); bar.classList.remove('done');
-  document.getElementById('tLab').textContent=etykietaPrzerwy();
+  document.getElementById('tLab').textContent='PRZERWA · '+fmtTime(T_LEN);
   clearInterval(TICK); paint(); TICK=setInterval(paint,250); wakeOn();
-}
-/* Nazwa cwiczenia w pasku. Miedzy seriami ekran bywa przewiniety gdzie indziej,
-   a pasek jest przypiety na stale — bez nazwy nie wiadomo, do czego liczy. */
-function etykietaPrzerwy(){
-  return 'PRZERWA' + (T_CW ? ' · ' + String(T_CW).toUpperCase() : '') +
-    ' · ' + fmtTime(T_LEN);
 }
 function resumeTimer(){
   try{
@@ -7134,9 +6058,9 @@ function resumeTimer(){
     if(!r || !r.end) return;
     const zostalo=(r.end-Date.now())/1000;
     if(zostalo<=0){ localStorage.removeItem(TIMKEY); return; }
-    T_LEN=r.len||90; T_END=r.end; if(r.cw) T_CW=r.cw;
+    T_LEN=r.len||90; T_END=r.end;
     const bar=document.getElementById('tbar'); bar.classList.add('on'); bar.classList.remove('done');
-    document.getElementById('tLab').textContent=etykietaPrzerwy();
+    document.getElementById('tLab').textContent='PRZERWA · '+fmtTime(T_LEN);
     clearInterval(TICK); paint(); TICK=setInterval(paint,250); wakeOn();
   }catch(e){}
 }
@@ -7489,333 +6413,25 @@ async function aiZapytaj(wiadomosci, opcje){
   } finally { clearTimeout(stoper); }
 }
 
-/* ============================================================
-   KOD KRESKOWY — EAN-13 i EAN-8 ze zdjęcia
-
-   Po co własny dekoder, skoro są gotowe biblioteki: `BarcodeDetector`
-   jest w Chrome, ale nie ma go w WebKicie, czyli akurat NIE MA GO NA
-   IPHONIE — a to jedyne urządzenie, na którym ta aplikacja działa.
-   Gotowe biblioteki (ZXing, Quagga) ważą setki kilobajtów, wymagają
-   pobrania z cudzego serwera i przestają działać offline. Ten plik ma
-   być jednym plikiem, który chodzi bez sieci.
-
-   Kod kreskowy jest przy tym najprostszym formatem, jaki da się czytać:
-   to jeden wiersz pikseli. Bierzemy kilkanaście wierszy ze środka zdjęcia,
-   zamieniamy każdy na ciąg długości pasków i dopasowujemy do tablicy
-   wzorów. Suma kontrolna EAN odrzuca pomyłki, więc błędny odczyt nie ma
-   jak wejść do dziennika — w najgorszym razie nie odczyta się nic.
-
-   Sprawdzone na wygenerowanych kodach: rozmycie, obrót do 5°, szum,
-   ciemne zdjęcie i ciasny kadr — 28 z 30 przypadków. Padają tylko obrazy
-   poniżej 800 px, dlatego do skanowania skalujemy do 1600 px, a nie do
-   800 jak przy zdjęciu talerza.
-   ============================================================ */
-const EAN_L = ['3211','2221','2122','1411','1132','1231','1114','1312','1213','3112'];
-const EAN_PARZ = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG',
-                  'LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
-
-/* Dopasowanie czterech pasków do cyfry. Nie porównujemy pikseli, tylko
-   PROPORCJE — dzięki temu ten sam kod czyta się z bliska i z daleka. */
-function eanDopasuj(runy, zestaw){
-  if(runy.length < 4) return null;
-  const suma = runy[0] + runy[1] + runy[2] + runy[3];
-  if(!(suma > 0)) return null;
-  let naj = null, najb = 1e9;
-  for(let c = 0; c < 10; c++){
-    const wzor = EAN_L[c], G = zestaw === 'G';
-    let b = 0;
-    for(let i = 0; i < 4; i++){
-      const oczek = Number(wzor[G ? 3 - i : i]) * suma / 7;
-      b += Math.abs(runy[i] - oczek) / (suma / 7);
-    }
-    if(b < najb){ najb = b; naj = c; }
-  }
-  return najb < 1.2 ? {cyfra: naj, blad: najb} : null;
-}
-
-/* Cyfra kontrolna. To ona pilnuje, żeby zły odczyt nie udawał dobrego. */
-function eanSuma(kod){
-  if(!/^[0-9]{8}$|^[0-9]{13}$/.test(kod)) return false;
-  const c = kod.split('').map(Number);
-  const k = c.pop();
-  let s = 0;
-  /* waga 3 dla co drugiej cyfry liczonej OD PRAWEJ — inaczej EAN-8
-     i EAN-13 wychodzą różnie */
-  for(let i = c.length - 1, w = 3; i >= 0; i--, w = (w === 3 ? 1 : 3)) s += c[i] * w;
-  return (10 - (s % 10)) % 10 === k;
-}
-
-function eanZRunow(runy, odCzarnego){
-  /* Najkrótszy kod to EAN-8: 3 + 16 + 5 + 16 + 3 = 43 przejścia. */
-  for(let start = odCzarnego ? 0 : 1; start + 40 <= runy.length; start += 2){
-    const g0 = runy[start], g1 = runy[start+1], g2 = runy[start+2];
-    const m = (g0 + g1 + g2) / 3;
-    if(!(m > 0)) continue;
-    if(Math.abs(g0-m) > m*0.6 || Math.abs(g1-m) > m*0.6 || Math.abs(g2-m) > m*0.6) continue;
-
-    const czytaj = (i, zestaw) => eanDopasuj(runy.slice(i, i + 4), zestaw);
-    const strazMa = i => {
-      const sr = runy.slice(i, i + 5);
-      return sr.length === 5 && !sr.some(x => Math.abs(x - m) > m * 0.7);
-    };
-
-    const proba13 = (start + 59 <= runy.length) ? (() => {
-      let i = start + 3; const lewe = []; let parz = '';
-      for(let c = 0; c < 6; c++){
-        const L = czytaj(i, 'L'), G = czytaj(i, 'G');
-        if(!L && !G) return null;
-        const lepszyL = !G || (L && L.blad <= G.blad);
-        const w = lepszyL ? L : G;
-        lewe.push(w.cyfra); parz += lepszyL ? 'L' : 'G'; i += 4;
-      }
-      if(!strazMa(i)) return null;
-      i += 5;
-      const prawe = [];
-      for(let c = 0; c < 6; c++){
-        const R = czytaj(i, 'L');    /* R ma te same długości co L */
-        if(!R) return null;
-        prawe.push(R.cyfra); i += 4;
-      }
-      const pierwsza = EAN_PARZ.indexOf(parz);
-      if(pierwsza < 0) return null;
-      const kod = String(pierwsza) + lewe.join('') + prawe.join('');
-      return eanSuma(kod) ? kod : null;
-    })() : null;
-    if(proba13) return proba13;
-
-    const proba8 = (() => {
-      let i = start + 3; const lewe = [];
-      for(let c = 0; c < 4; c++){
-        const L = czytaj(i, 'L');
-        if(!L) return null;
-        lewe.push(L.cyfra); i += 4;
-      }
-      if(!strazMa(i)) return null;
-      i += 5;
-      const prawe = [];
-      for(let c = 0; c < 4; c++){
-        const R = czytaj(i, 'L');
-        if(!R) return null;
-        prawe.push(R.cyfra); i += 4;
-      }
-      const kod = lewe.join('') + prawe.join('');
-      return eanSuma(kod) ? kod : null;
-    })();
-    if(proba8) return proba8;
-  }
-  return null;
-}
-
-/* Runy czarno-bialych pasm przy zadanym progu. Prog moze byc rozny dla
-   kazdego piksela - stad funkcja, a nie liczba. */
-function eanZProgu(piksele, prog){
-  const n = piksele.length;
-  const runy = []; let kolor = piksele[0] < prog(0), dl = 0;
-  for(let i = 0; i < n; i++){
-    const c = piksele[i] < prog(i);
-    if(c === kolor) dl++;
-    else { runy.push(dl); kolor = c; dl = 1; }
-  }
-  runy.push(dl);
-  /* Kod bywa sfotografowany do gory nogami - wtedy ten sam wiersz
-     czyta sie od konca, a kolor pierwszego paska to kolor ostatniego. */
-  return eanZRunow(runy, piksele[0] < prog(0))
-      || eanZRunow(runy.slice().reverse(), kolor);
-}
-
-function eanZWiersza(piksele){
-  const n = piksele.length;
-  let min = 255, max = 0;
-  for(let i = 0; i < n; i++){
-    const p = piksele[i];
-    if(p < min) min = p;
-    if(p > max) max = p;
-  }
-  if(max - min < 40) return null;              /* wiersz bez kontrastu */
-
-  /* Prog globalny wystarcza przy rownym swietle. */
-  const srodek = (min + max) / 2;
-  const a = eanZProgu(piksele, () => srodek);
-  if(a) return a;
-
-  /* Prog ruchomy: srednia z okna szerokosci ~1/12 wiersza, minus margines.
-     To jest roznica miedzy skanerem, ktory dziala w laboratorium, a takim,
-     ktory dziala w sklepie: odblask lampy albo cien palca na polowie
-     opakowania przesuwa jasnosc tak, ze jeden prog dla calego wiersza
-     zamienia polowe paskow w jedna plame. */
-  const okno = Math.max(9, Math.round(n / 12)) | 1;
-  const suma = new Float64Array(n + 1);
-  for(let i = 0; i < n; i++) suma[i + 1] = suma[i] + piksele[i];
-  const pol = okno >> 1;
-  const prog = new Float64Array(n);
-  for(let i = 0; i < n; i++){
-    const od = Math.max(0, i - pol), do_ = Math.min(n, i + pol + 1);
-    prog[i] = (suma[do_] - suma[od]) / (do_ - od) - 3;
-  }
-  return eanZProgu(piksele, i => prog[i]);
-}
-/* Kilkanaście wierszy ze środka obrazu, wygrywa najczęstszy odczyt. */
-function eanZDanych(dane, w, h){
-  const glosy = {}, ILE = 31;
-  const wiersz = new Uint8Array(w);
-  const jasnosc = (i) => (dane[i] * 299 + dane[i+1] * 587 + dane[i+2] * 114) / 1000;
-
-  for(let k = 0; k < ILE; k++){
-    const y = Math.round(h * (0.10 + 0.80 * k / (ILE - 1)));
-    const baza = y * w * 4;
-    /* jasnosc, nie sama zielen - kody bywaja na kolorowym tle */
-    for(let x = 0; x < w; x++) wiersz[x] = jasnosc(baza + x * 4);
-    const kod = eanZWiersza(wiersz);
-    if(kod) glosy[kod] = (glosy[kod] || 0) + 1;
-  }
-
-  /* Linie ukosne. Zdjecie z reki nigdy nie jest idealnie proste, a przy
-     przechyle o kilka stopni poziomy wiersz przecina paski pod katem i
-     mierzy je za szerokie. Tanszy sposob niz obracanie calego obrazu:
-     czytac po skosie w druga strone. */
-  for(const nachyl of [-0.14, -0.07, 0.07, 0.14]){
-    for(let k = 0; k < 5; k++){
-      const y0 = h * (0.25 + 0.5 * k / 4);
-      for(let x = 0; x < w; x++){
-        const y = Math.round(y0 + (x - w / 2) * nachyl);
-        wiersz[x] = (y < 0 || y >= h) ? 255 : jasnosc((y * w + x) * 4);
-      }
-      const kod = eanZWiersza(wiersz);
-      if(kod) glosy[kod] = (glosy[kod] || 0) + 1;
-    }
-  }
-
-  const naj = Object.keys(glosy).sort((a, b) => glosy[b] - glosy[a])[0];
-  return naj || null;
-}
-
-function eanZPlotna(c){
-  const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-  return eanZDanych(d, c.width, c.height);
-}
-
-/* Kilkadziesiat linii przez obraz, wygrywa najczestszy odczyt. */
-function eanZObrazu(img, maxBok){
-  const sk = Math.min(1, (maxBok || 1600) / Math.max(img.width, img.height));
-  const c = document.createElement('canvas');
-  c.width = Math.max(1, Math.round(img.width * sk));
-  c.height = Math.max(1, Math.round(img.height * sk));
-  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-  return eanZPlotna(c);
-}
 /* ---- JEDZENIE → GRAMY BIAŁKA -------------------------------------------
    Model dostaje jedno zadanie i ma odpowiedzieć samym JSON-em. Nawet jeśli
    odpowie zdaniem dookoła, wyłuskujemy pierwszy nawias klamrowy — to tańsze
    niż walka o idealny format i odporniejsze na zmianę modelu. */
-/* MODEL PODAJE GĘSTOŚĆ, MNOŻY APLIKACJA.
-
-   Do wersji 62 model dostawał „policz makro tego posiłku" i oddawał gotowe
-   sumy. Wychodziły z tego okrągłe bzdury, systematycznie zaniżone, bo waga
-   z opisu była ignorowana. Z logu:
-
-     „Bajgiel z kurczakiem 250 g"  → 325 kcal  (powinno ~600)
-     „Pizza z Lidla 350 g"         → 360 kcal  (powinno ~900)
-     „105 g kabanosów wieprzowych" → 100 kcal  (powinno ~500)
-
-   Wszystkie odpowiedzi to wielokrotności piątki, białko zawsze 25 albo 35.
-   To nie jest liczenie, to zgadywanie zakotwiczone na „typowej porcji".
-
-   Model językowy nieźle wie, ILE MA STO GRAMÓW danego produktu — to jest
-   wiedza, którą naprawdę widział w danych. Fatalnie natomiast mnoży przez
-   wagę i sumuje. Więc odbieramy mu arytmetykę: ma podać składniki, ich wagę
-   i wartości NA 100 g, a mnożenie i sumowanie robi aplikacja. To ta sama
-   zasada co przy zdjęciu — każdy robi to, w czym jest dobry. */
-const AI_JEDZENIE = 'Jesteś tabelą wartości odżywczych. Dostajesz opis posiłku po polsku. ' +
-  'Rozbijasz go na składniki i dla KAŻDEGO podajesz jego wagę oraz wartości NA 100 g. ' +
-  'NIE mnożysz i NIE sumujesz — to zrobi program. ' +
-  'Odpowiadasz WYŁĄCZNIE obiektem JSON: ' +
-  '{"opis":"krótki opis","skladniki":[{"co":"nazwa","g":waga_w_gramach,' +
-  '"b100":białko_na_100g,"w100":węglowodany_na_100g,"t100":tłuszcz_na_100g}],' +
+const AI_JEDZENIE = 'Jesteś licznikiem makroskładników. Dostajesz opis posiłku po polsku. ' +
+  'Odpowiadasz WYŁĄCZNIE obiektem JSON: {"opis":"krótki opis","bialko":gramy,' +
+  '"wegle":gramy,"tluszcz":gramy,"kcal":kalorie,' +
   '"pewnosc":"wysoka|srednia|niska","uwaga":"tekst albo pusty"}. ' +
-  'Wartości na 100 g podajesz dla produktu W POSTACI, W JAKIEJ SIĘ GO JE ' +
-  '(ryż ugotowany, nie suchy). Przykłady, żeby wyczuć rząd wielkości: ' +
-  'kabanosy 25/1/44, boczek 13/0/53, ser żółty 25/1/28, pierś z kurczaka 31/0/4, ' +
-  'ryż ugotowany 3/28/0, pieczywo pszenne 9/49/3, oliwa 0/0/100, mleko 2% 3/5/2. ' +
-  'Gdy waga nie jest podana, przyjmij typową porcję, wpisz ją w "g", ustaw ' +
-  'pewnosc na "niska" i napisz w uwadze, ile założyłeś. ' +
-  'Gdy opis nie jest jedzeniem, oddaj pustą listę skladnikow i wyjaśnij to w uwadze.';
+  'Wszystkie liczby całkowite. Kalorie policz z makroskładników: 4 kcal na gram ' +
+  'białka i węglowodanów, 9 na gram tłuszczu. ' +
+  'Gdy ilość nie jest podana, przyjmij typową porcję, ustaw pewnosc na "niska" ' +
+  'i napisz w uwadze, jaką porcję założyłeś. ' +
+  'Gdy opis nie jest jedzeniem, wyzeruj wszystkie liczby i wyjaśnij to w uwadze.';
 
-/* Suma z gęstości — całe mnożenie siedzi tutaj, nie w modelu. */
-function zeSkladnikow(w){
-  if(!w || !Array.isArray(w.skladniki) || !w.skladniki.length) return null;
-  const lb = [];
-  let b = 0, we = 0, t = 0;
-  for(const s of w.skladniki){
-    const g = Number(s.g), b100 = Number(s.b100), w100 = Number(s.w100), t100 = Number(s.t100);
-    if(!(g > 0) || [b100, w100, t100].some(x => !isFinite(x) || x < 0)) return null;
-    /* Nic jadalnego nie ma więcej niż 100 g czegokolwiek w 100 g. */
-    if(b100 > 100 || w100 > 100 || t100 > 100) return null;
-    const k = g / 100;
-    b += b100 * k; we += w100 * k; t += t100 * k;
-    lb.push({co: String(s.co || '?'), g: Math.round(g),
-             kcal100: Math.round(b100 * 4 + w100 * 4 + t100 * 9)});
-  }
-  return {bialko: Math.round(b), wegle: Math.round(we), tluszcz: Math.round(t),
-          kcal: Math.round(b * 4 + we * 4 + t * 9), lista: lb};
-}
-
-/* OSTATNI DOMKNIĘTY OBIEKT, NIE „OD PIERWSZEJ KLAMRY DO OSTATNIEJ".
-
-   Stara wersja brała wszystko między pierwszym `{` a ostatnim `}`. Działa,
-   dopóki model odda dokładnie jeden obiekt. Modele rozumujące (gemma) piszą
-   po drodze przykłady i poprawiają się — wtedy taki wycinek to dwa obiekty
-   sklejone przecinkiem, czyli nic. Szukamy więc obiektów po zbilansowanych
-   klamrach i bierzemy OSTATNI, który się parsuje: model poprawia się w miarę
-   pisania, więc ostatni jest jego odpowiedzią. */
 function aiWyluskajJson(tekst){
   const t = String(tekst || '');
-  let wynik = null, glebokosc = 0, start = -1, wCudzyslowie = false, ucieczka = false;
-  for(let i = 0; i < t.length; i++){
-    const c = t[i];
-    if(ucieczka){ ucieczka = false; continue; }
-    if(c === '\\'){ ucieczka = true; continue; }
-    if(c === '"'){ wCudzyslowie = !wCudzyslowie; continue; }
-    if(wCudzyslowie) continue;
-    if(c === '{'){ if(glebokosc === 0) start = i; glebokosc++; }
-    else if(c === '}' && glebokosc > 0){
-      glebokosc--;
-      if(glebokosc === 0 && start >= 0){
-        try { const o = JSON.parse(t.slice(start, i + 1));
-              if(o && typeof o === 'object') wynik = o; } catch(e){}
-      }
-    }
-  }
-  /* RATOWANIE ODPOWIEDZI URWANEJ W POLOWIE.
-
-     Model z limitem tokenow potrafi skonczyc w srodku obiektu — wtedy nie
-     ma domykajacego nawiasu, petla wyzej nie ma czego sparsowac i uzytkownik
-     dostaje „nie umiem odczytac", choc dziewiec dziesiatych odpowiedzi jest
-     poprawne. Domykamy to, co zostalo otwarte, i obcinamy ostatni niepelny
-     element. Lepiej policzyc z trzech skladnikow niz z zadnego. */
-  if(!wynik && start >= 0){
-    let ogon = t.slice(start);
-    /* ucinamy do ostatniego miejsca, ktore moze byc koncem wartosci */
-    for(let i = ogon.length - 1; i > 0; i--){
-      if(!/[0-9"}\]]/.test(ogon[i])) continue;
-      let proba = ogon.slice(0, i + 1).replace(/,\s*$/, '');
-      /* policz, ile nawiasow trzeba domknac — cudzyslowy pomijamy */
-      let kl = 0, kw = 0, wC = false, uc = false;
-      for(const c of proba){
-        if(uc){ uc = false; continue; }
-        if(c === '\\'){ uc = true; continue; }
-        if(c === '"'){ wC = !wC; continue; }
-        if(wC) continue;
-        if(c === '{') kl++; else if(c === '}') kl--;
-        else if(c === '[') kw++; else if(c === ']') kw--;
-      }
-      if(wC || kl < 0 || kw < 0) continue;
-      try {
-        const o = JSON.parse(proba + ']'.repeat(kw) + '}'.repeat(kl));
-        if(o && typeof o === 'object'){ wynik = o; break; }
-      } catch(e){}
-    }
-  }
-  return wynik;
+  const i = t.indexOf('{'), j = t.lastIndexOf('}');
+  if(i < 0 || j <= i) return null;
+  try { return JSON.parse(t.slice(i, j + 1)); } catch(e){ return null; }
 }
 
 /* ZDJĘCIE IDZIE DWOMA KROKAMI, NIE JEDNYM.
@@ -7926,56 +6542,19 @@ async function aiJedzenie(opis, zdjecieBase64){
       'a ze zdjęcia bierz wyłącznie ilości.'
     : (opis || '');
 
-  /* 300 TOKENOW TO BYLO ZA MALO.
-
-     Od wersji 62 model oddaje liste skladnikow z waga i gestoscia, a nie
-     trzy gotowe sumy — ta odpowiedz jest kilka razy dluzsza. Przy dwoch
-     tostach z czyms na wierzchu wychodzily trzy, cztery skladniki i JSON
-     urywal sie w polowie, a uzytkownik dostawal „nie umiem odczytac".
-     Limit jest teraz ustawiony pod najdluzsza sensowna odpowiedz. */
-  let odp = await aiZapytaj(
+  const odp = await aiZapytaj(
     [{role: 'system', content: AI_JEDZENIE}, {role: 'user', content: pytanie}],
-    {tryb: 'tekst', max_tokens: 700});
-  let wynik = aiWyluskajJson(odp.tresc);
+    {tryb: 'tekst', max_tokens: 300});
 
-  /* Jedna ponowna proba, krotsza i ostrzejsza. Modele bywaja gadatliwe
-     losowo — druga proba z jawnym „maksymalnie trzy skladniki, sam JSON"
-     kosztuje sekunde, a ratuje wpis, ktory inaczej trzeba wklepac recznie. */
-  if(!wynik || typeof wynik.bialko !== 'number'){
-    aiZapisz({co: 'jedzenie-nieudane', pytanie: pytanie.slice(0, 200),
-              odpowiedz: (odp.tresc || '').slice(0, 300)});
-    odp = await aiZapytaj(
-      [{role: 'system', content: AI_JEDZENIE +
-        ' ODPOWIADASZ SAMYM JSON-em, bez komentarza i bez bloku kodu. ' +
-        'Najwyzej TRZY skladniki. Krotkie nazwy.'},
-       {role: 'user', content: pytanie}],
-      {tryb: 'tekst', max_tokens: 700});
-    wynik = aiWyluskajJson(odp.tresc);
-  }
-
+  const wynik = aiWyluskajJson(odp.tresc);
   aiZapisz({co: 'jedzenie', pytanie: pytanie.slice(0, 200),
-            odpowiedz: (odp.tresc || '').slice(0, 300), bialko: wynik && wynik.bialko});
-  if(!wynik || typeof wynik.bialko !== 'number'){
-    /* Komunikat pokazuje POCZATEK tego, co naprawde przyszlo. Bez tego
-       „dziwna odpowiedz" nie da sie zdiagnozowac po fakcie — a to jedyna
-       informacja, ktora odroznia model gadajacy od modelu niedostepnego. */
-    const co = String(odp.tresc || '').replace(/\s+/g, ' ').trim().slice(0, 90);
-    throw new Error('Model odpowiedział czymś, czego nie umiem odczytać' +
-      (co ? ': „' + co + '…"' : ' (pusta odpowiedź)') + '. Wpisz gramy ręcznie.');
-  }
+            odpowiedz: (odp.tresc || '').slice(0, 200), bialko: wynik && wynik.bialko});
+  if(!wynik || typeof wynik.bialko !== 'number')
+    throw new Error('Model odpowiedział czymś, czego nie umiem odczytać. Wpisz gramy ręcznie.');
   return domknijMakro(wynik);
 }
 
 function domknijMakro(wynik){
-  /* Droga główna: model podał składniki z wagą i gęstością, aplikacja mnoży.
-     Stary, płaski kształt odpowiedzi zostaje jako awaryjny — model bywa
-     leniwy i czasem odda same sumy mimo polecenia. */
-  const zG = zeSkladnikow(wynik);
-  if(zG){
-    wynik.bialko = zG.bialko; wynik.wegle = zG.wegle;
-    wynik.tluszcz = zG.tluszcz; wynik.kcal = zG.kcal;
-    wynik.rozbicie = zG.lista;
-  }
 
   /* Model bywa nierówny w arytmetyce: potrafi podać makro i kalorie, które
      się z nim nie zgadzają. Kalorie z makroskładników są policzalne, więc
@@ -7984,321 +6563,7 @@ function domknijMakro(wynik){
   const zMakro = wynik.bialko*4 + wynik.wegle*4 + wynik.tluszcz*9;
   if(typeof wynik.kcal !== 'number' || !wynik.kcal ||
      Math.abs(wynik.kcal - zMakro) > zMakro * 0.15) wynik.kcal = Math.round(zMakro);
-
-  /* PRÓBA ROZSĄDKU. Nie wiemy, ile posiłek ma naprawdę, ale wiemy, ile
-     NIE MOŻE mieć. Poniżej 0,3 kcal na gram jest tylko woda i warzywa,
-     powyżej 8 tylko czysty tłuszcz. Gdy waga jest znana i wynik wypada poza
-     tym pasmem, obniżamy pewność i mówimy o tym wprost — zamiast dopisywać
-     do dziennika liczbę, która wygląda poprawnie i jest fałszywa. */
-  const gramy = (wynik.rozbicie || []).reduce((a, x) => a + x.g, 0);
-  if(gramy > 0 && wynik.kcal > 0){
-    /* Zero zostaje bez uwagi: woda, czarna kawa i „to nie jest jedzenie"
-       mają prawo mieć zero i nie ma po co straszyć. Dolny próg 0,15 kcal/g
-       przepuszcza ogórka i sałatę, górny 8 przepuszcza masło i oliwę. */
-    const naGram = wynik.kcal / gramy;
-    if(naGram < 0.15 || naGram > 8){
-      wynik.pewnosc = 'niska';
-      wynik.uwaga = (wynik.uwaga ? wynik.uwaga + ' ' : '') +
-        'Wychodzi ' + (Math.round(naGram * 10) / 10) + ' kcal na gram, a to poza '+
-        'rozsądnym zakresem — sprawdź, zanim dopiszesz.';
-    }
-  }
   return wynik;
-}
-
-/* ============================================================
-   PRODUKT Z KODU KRESKOWEGO
-
-   Open Food Facts — otwarta baza produktów spożywczych, bez klucza,
-   bez limitu, z dobrym pokryciem polskich sklepów. Aplikacja pyta ją
-   WPROST z telefonu, nie przez Workera: to jedyne zapytanie w całej
-   aplikacji, które nie niesie żadnego sekretu ani danych Filipa —
-   leci sam trzynastocyfrowy numer z opakowania.
-
-   Wartości bierzemy NA 100 g i mnożymy u siebie, tą samą drogą co przy
-   opisie i zdjęciu (`zeSkladnikow`). Tu akurat nie ma modelu językowego
-   i nie ma czego zgadywać: to są liczby z etykiety producenta. To jest
-   najdokładniejsza droga liczenia w tej aplikacji i dlatego pewność
-   ustawiamy na wysoką.
-
-   Odczytane produkty zostają w pamięci telefonu. Powód jest praktyczny:
-   Filip je w kółko to samo, a w Lidlu bywa słaby zasięg — raz zeskanowany
-   kabanos policzy się potem bez sieci.
-   ============================================================ */
-const KODY_KLUCZ = 'trening-kody';
-function kodyPamiec(){
-  try { return JSON.parse(localStorage.getItem(KODY_KLUCZ) || '{}') || {}; }
-  catch(e){ return {}; }
-}
-function kodyZapisz(kod, produkt){
-  try {
-    const p = kodyPamiec();
-    p[kod] = Object.assign({kiedy: new Date().toISOString()}, produkt);
-    /* Sto produktów to cały koszyk zakupowy i kilkanaście kilobajtów.
-       Limit jest po to, żeby pamięć nie rosła w nieskończoność. */
-    const klucze = Object.keys(p).sort((a, b) => (p[b].kiedy || '').localeCompare(p[a].kiedy || ''));
-    const male = {};
-    klucze.slice(0, 100).forEach(k => { male[k] = p[k]; });
-    localStorage.setItem(KODY_KLUCZ, JSON.stringify(male));
-  } catch(e){}
-}
-
-/* Z odpowiedzi Open Food Facts robimy to samo, co model zwraca przy opisie:
-   nazwę i wartości na 100 g. Reszta aplikacji nie musi wiedzieć, skąd to jest. */
-function produktZOFF(p){
-  if(!p) return null;
-  const n = p.nutriments || {};
-  const licz = (...klucze) => {
-    for(const k of klucze){
-      const v = Number(n[k]);
-      if(isFinite(v) && v >= 0) return v;
-    }
-    return null;
-  };
-  const b = licz('proteins_100g', 'proteins');
-  const w = licz('carbohydrates_100g', 'carbohydrates');
-  const t = licz('fat_100g', 'fat');
-  if(b == null || w == null || t == null) return null;
-  /* Nic jadalnego nie ma więcej niż 100 g czegokolwiek w 100 g —
-     taki wpis w bazie jest po prostu błędny i lepiej go odrzucić. */
-  if(b > 100 || w > 100 || t > 100) return null;
-
-  const nazwa = (p.product_name_pl || p.product_name || p.generic_name || '').trim();
-  const marka = (p.brands || '').split(',')[0].trim();
-  /* „Serving size" bywa tekstem w rodzaju „30 g (2 plastry)" — bierzemy
-     pierwszą liczbę, bo tylko ona nas obchodzi. */
-  const porcja = (() => {
-    const m = String(p.serving_size || '').match(/([0-9]+(?:[.,][0-9]+)?)\s*g/i);
-    const v = m ? Number(m[1].replace(',', '.')) : null;
-    return (v && v > 0 && v < 2000) ? Math.round(v) : null;
-  })();
-
-  return {nazwa: nazwa || 'Produkt bez nazwy', marka: marka || '',
-          b100: b, w100: w, t100: t, porcja,
-          opak: String(p.quantity || '').trim()};
-}
-
-async function produktZKodu(kod){
-  const pam = kodyPamiec();
-  if(pam[kod]) return Object.assign({zPamieci: true}, pam[kod]);
-
-  const kontroler = new AbortController();
-  const stoper = setTimeout(() => kontroler.abort(), 12000);
-  try {
-    const r = await fetch('https://world.openfoodfacts.org/api/v2/product/' +
-      encodeURIComponent(kod) + '.json?fields=product_name,product_name_pl,generic_name,' +
-      'brands,quantity,serving_size,nutriments', {signal: kontroler.signal});
-    if(!r.ok) throw new Error('baza odpowiedziała ' + r.status);
-    const d = await r.json();
-    if(!d || d.status !== 1 || !d.product)
-      throw new Error('Tego kodu nie ma w bazie Open Food Facts');
-    const prod = produktZOFF(d.product);
-    if(!prod) throw new Error('Produkt jest w bazie, ale bez wartości odżywczych');
-    kodyZapisz(kod, prod);
-    return prod;
-  } finally { clearTimeout(stoper); }
-}
-
-/* ---- SKANOWANIE ---------------------------------------------------- */
-let KOD_PRODUKT = null;     /* znaleziony produkt, czeka na podanie gramów */
-
-async function odczytajKod(plik){
-  /* Gdy przeglądarka ma własny dekoder (Chrome, Android), pytamy najpierw
-     jego — jest szybszy i radzi sobie z gorszymi zdjęciami. Na iPhonie go
-     nie ma i wtedy liczy nasz. */
-  try {
-    if(typeof BarcodeDetector !== 'undefined'){
-      const det = new BarcodeDetector({formats: ['ean_13', 'ean_8']});
-      const bm = await createImageBitmap(plik);
-      const zn = await det.detect(bm);
-      if(zn && zn.length && eanSuma(zn[0].rawValue)) return zn[0].rawValue;
-    }
-  } catch(e){ /* brak API albo odmowa — lecimy dalej własnym dekoderem */ }
-
-  const img = await wczytajObrazek(plik);
-  return eanZObrazu(img, 1600);
-}
-
-function wczytajObrazek(plik){
-  return new Promise((zwroc, odrzuc) => {
-    const czyt = new FileReader();
-    czyt.onerror = () => odrzuc(new Error('Nie udało się odczytać pliku'));
-    czyt.onload = () => {
-      const img = new Image();
-      img.onerror = () => odrzuc(new Error('To nie wygląda na zdjęcie'));
-      img.onload = () => zwroc(img);
-      img.src = czyt.result;
-    };
-    czyt.readAsDataURL(plik);
-  });
-}
-
-/* ============================================================
-   SKANER KODU NA ZYWO
-
-   Pojedyncze zdjecie daje jedno podejscie: zla ostrosc, odblask albo
-   przechyl i po sprawie. Podglad z kamery daje kilkanascie podejsc na
-   sekunde, a czlowiek widzi, co robi, i sam poprawia odleglosc. To jest
-   cala roznica miedzy "nie czyta" a "czyta".
-
-   Kod przyjmujemy dopiero, gdy ta sama liczba wyjdzie z DWOCH roznych
-   klatek. Suma kontrolna EAN odrzuca wiekszosc smieci, ale nie wszystkie -
-   drugie potwierdzenie zamyka te reszte.
-   ============================================================ */
-let SKANER = null;
-
-function skanerZamknij(){
-  if(!SKANER) return;
-  const s = SKANER; SKANER = null;
-  try { if(s.klatka) cancelAnimationFrame(s.klatka); } catch(e){}
-  try { s.strum.getTracks().forEach(t => t.stop()); } catch(e){}
-  try { if(s.el && s.el.parentNode) s.el.parentNode.removeChild(s.el); } catch(e){}
-}
-
-function skanerZeZdjecia(){
-  skanerZamknij();
-  const el = document.getElementById('jedzenieKod');
-  if(el) el.click();
-}
-
-async function skanujNaZywo(){
-  if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
-    skanerZeZdjecia(); return;
-  }
-  let strum;
-  try {
-    strum = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' },
-               width: { ideal: 1920 }, height: { ideal: 1080 } }
-    });
-  } catch(e){
-    /* Odmowa dostepu albo brak kamery - zdjecie dalej dziala. */
-    toast('Brak dostepu do aparatu - robimy ze zdjecia');
-    skanerZeZdjecia(); return;
-  }
-
-  const el = document.createElement('div');
-  el.className = 'skaner';
-  el.innerHTML =
-    '<video playsinline autoplay muted></video>' +
-    '<div class="skaner-ramka"></div>' +
-    '<div class="skaner-info">Kod poziomo w ramce, 10-15 cm od obiektywu</div>' +
-    '<div class="skaner-dol">' +
-      '<button class="btn ghost sm" onclick="skanerZamknij()">Anuluj</button>' +
-      '<button class="btn ghost sm" onclick="skanerZamknij();wpiszKod()">Wpisz cyfry</button>' +
-    '</div>';
-  document.body.appendChild(el);
-
-  const v = el.querySelector('video');
-  v.setAttribute('playsinline', ''); v.muted = true; v.srcObject = strum;
-  try { await v.play(); } catch(e){}
-
-  const c = document.createElement('canvas');
-  const info = el.querySelector('.skaner-info');
-  SKANER = { strum, el, glosy: {}, start: Date.now(), klatka: 0 };
-
-  const krok = () => {
-    if(!SKANER) return;
-    if(v.videoWidth){
-      /* Wiecej niz 1280 px szerokosci nie pomaga, a kosztuje czas na kazdej
-         klatce - paski w kadrze i tak maja wtedy po kilka pikseli. */
-      const sk = Math.min(1, 1280 / v.videoWidth);
-      c.width = Math.round(v.videoWidth * sk);
-      c.height = Math.round(v.videoHeight * sk);
-      c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-      let kod = null;
-      try { kod = eanZPlotna(c); } catch(e){ kod = null; }
-      if(kod){
-        SKANER.glosy[kod] = (SKANER.glosy[kod] || 0) + 1;
-        if(SKANER.glosy[kod] >= 2){
-          const znaleziony = kod;
-          skanerZamknij();
-          try { navigator.vibrate && navigator.vibrate(60); } catch(e){}
-          pokazProdukt(znaleziony);
-          return;
-        }
-      }
-    }
-    if(Date.now() - SKANER.start > 12000){
-      info.textContent = 'Nie idzie - sprobuj blizej, bez odblasku, albo wpisz cyfry';
-      SKANER.start = Date.now();
-    }
-    SKANER.klatka = requestAnimationFrame(krok);
-  };
-  krok();
-}
-
-async function skanujKod(ev){
-  const plik = ev.target.files && ev.target.files[0];
-  ev.target.value = '';
-  if(!plik) return;
-  jedzenieBox('<div class="note" style="margin-top:9px">Czytam kod…</div>');
-  try {
-    const kod = await odczytajKod(plik);
-    if(!kod){
-      jedzenieBox('<div class="tip bad" style="margin-top:9px"><b>Nie odczytałem kodu</b>'+
-        '<div class="hm" style="margin-top:5px">Zrób zdjęcie bliżej i prosto — kod ma zająć '+
-        'co najmniej jedną trzecią szerokości kadru, paski pionowo. Możesz też wpisać '+
-        'cyfry spod kresek.</div>'+
-        '<button class="btn ghost sm" style="margin-top:8px;width:100%" '+
-        'onclick="wpiszKod()">Wpisz cyfry z opakowania</button></div>');
-      return;
-    }
-    await pokazProdukt(kod);
-  } catch(e){ bladJedzenia(e); }
-}
-
-function wpiszKod(){
-  const k = prompt('Cyfry spod kresek (8 albo 13 cyfr):');
-  if(!k) return;
-  const kod = String(k).replace(/[^0-9]/g, '');
-  if(!eanSuma(kod)){
-    toast('To nie jest poprawny kod EAN — sprawdź cyfry');
-    return;
-  }
-  pokazProdukt(kod).catch(bladJedzenia);
-}
-
-async function pokazProdukt(kod){
-  jedzenieBox('<div class="note" style="margin-top:9px">Kod '+esc(kod)+' — szukam w bazie…</div>');
-  let p;
-  try { p = await produktZKodu(kod); }
-  catch(e){
-    jedzenieBox('<div class="tip bad" style="margin-top:9px"><b>'+esc(e.message)+'</b>'+
-      '<div class="hm" style="margin-top:5px">Kod odczytany poprawnie: '+esc(kod)+'. '+
-      'Opisz produkt słowami w polu wyżej — policzę to jak zwykle.</div></div>');
-    return;
-  }
-  KOD_PRODUKT = Object.assign({kod}, p);
-  const kcal100 = Math.round(p.b100 * 4 + p.w100 * 4 + p.t100 * 9);
-  const domyslne = p.porcja || 100;
-  jedzenieBox('<div class="tip ok" style="margin-top:9px">'+
-    '<b>'+esc(p.nazwa)+'</b>'+(p.marka ? ' <span class="hm">'+esc(p.marka)+'</span>' : '')+
-    '<div class="hm" style="margin-top:4px">Na 100 g: <b>'+kcal100+' kcal</b> · '+
-      fmtKg(p.b100)+' g B · '+fmtKg(p.w100)+' g W · '+fmtKg(p.t100)+' g T'+
-      (p.zPamieci ? ' · z pamięci telefonu' : '')+'</div>'+
-    (p.opak ? '<div class="note" style="margin-top:3px">Opakowanie: '+esc(p.opak)+'</div>' : '')+
-    '<div class="fld" style="margin-top:9px"><label>Ile zjadłeś (g)</label>'+
-      '<div class="wiersz">'+
-        '<input type="number" inputmode="decimal" id="kodGramy" value="'+domyslne+'">'+
-        '<button class="btn sm" onclick="policzZKodu()">Policz</button>'+
-      '</div></div>'+
-    (p.porcja ? '<div class="note" style="margin-top:5px">Porcja z etykiety: '+p.porcja+' g.</div>' : '')+
-    '</div>');
-}
-
-function policzZKodu(){
-  if(!KOD_PRODUKT) return;
-  const el = document.getElementById('kodGramy');
-  const g = liczba(el ? el.value : '');
-  if(!(g > 0)){ toast('Wpisz, ile gramów'); return; }
-  const p = KOD_PRODUKT;
-  pokazPropozycjeJedzenia(domknijMakro({
-    opis: p.nazwa + (p.marka ? ' (' + p.marka + ')' : ''),
-    skladniki: [{co: p.nazwa, g, b100: p.b100, w100: p.w100, t100: p.t100}],
-    /* To są liczby z etykiety producenta, nie szacunek modelu. */
-    pewnosc: 'wysoka', uwaga: 'Z etykiety, kod ' + p.kod + '.'
-  }));
 }
 
 /* ---- KOMENTARZ W TRAKCIE SESJI -----------------------------------------
@@ -8576,42 +6841,6 @@ function usunPosilek(id){
   odswiezWidok();
 }
 
-/* POWTORZ POSILEK — te same rzeczy wracaja co kilka dni.
-
-   Dwanascie wpisow przez szesc tygodni to nie brak checi, tylko koszt:
-   za kazdym razem trzeba opisac to samo slowami i poczekac na model.
-   Lista ostatnich roznych posilkow zamienia to w jedno dotkniecie. */
-function ostatniePosilki(ile){
-  const widziane = {}, out = [];
-  const lista = (DB.posilki || []).slice().reverse();
-  for(const p of lista){
-    const k = String(p.opis || '').toLowerCase().trim();
-    if(!k || widziane[k]) continue;
-    widziane[k] = 1;
-    out.push(p);
-    if(out.length >= (ile || 6)) break;
-  }
-  return out;
-}
-
-function powtorzPosilek(id){
-  const p = (DB.posilki || []).find(x => x.id === id);
-  if(!p){ toast('Nie mam tego posiłku'); return; }
-  dodajMakro({bialko: p.bialko, wegle: p.wegle, tluszcz: p.tluszcz, kcal: p.kcal}, p.opis);
-  toast('Dodane: ' + p.opis);
-}
-
-function chipyPosilkow(){
-  const lista = ostatniePosilki(6);
-  if(!lista.length) return '';
-  return '<div style="margin-top:12px" onclick="event.stopPropagation()">'+
-    '<div class="etyk" style="margin-bottom:2px">POWTÓRZ</div>'+
-    '<div class="chipy">'+ lista.map(x =>
-      '<button class="chip" onclick="powtorzPosilek(\''+x.id+'\')">'+
-        esc(String(x.opis).slice(0, 28)) + '<small>'+x.kcal+' kcal</small></button>'
-    ).join('') +'</div></div>';
-}
-
 function listaPosilkow(){
   const lista = posilkiDnia();
   if(!lista.length) return '';
@@ -8704,13 +6933,6 @@ function pokazPropozycjeJedzenia(w){
       '<div><b style="font-size:17px">'+(w.wegle||0)+'</b><span style="font-size:9px;color:var(--dim)"> g W</span></div>'+
       '<div><b style="font-size:17px">'+(w.tluszcz||0)+'</b><span style="font-size:9px;color:var(--dim)"> g T</span></div>'+
     '</div>'+
-    /* Rozbicie na składniki z gęstością — po nim widać bzdurę, zanim wejdzie
-       do dziennika. „kabanosy 105 g · 500 kcal/100 g" da się sprawdzić okiem;
-       samo „520 kcal" trzeba przyjąć na wiarę. */
-    ((w.rozbicie && w.rozbicie.length)
-      ? '<div class="hm" style="margin-top:6px">'+
-        w.rozbicie.map(x => esc(x.co)+' '+x.g+' g · '+x.kcal100+' kcal/100 g').join('<br>')+
-        '</div>' : '')+
     (w.pewnosc && w.pewnosc !== 'wysoka'
       ? '<div class="hm" style="margin-top:5px">Szacunek '+esc(w.pewnosc)+'ej pewności'+
         (w.uwaga ? ': '+esc(w.uwaga) : '')+'</div>'
@@ -8873,17 +7095,9 @@ function renderBialko(){
             '<input type="text" id="jedzenieIn" placeholder="np. 200 g ryżu i pierś z kurczaka">'+
             '<button class="btn sm" onclick="policzJedzenie()">Policz</button>'+
           '</div>'+
-          '<div class="btn2" style="margin-top:7px">'+
-            '<button class="btn ghost sm" '+
-              'onclick="document.getElementById(\'jedzenieFoto\').click()">'+
-              (JEDZENIE_ZDJECIE ? 'Zmień zdjęcie' : 'Zdjęcie talerza')+'</button>'+
-            '<button class="btn ghost sm" onclick="skanujNaZywo()">'+
-              'Kod kreskowy</button>'+
-          '</div>'+
-          /* Kod kreskowy to jedyna droga w tej aplikacji, która nie zgaduje:
-             wartości są z etykiety producenta, nie z modelu językowego. */
-          '<input type="file" id="jedzenieKod" accept="image/*" '+
-            'style="display:none" onchange="skanujKod(event)">'+
+          '<button class="btn ghost sm" style="margin-top:7px;width:100%" '+
+            'onclick="document.getElementById(\'jedzenieFoto\').click()">'+
+            (JEDZENIE_ZDJECIE ? 'Zmień zdjęcie' : 'Dodaj zdjęcie talerza')+'</button>'+
           '<div class="note" style="margin-top:5px">'+
             (JEDZENIE_ZDJECIE ? 'Zdjęcie gotowe. Dopisz wyżej, co to jest.'
                               : 'Zdjęcie plus opis myli się rzadziej niż samo zdjęcie.')+
@@ -8910,7 +7124,6 @@ function renderBialko(){
       (dzis > 0 ? ' <a href="javascript:void(0)" onclick="event.stopPropagation();wyzerujBialko()">Wyzeruj dziś</a>' : '')+
       '</div>';
 
-  h += chipyPosilkow();
   h += listaPosilkow();
 
   const sr = bialkoSrednia(7);
@@ -8981,65 +7194,10 @@ function renderSteppery(){
   }).join('') + '</div>';
 }
 
-/* Pelne wyjasnienie, skad biora sie dane z zegarka — schowane pod „?",
-   bo czyta sie je raz, a zajmowalo cztery linijki kazdego dnia. */
-function pomocZegarek(){
-  alert('Sen, tętno spoczynkowe, HRV i Body Battery wchodzą tu same z zegarka '+
-    '— Cloudflare pobiera je rano, bez udziału telefonu.\n\n'+
-    'Jeśli dopiero wstałeś i pól jeszcze nie ma: dane o śnie pojawiają się '+
-    'w Garmin Connect dopiero po tym, jak zegarek zsynchronizuje się po '+
-    'przebudzeniu. Wtedy pomaga „Pobierz z zegarka".');
-}
-
-/* Data po polsku pod natywnym polem — patrz komentarz przy #dDateOpis. */
-function opisDaty(){
-  const el = document.getElementById('dDate');
-  const box = document.getElementById('dDateOpis');
-  if(!el || !box) return;
-  const v = el.value;
-  if(!v){ box.textContent = ''; return; }
-  const d = new Date(v + 'T12:00:00');
-  const dni = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
-  const mies = ['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca',
-                'sierpnia','września','października','listopada','grudnia'];
-  if(isNaN(d.getTime())){ box.textContent = ''; return; }
-  box.textContent = dni[d.getDay()] + ', ' + d.getDate() + ' ' + mies[d.getMonth()] +
-    ' ' + d.getFullYear() + (v === today() ? ' · dziś' : '');
-}
-
-/* STAN KOPII ZAPASOWEJ — to, co jest, a nie to, czego sie obawiamy.
-
-   Wczesniej stalo tu na sztywno zolte „Dane sa tylko w tym telefonie".
-   Odkad dziala Worker, to zdanie bylo po prostu nieprawdziwe — a ostrzezenie,
-   ktore klamie, przestaje byc czytane takze wtedy, gdy zaczyna miec racje. */
-function stanKopii(){
-  const box = document.getElementById('kopiaStan');
-  if(!box) return;
-  if(srvGotowy() && SRV.ostatni && !SRV.blad){
-    const dzien = SRV.ostatni.slice(0, 10);
-    const swieza = dzien >= daysAgo(2);
-    box.innerHTML = '<div class="tip '+(swieza ? 'ok' : 'warn')+'">'+
-      '<b>Kopia na serwerze: '+plDate(dzien)+' '+SRV.ostatni.slice(11,16)+'</b>'+
-      (swieza ? '' : '<div class="hm" style="margin-top:4px">To już ponad dobę temu — '+
-        'wejdź w Serwer → „Synchronizuj teraz".</div>')+'</div>';
-    return;
-  }
-  if(srvGotowy() && SRV.blad){
-    box.innerHTML = '<div class="tip warn"><b>Ostatnia wysyłka się nie udała</b>'+
-      '<div class="hm" style="margin-top:4px">'+esc(String(SRV.blad))+'</div></div>';
-    return;
-  }
-  box.innerHTML = '<div class="tip warn"><b>Dane są tylko w tym telefonie</b>'+
-    '<div class="hm" style="margin-top:4px">Włącz synchronizację w Serwerze '+
-    'niżej — wtedy kopia leci na Cloudflare przy każdej zmianie. Do tego czasu '+
-    'eksportuj co niedzielę.</div></div>';
-}
-
 function renderDaily(){
   renderHistTreningow();
   const el=document.getElementById('dDate');
   if(!el.value) el.value=today();
-  opisDaty();
   const ex=DB.daily.find(d=>d.date===el.value);
   renderRest();
   [['dSleep','sleep'],['dRhr','rhr'],['dHrv','hrv'],['dSteps','steps'],
@@ -10229,8 +8387,6 @@ function renderKosz(){
 }
 
 function renderData(){
-  setTimeout(() => bezpiecznie('renderPush', renderPush), 0);
-  bezpiecznie('stanKopii', stanKopii);
   renderSrv();
   renderKosz();
   renderKopie();
