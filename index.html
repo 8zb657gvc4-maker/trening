@@ -1058,7 +1058,7 @@ const DOMYSLNA_LIB = {
   'Ściąganie drążka':            {inc:2.5, mus:{plecy_pion:1, biceps_dluga:.3, biceps_krotka:.3, ramienny:.2}},
   'Ściąganie wąsko podchwytem':  {inc:2.5, mus:{plecy_pion:.9, biceps_dluga:.5, biceps_krotka:.5, ramienny:.3}},
   'Wiosłowanie sztangą':         {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.4, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3, prostowniki:.4}},
-  'Wiosłowanie hantlem':         {hantle:true, inc:2.5, mus:{plecy_poziom:1, plecy_pion:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3}},
+  'Wiosłowanie hantlem':         {hantle:true, inc:2.5, strona:'rękę', mus:{plecy_poziom:1, plecy_pion:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3}},
   'Wiosłowanie na maszynie':     {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3}},
   'Wiosłowanie na wyciągu':      {inc:2.5, mus:{plecy_poziom:1, plecy_gora:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3}},
 
@@ -1074,7 +1074,7 @@ const DOMYSLNA_LIB = {
                                   cue:'Unosisz barki prosto w górę, bez krążenia. Sekunda przytrzymania u góry — to ona robi robotę.'},
   'Szrugsy z hantlami':          {hantle:true, inc:2.5, rr:[12,20], mus:{plecy_gora:1, przedramie:.5},
                                   cue:'Hantle wzdłuż tułowia. Pełny zakres: barki nisko, potem najwyżej jak się da.'},
-  'Odwodzenie nogi w bok':       {inc:2.5, rr:[15,25], mus:{posladki_sr:1, posladki:.3},
+  'Odwodzenie nogi w bok':       {inc:2.5, rr:[15,25], strona:'nogę', mus:{posladki_sr:1, posladki:.3},
                                   cue:'Stojąc albo leżąc na boku, noga prosta, unosisz ją w bok bez skręcania miednicy. Guma albo linka wyciągu.'},
   'Chód boczny z gumą':          {bw:true, rr:[15,25], mus:{posladki_sr:1, posladki:.2},
                                   cue:'Guma nad kolanami, półprzysiad, kroki w bok. Kolana cały czas rozpychają gumę.'},
@@ -1091,12 +1091,36 @@ const DOMYSLNA_LIB = {
   'Uginanie na modlitewniku':    {inc:2.5, mus:{biceps_krotka:1, biceps_dluga:.4, ramienny:.4}},
   'Uginanie na wyciągu':         {inc:2.5, mus:{biceps_dluga:.9, biceps_krotka:.8, ramienny:.3}},
 
+  /* CZTERY DOPISANE PRZY PRZEBUDOWIE PLANU (wrzesien 2026).
+
+     Pierwsze trzy zamykaja dziury, ktore widac bylo w pokryciu: biceps mial
+     same cwiczenia z ramieniem przy tulowiu (glowa dluga pracuje dopiero, gdy
+     ramie jest COFNIETE za tulow), a triceps — same izolacje, wiec nie dalo sie
+     go obciazyc ciezarem, ktorego izolacja nie uniesie.
+
+     Czwarte, spider curl, Filip wpisal recznie 16 wrzesnia. Bez pozycji
+     w bibliotece nie mialo mapowania na miesnie, wiec liczylo sie donikad —
+     dokladnie ten sam blad co „Facepull" kontra „Face pull". */
+  'Uginanie hantlami na skosie': {hantle:true, inc:2.5, rr:[8,14],
+                                  mus:{biceps_dluga:1, biceps_krotka:.4, ramienny:.3},
+                                  cue:'Oparcie na jakieś 60°, ramiona zwisają ZA tułowiem — to rozciągnięcie robi głowę długą. Łokcie nie jadą do przodu.'},
+  'Uginanie odwrotne':           {inc:2.5, rr:[10,15],
+                                  mus:{przedramie:1, ramienny:.8, biceps_dluga:.3},
+                                  cue:'Chwyt nachwytem. Ciężar mniejszy niż przy młotkowych — to normalne, pracuje słabszy mięsień.'},
+  'Spider curl':                 {hantle:true, inc:2.5, rr:[8,14],
+                                  mus:{biceps_krotka:1, biceps_dluga:.5, ramienny:.3},
+                                  cue:'Klatka oparta o skos, ramiona pionowo w dół. Nie da się oszukać plecami — dlatego ciężar jest mały.'},
+  'Wyciskanie wąsko':            {inc:2.5, rr:[6,12],
+                                  mus:{triceps_bocz:1, triceps_przysr:.8, triceps_dluga:.5,
+                                       klatka_srodek:.5, bark_przod:.3},
+                                  cue:'Chwyt na szerokość barków, nie węziej — węższy boli nadgarstki, a tricepsowi nic nie dodaje. Łokcie przy tułowiu.'},
+
   /* --- nogi --- */
   'Przysiad ze sztangą':         {inc:5,   mus:{czworoglowe:1, udo_proste:.3, posladki:.6, prostowniki:.4}},
   'Wypychanie nogami':           {inc:5,   mus:{czworoglowe:1, udo_proste:.3, posladki:.5}},
   'Hack squat':                  {inc:5,   mus:{czworoglowe:1, udo_proste:.3, posladki:.3}},
-  'Przysiad bułgarski':          {hantle:true, inc:2.5, mus:{czworoglowe:.8, udo_proste:.3, posladki:1, posladki_sr:.5}},
-  'Wykroki chodzone':            {hantle:true, inc:2.5, mus:{czworoglowe:.7, udo_proste:.3, posladki:1, posladki_sr:.4}},
+  'Przysiad bułgarski':          {hantle:true, inc:2.5, strona:'nogę', mus:{czworoglowe:.8, udo_proste:.3, posladki:1, posladki_sr:.5}},
+  'Wykroki chodzone':            {hantle:true, inc:2.5, strona:'nogę', mus:{czworoglowe:.7, udo_proste:.3, posladki:1, posladki_sr:.4}},
   'Prostowanie nóg':             {inc:2.5, mus:{czworoglowe:1, udo_proste:1}},
   'Martwy ciąg klasyczny':       {inc:5,   mus:{posladki:1, posladki_sr:.2, prostowniki:1, dwuglowe:.8, dwuglowe_kol:.1, plecy_gora:.4, glebokie:.5}},
   'Martwy ciąg rumuński':        {inc:5,   mus:{dwuglowe:1, dwuglowe_kol:.2, posladki:.8, prostowniki:.6}},
@@ -1117,7 +1141,7 @@ const DOMYSLNA_LIB = {
      więc mieszka w bibliotece głównej, nie w puli wyjazdowej. Wcześniej
      siedziało w KALIS_LIB, a odwoływał się do niego slot siłowni C5 —
      walidacja planu to wychwyciła. */
-  'Wspięcia na palce jednonóż':   {bw:true, rr:[15,25], mus:{lydki_stoj:1},
+  'Wspięcia na palce jednonóż':   {bw:true, rr:[15,25], strona:'nogę', mus:{lydki_stoj:1},
                                   cue:'Jedna noga, druga zahaczona z tyłu. Pełny zakres: pięta nisko, potem najwyżej jak się da.'},
   'Wspięcia siedząc z obciążeniem': {bw:true, rr:[15,25], mus:{lydki_sied:1},
                                   cue:'Siedzisz, ciężar na kolanach, unosisz pięty. Zgięte kolano wyłącza brzuchaty i całą pracę bierze płaszczkowaty.'},
@@ -1143,9 +1167,9 @@ const DOMYSLNA_LIB = {
      `stare:true` trzyma je z dala od planowania. */
   'Plank / ab wheel':            {inc:0, time:true, stare:true, mus:{glebokie:1, brzuch:.6}},
   'Unoszenie nóg w zwisie':      {inc:0, bw:true, rr:[8,15], mus:{brzuch:1}},
-  'Deska bokiem':                {bw:true, time:true, rr:[25,50], mus:{skosne:1, glebokie:.7, prostowniki:.2},
+  'Deska bokiem':                {bw:true, time:true, rr:[25,50], strona:'stronę', mus:{skosne:1, glebokie:.7, prostowniki:.2},
                                   cue:'Biodro wysoko, ciało w jednej linii. Na każdą stronę osobno.'},
-  'Skłon boczny z hantlem':      {hantle:true, inc:2.5, rr:[12,20], mus:{skosne:1, glebokie:.4},
+  'Skłon boczny z hantlem':      {hantle:true, inc:2.5, rr:[12,20], strona:'stronę', mus:{skosne:1, glebokie:.4},
                                   cue:'Hantel w jednej ręce, schylasz się w JEGO stronę i prostujesz. Druga ręka za głową. Bez rotacji.'},
   'Allahy na wyciągu':           {inc:2.5, rr:[12,20], mus:{brzuch:1}}
 };
@@ -1167,7 +1191,7 @@ const DOMYSLNY_PLAN = {
      pozycji zamiast sześciu, bo przy jednej sesji na tydzień nie ma drugiej
      szansy w razie potknięcia. Tułów przeniesiony do dni góry — na nogach
      i tak nie zostaje siła na deskę. */
-  A: { name:'Nogi', grp:'nogi', slots:[
+  A: { name:'Nogi (wycofany)', grp:'nogi', wycofany:true, slots:[
     {id:'A1', lab:'Główny bój', fixed:'Przysiad ze sztangą',
      t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
      s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
@@ -1203,7 +1227,7 @@ const DOMYSLNY_PLAN = {
   ]},
 
   /* --- B: PUSH pierwszy. Główny bój: wyciskanie leżąc. ------------------ */
-  B: { name:'Push — wyciskanie', grp:'push', slots:[
+  B: { name:'Push — wyciskanie (wycofany)', grp:'push', wycofany:true, slots:[
     {id:'B1', lab:'Główny bój', fixed:'Wyciskanie leżąc',
      t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
      s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
@@ -1276,7 +1300,7 @@ const DOMYSLNY_PLAN = {
   ]},
 
   /* --- D: PULL pierwszy. Główny bój: podciąganie. ------------------------ */
-  D: { name:'Pull — podciąganie', grp:'pull', slots:[
+  D: { name:'Pull — podciąganie (wycofany)', grp:'pull', wycofany:true, slots:[
     {id:'D1', lab:'Główny bój', fixed:'Podciąganie',
      t:['3×6-8 RPE6','3×6-10 RPE8','2×6 RPE5','3×5-8 + obciążenie'],
      s:[3,3,2,3], rr:[[6,8],[6,10],[6,6],[5,8]]},
@@ -1309,7 +1333,7 @@ const DOMYSLNY_PLAN = {
      Drugi dzień push nie jest powtórką pierwszego. Tam sztanga leży
      poziomo i pracuje środek klatki, tu idzie nad głowę i pracuje bark
      przedni — inny kąt, inny główny bój, inna progresja do śledzenia. */
-  E: { name:'Push — barki', grp:'push', slots:[
+  E: { name:'Push — barki (wycofany)', grp:'push', wycofany:true, slots:[
     {id:'E1', lab:'Główny bój', fixed:'Wyciskanie żołnierskie',
      t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×5-6 RPE8'],
      s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[5,6]]},
@@ -1342,7 +1366,7 @@ const DOMYSLNY_PLAN = {
      w rotacji B, D, A, E, F dzień F wypada trzy dni po przysiadzie, więc
      dwa najcięższe boje nie stoją obok siebie. Gdyby martwy ciąg został
      na nogach, wypadałby w tej samej sesji co przysiad. */
-  F: { name:'Pull — martwy ciąg', grp:'pull', slots:[
+  F: { name:'Pull — martwy ciąg (wycofany)', grp:'pull', wycofany:true, slots:[
     {id:'F1', lab:'Główny bój', fixed:'Martwy ciąg klasyczny',
      t:['3×5 RPE6','3×5 RPE7','2×5 RPE5','3×3-5 RPE8'],
      s:[3,3,2,3], rr:[[5,5],[5,5],[5,5],[3,5]]},
@@ -1365,6 +1389,195 @@ const DOMYSLNY_PLAN = {
     /* Chwyt puszcza wcześniej niż plecy i to on ogranicza martwy ciąg,
        nie siła. Dlatego stoi w tym samym dniu, na końcu. */
     {id:'F6', lab:'Chwyt', pool:['Utrzymanie sztangi','Utrzymanie hantli'],
+     t:['2×30s','2×40s','1×30s','2×45s'],
+     s:[2,2,1,2], rr:[[30,30],[40,40],[30,30],[45,45]]}
+  ]}
+,
+  /* ============================================================
+     ROTACJA PPL + GORA/DOL — od 17 wrzesnia 2026
+
+     Powod zmiany jest w danych: 12 treningow w 44 dni, z tego dzien B cztery
+     razy, D cztery, A dwa, E raz, F raz. Piec dni przy niecalych dwoch
+     sesjach w tygodniu to 17 dni na pelne kolo — Filip nigdy nie dochodzil
+     do konca rotacji, wiec nogi i martwy ciag praktycznie nie istnialy.
+
+     Nowy uklad to piec dni, ale kazda partia dostaje DWA uderzenia na cykl:
+     raz w bloku ciezkim (P/G/N), raz w bloku objetosciowym (U/L). Przy
+     zapowiadanych 4-5 treningach tygodniowo kolo domyka sie w tydzien.
+
+     Trzy rzeczy rozstrzygniete swiadomie:
+
+     1. CZTERY ciezkie boje sztangowe w tygodniu, nie siedem: lawka, podciaganie,
+        przysiad, martwy ciag. Reszta wielostawowych idzie na hantlach, maszynie
+        i wyciagu przy RPE 7-8. Filip sam to zauwazyl: „za duzo wielostawowych,
+        za bardzo bede obciazal uklad nerwowy". Proporcja wielostawowe:izolowane
+        wyszla 17:16, wczesniej 17:14.
+     2. Przysiad w dniu N, martwy ciag w dniu L — trzy dni odstepu. Rumunski
+        wypadl calkiem: wzorzec hinge robi martwy ciag, a biodra dostaja hip
+        thrust, ktory nie obciaza kregoslupa.
+     3. `upadek:true` na slotach izolacyjnych. Filip ma 90 serii oznaczonych
+        RPE 6 i martwy ciag 60 kg na 10 przy RPE 6 — czyli oszczedza sie
+        wszedzie. Ale upadek na przysiadzie psuje technike przed miesniem,
+        wiec do upadku schodzi wylacznie izolacja, i tylko w ostatniej serii.
+     ============================================================ */
+  P: { name:'Push — klata, barki, triceps', grp:'push', slots:[
+    {id:'P1', lab:'Główny bój', fixed:'Wyciskanie leżąc',
+     t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
+     s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
+    /* Zolnierskie zostaja w puli, ale nie jako pierwsze: dwa ciezkie
+       wyciskania ze sztangi w jednym dniu to byl najciezszy punkt planu. */
+    {id:'P2', lab:'Bark — wyciskanie',
+     pool:['Wyciskanie hantli nad głowę','Arnold press','Wyciskanie żołnierskie'],
+     t:['3×10 RPE6','3×8-10 RPE7','2×10 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
+    {id:'P3', lab:'Klatka — góra',
+     pool:['Wyciskanie hantli, skos','Wyciskanie sztangą, skos','Brama dół→góra'],
+     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
+    {id:'P4', lab:'Bark — bok', upadek:true,
+     pool:['Unoszenie hantli bokiem','Unoszenie bokiem na wyciągu','Unoszenie bokiem na maszynie'],
+     t:['3×15','3×15-20','2×15','3×15-20'],
+     s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
+    {id:'P5', lab:'Klatka dół + triceps',
+     pool:['Dipy','Wyciskanie, skos ujemny'],
+     t:['3×10 RPE6','3×8-12 RPE8','2×10 RPE5','3×8-12 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,12],[10,10],[8,12]]},
+    {id:'P6', lab:'Triceps — głowa długa', upadek:true,
+     pool:['Francuskie zza głowy','Prostowanie zza głowy wyciąg'],
+     t:['3×12','3×10-12','2×12','3×10-12'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]}
+  ]},
+
+  G: { name:'Pull — plecy, biceps', grp:'pull', slots:[
+    {id:'G1', lab:'Główny bój', fixed:'Podciąganie',
+     t:['3×6-8 RPE6','3×6-10 RPE8','2×6 RPE5','3×5-8 + obciążenie'],
+     s:[3,3,2,3], rr:[[6,8],[6,10],[6,6],[5,8]]},
+    /* Wioslowanie sztanga zeszlo na koniec puli: podciaganie jest juz bojem
+       tego dnia, a sztanga dokladala czwarty ciezki ruch kregoslupowy. */
+    {id:'G2', lab:'Ciąg poziomy',
+     pool:['Wiosłowanie na maszynie','Wiosłowanie na wyciągu','Wiosłowanie hantlem','Wiosłowanie sztangą'],
+     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
+    {id:'G3', lab:'Ciąg pionowy',
+     pool:['Ściąganie drążka','Ściąganie wąsko podchwytem'],
+     t:['3×10','3×10-12','2×10','3×8-10'],
+     s:[3,3,2,3], rr:[[10,10],[10,12],[10,10],[8,10]]},
+    /* Cztery serie, nie trzy: w audycie tyl barku wyszedl na 3 przy normie
+       3-10, czyli na samym dnie — a przy pieciu slotach klatki na rotacje
+       to jest partia, ktora powinna raczej rosnac. */
+    {id:'G4', lab:'Tył barku', upadek:true,
+     pool:['Face pull','Odwrotne rozpiętki'],
+     t:['3×15','4×15-20','2×15','4×15-20'],
+     s:[3,4,2,4], rr:[[15,15],[15,20],[15,15],[15,20]]},
+    {id:'G5', lab:'Biceps — głowa długa', upadek:true,
+     pool:['Uginanie hantlami na skosie','Uginanie ramion'],
+     t:['3×12','3×10-12','2×12','3×8-10'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
+    {id:'G6', lab:'Mięsień ramienny', upadek:true,
+     pool:['Uginanie młotkowe','Uginanie odwrotne'],
+     t:['3×12','3×10-12','2×12','3×10-12'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]}
+  ]},
+
+  N: { name:'Nogi', grp:'nogi', slots:[
+    {id:'N1', lab:'Główny bój', fixed:'Przysiad ze sztangą',
+     t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
+     s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
+    {id:'N2', lab:'Czworogłowe — maszyna',
+     pool:['Wypychanie nogami','Hack squat'],
+     t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
+    /* Zamiast rumunskiego. Pelny wyprost bioder, posladki i dwuglowe od
+       strony biodra — a kregoslup nie dostaje nic, bo tulow lezy na lawce. */
+    {id:'N3', lab:'Biodra / pośladki',
+     pool:['Hip thrust','Hip thrust jednonóż'],
+     t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
+    {id:'N4', lab:'Dwugłowe — zginanie kolana', upadek:true,
+     pool:['Uginanie nóg leżąc','Uginanie nóg siedząc'],
+     t:['3×12','3×10-12','2×12','3×10-12'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    {id:'N5', lab:'Łydki — brzuchaty (stojąc)', upadek:true,
+     pool:['Wspięcia na palce stojąc','Wspięcia na palce jednonóż'],
+     t:['2×15','2×12-15','2×15','2×12-15'],
+     s:[2,2,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]},
+    {id:'N6', lab:'Tułów — brzuch', upadek:true,
+     pool:['Ab wheel','Allahy na wyciągu','Unoszenie nóg w zwisie','Plank'],
+     t:['3×40s','3×50s','2×40s','3×60s'],
+     s:[3,3,2,3], rr:[[40,40],[50,50],[40,40],[60,60]]}
+  ]},
+
+  /* Osiem slotow, ale nie po trzy serie kazdy: przy trzech wychodzilo 24
+     serie robocze w jednej sesji, czyli ponad 70 minut i wiecej niz
+     w jakimkolwiek innym dniu planu. Cztery sloty schodza do dwoch serii —
+     to drugie uderzenie w te partie w tygodniu, nie pierwsze. Razem 20. */
+  U: { name:'Góra — objętość', grp:'gora', slots:[
+    {id:'U1', lab:'Klatka — nacisk hantlami',
+     pool:['Wyciskanie hantlami płasko','Wyciskanie hantli, skos'],
+     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
+    {id:'U2', lab:'Ciąg poziomy',
+     pool:['Wiosłowanie na maszynie','Wiosłowanie na wyciągu','Wiosłowanie hantlem'],
+     t:['2×12 RPE6','2×10-12 RPE8','2×12 RPE5','2×10-12 RPE8'],
+     s:[2,2,2,2], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    {id:'U3', lab:'Klatka — rozciąganie', upadek:true,
+     pool:['Rozpiętki płasko','Brama góra→dół','Rozpiętki na maszynie'],
+     t:['2×15','2×12-15','2×15','2×12-15'],
+     s:[2,2,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]},
+    {id:'U4', lab:'Ciąg pionowy',
+     pool:['Ściąganie wąsko podchwytem','Ściąganie drążka'],
+     t:['2×12','2×10-12','2×12','2×10-12'],
+     s:[2,2,2,2], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    /* Jedyne wielostawowe na triceps w planie. Izolacja nie uniesie ciezaru,
+       ktory ten miesien realnie potrzebuje, zeby urosnac. */
+    {id:'U5', lab:'Triceps — wielostawowe',
+     pool:['Wyciskanie wąsko','Dipy'],
+     t:['3×10 RPE6','3×8-12 RPE8','2×10 RPE5','3×8-12 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,12],[10,10],[8,12]]},
+    {id:'U6', lab:'Triceps — izolacja', upadek:true,
+     pool:['Prostowanie zza głowy wyciąg','Prostowanie ramion wyciąg'],
+     t:['3×15','3×12-15','2×15','3×12-15'],
+     s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
+    {id:'U7', lab:'Biceps — głowa krótka', upadek:true,
+     pool:['Uginanie na modlitewniku','Spider curl'],
+     t:['3×12','3×10-12','2×12','3×10-12'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    {id:'U8', lab:'Biceps — wyciąg', upadek:true,
+     pool:['Uginanie na wyciągu','Uginanie ramion'],
+     t:['2×15','2×12-15','2×15','2×12-15'],
+     s:[2,2,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]}
+  ]},
+
+  L: { name:'Dół — martwy ciąg', grp:'nogi', slots:[
+    {id:'L1', lab:'Główny bój', fixed:'Martwy ciąg klasyczny',
+     t:['3×5 RPE6','3×5 RPE7','2×5 RPE5','3×3-5 RPE8'],
+     s:[3,3,2,3], rr:[[5,5],[5,5],[5,5],[3,5]]},
+    {id:'L2', lab:'Jednonóż / stabilizacja miednicy',
+     pool:['Przysiad bułgarski','Wykroki chodzone'],
+     t:['2×10 RPE6','3×8-10 RPE8','2×10 RPE5','2×8-10 RPE8'],
+     s:[2,3,2,2], rr:[[10,10],[8,10],[10,10],[8,10]]},
+    /* Odwrotna kolejnosc puli niz w dniu N — zeby w tygodniu wyszly dwie
+       rozne maszyny na czworoglowe, a nie dwa razy ta sama. */
+    {id:'L3', lab:'Czworogłowe — maszyna',
+     pool:['Hack squat','Wypychanie nogami'],
+     t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
+    {id:'L4', lab:'Dwugłowe — zginanie kolana', upadek:true,
+     pool:['Uginanie nóg siedząc','Uginanie nóg leżąc'],
+     t:['3×12','3×10-12','2×12','3×10-12'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    /* Bark w dniu dolnym nie jest pomylka: to drugie uderzenie w bok barku
+       w tygodniu, a najdalej od dnia P, jak sie w tej rotacji da. */
+    {id:'L5', lab:'Bark — bok', upadek:true,
+     pool:['Unoszenie bokiem na maszynie','Unoszenie bokiem na wyciągu','Unoszenie hantli bokiem'],
+     t:['3×15','3×15-20','2×15','3×15-20'],
+     s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
+    {id:'L6', lab:'Łydki — płaszczkowaty (siedząc)', upadek:true,
+     pool:['Wspięcia na palce siedząc','Wspięcia siedząc z obciążeniem'],
+     t:['2×15','2×15-20','2×15','2×15-20'],
+     s:[2,2,2,2], rr:[[15,15],[15,20],[15,15],[15,20]]},
+    {id:'L7', lab:'Chwyt', upadek:true,
+     pool:['Utrzymanie sztangi','Utrzymanie hantli'],
      t:['2×30s','2×40s','1×30s','2×45s'],
      s:[2,2,1,2], rr:[[30,30],[40,40],[30,30],[45,45]]}
   ]}
@@ -1439,7 +1652,7 @@ const LIB_MASA_WLASNA = {
    wykonanym treningu push — przestawienie liter zmieniłoby opis treningów
    sprzed miesiąca i nikt by już nie wiedział, co naprawdę zrobił. Dlatego
    dochodzą nowe litery E i F, a C zostaje jako wycofany. */
-const DOMYSLNY_ORDER = ['B','D','A','E','F'];
+const DOMYSLNY_ORDER = ['P','G','N','U','L'];
 
 const DOMYSLNE_PHASES = [
   {n:'Reaktywacja',    rpe:6, skala:1,   d:'Tygodnie 1–2, raz na początku. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
@@ -1662,7 +1875,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '69';
+const WERSJA = '72';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2953,6 +3166,53 @@ function zastepstwoDlaSlotu(slot, zajete){
       'zamiast podsuwać Ci coś, czego nie masz.'};
 }
 
+/* ============================================================
+   BUDZET KREGOSLUPA
+
+   16 wrzesnia Filip zrobil dzien F: martwy ciag klasyczny, a zaraz po nim
+   wioslowanie sztanga. Po martwym ciagu dol plecow byl juz zmeczony, a
+   wioslowanie sztanga to kolejne kilkadziesiat sekund w sklonie z obciazeniem
+   — w puli tego slotu stoja obok siebie wioslowanie na maszynie i na wyciagu,
+   ktore trafiaja dokladnie w te same plecy BEZ prostownikow.
+
+   To nie jest kwestia objetosci, tylko kolejnosci: prostowniki i miesnie
+   glebokie sa stabilizatorem calego dnia, nie partia do wypelnienia. Gdy
+   glowny boj juz je obciazyl, kolejne sloty maja wybierac warianty podparte
+   — maszyna, wyciag, lawka — a nie drugi wolny ciezar w skłonie.
+
+   Dane do tej decyzji byly w bibliotece od poczatku: martwy ciag ma
+   prostowniki 1,0, wioslowanie sztanga 0,4, wioslowanie na maszynie zero. */
+const STABILIZATORY = {prostowniki: 1, glebokie: 0.6};
+
+function zuzyteStabilizatory(nazwy){
+  const out = {};
+  (nazwy || []).forEach(n => {
+    const mus = (LIB[n] || {}).mus || {};
+    Object.keys(STABILIZATORY).forEach(r => { out[r] = (out[r] || 0) + (mus[r] || 0); });
+  });
+  return out;
+}
+
+/** Ile punktow odjac kandydatowi za dokladanie do juz zmeczonego kregoslupa. */
+function karaZaKregoslup(name, juz){
+  const mus = (LIB[name] || {}).mus || {};
+  const zuzyte = zuzyteStabilizatory(juz);
+  let kara = 0;
+  Object.keys(STABILIZATORY).forEach(r => {
+    /* 0,9 to prog „byl dzis prawdziwy boj na te partie" — martwy ciag (1,0),
+       przysiad, dzien dobry. Samo wioslowanie (0,4) go nie przekracza, wiec
+       w dniu bez boju na plecy nic sie nie zmienia. */
+    if((zuzyte[r] || 0) >= 0.9 && (mus[r] || 0) > 0.2)
+      kara += (mus[r] || 0) * STABILIZATORY[r] * 1.5;
+  });
+  return kara;
+}
+
+function kregoslupZmeczony(juz){
+  const z = zuzyteStabilizatory(juz);
+  return Object.keys(STABILIZATORY).some(r => (z[r] || 0) >= 0.9);
+}
+
 function pickVariant(slot, zajete){
   if(slot.fixed){
     /* Główny bój też można odznaczyć — i to nie jest przypadek brzegowy:
@@ -2996,9 +3256,28 @@ function pickVariant(slot, zajete){
   let streak = 0;
   for(const h of hist){ if(h.name===cur) streak++; else break; }
 
-  if(cur && pool.indexOf(cur)>=0 && streak < HOLD){
+  /* Trzymanie wariantu ustepuje bezpieczenstwu: gdy kregoslup jest juz
+     obciazony przez boj, nie zostajemy przy wolnym ciezarze w skłonie
+     tylko dlatego, ze stal tu ostatnim razem. */
+  if(cur && pool.indexOf(cur)>=0 && streak < HOLD && !karaZaKregoslup(cur, juz)){
     return {name:cur, rot:'hold', streak,
       why:'Zostaje na kolejną sesję ('+(streak+1)+' z '+HOLD+'). Wariant trzymamy kilka sesji, żeby dało się sensownie dobrać ciężar.'};
+  }
+
+  /* KARA PUNKTOWA NIE WYSTARCZALA.
+
+     Pierwsza wersja odejmowala punkty za dokladanie do zmeczonego kregoslupa
+     i przegrywala z punktacja za pokrycie: wioslowanie sztanga trafia w wiecej
+     regionow naraz (prostowniki tez sa regionem!), wiec im bardziej byly
+     zaniedbane, tym mocniej wygrywalo mimo kary. To jest odwrotnie niz
+     powinno — zaniedbane prostowniki to nie powod, zeby dołozyc im PO martwym
+     ciagu. Wiec nie punktujemy, tylko zawezamy pule: jesli jest wariant
+     podparty, wybieramy wylacznie sposrod podpartych. Gdy cala pula obciaza
+     kregoslup (bo taki jest slot), zostaje jak byla — lepiej zrobic cwiczenie
+     niz wyciac je z dnia. */
+  if(kregoslupZmeczony(juz)){
+    const podparte = pool.filter(n => !karaZaKregoslup(n, juz));
+    if(podparte.length) pool = podparte;
   }
 
   const cov = regionSets(14);
@@ -3012,13 +3291,22 @@ function pickVariant(slot, zajete){
     });
     if(name === cur) sc -= 0.8;
     else if(hist.slice(0,2).some(h=>h.name===name)) sc -= 0.35;
-    return {name, sc, top};
+    const kara = karaZaKregoslup(name, juz);
+    sc -= kara;
+    return {name, sc, top, kara};
   });
   scored.sort((a,b)=> b.sc-a.sc || pool.indexOf(a.name)-pool.indexOf(b.name));
   const win = scored[0];
   const reg = win.top && REG[win.top] ? REG[win.top] : null;
   const have = win.top ? Math.round((cov[win.top]||0)*10)/10 : 0;
 
+  if(kregoslupZmeczony(juz) && !win.kara){
+    return {name:win.name, rot:'switch',
+      why:'Dziś w tym dniu stoi już bój obciążający dolny grzbiet, więc ten slot '+
+        'bierze wariant podparty — „'+win.name+'" trafia w te same plecy, ale nie '+
+        'dokłada do prostowników. Po ciężkim ciągu to one puszczają pierwsze, '+
+        'nie mięsień, który ćwiczysz.'};
+  }
   return {name:win.name, rot:'switch', why: reg
     ? 'Zmiana wariantu: „'+reg.n+'" ma '+fmtKg(have)+' serii w ostatnich 14 dniach przy celu '+reg.min+'–'+reg.max+'. To ćwiczenie łata tę dziurę.'
     : 'Zmiana wariantu po '+HOLD+' sesjach.'};
@@ -3098,7 +3386,7 @@ function przerwaSkala(dni){
    Tu liczymy go od nowa: z zakresu tego ćwiczenia i z jego jednostki. */
 function celCwiczenia(name, slot, phase, sug){
   const L = LIB[name] || {};
-  const [mn, mx] = L.rr || slot.rr[phase] || [8, 8];
+  const [mn, mx] = zakresCwiczenia(name, slot, phase) || [8, 8];
   const serie = (sug && sug.sets) || serieSlotu(slot, phase, weekNo()) || 3;
   /* Etykieta celu brała zakres ze SLOTU, a silnik osobno liczył swój.
      Po dwunastu dniach przerwy silnik prosił o 9 powtórzeń w dipach,
@@ -3113,7 +3401,66 @@ function celCwiczenia(name, slot, phase, sug){
     : (mn === mx ? String(mn) : mn + '-' + mx);
   const jedn = L.time ? ' s' : '';
   const rpe = (slot.t[phase] || '').match(/RPE\s*[\d,.]+/);
-  return serie + '×' + zakres + jedn + (rpe ? ' ' + rpe[0] : '');
+  /* „2×10" przy przysiadzie bulgarskim znaczy dziesiec NA NOGE, ale w planie
+     stalo to tylko w tekscie slotu i gubilo sie przy skladaniu celu z silnika.
+     Dziesiec powtorzen zamiast dwudziestu to polowa treningu nog. */
+  const str = L.strona ? '/' + L.strona : '';
+  return serie + '×' + zakres + jedn + str + (rpe ? ' ' + rpe[0] : '');
+}
+
+/* ============================================================
+   ZAKRES POWTORZEN: SLOT KONTRA CWICZENIE
+
+   Slot ma jeden zakres dla calej puli i zmienia go z faza na faze —
+   to jest cala periodyzacja tej aplikacji. Cwiczenie ma wlasny zakres,
+   bo plank mierzy sie w sekundach, a ab wheel w powtorzeniach.
+
+   Do wersji 70 wlasny zakres cwiczenia po prostu KASOWAL zakres slotu.
+   Skutek: ab wheel pokazywal „3×8-12" w kazdej fazie — tak samo w deloadzie
+   jak w intensyfikacji. Periodyzacja dla tych cwiczen po prostu nie istniala,
+   a nikt tego nie widzial, bo liczby wygladaly sensownie.
+
+   Teraz zalezy to od tego, czy slot i cwiczenie mowia TA SAMA JEDNOSTKA:
+
+   - ta sama (np. chwyt na czas w slocie na czas): rzadzi slot, bo to on
+     wie, ktora to faza — przycinamy tylko do granic zdrowego rozsadku
+     dla tego cwiczenia,
+   - rozna albo pula mieszana (slot tulowia: plank obok ab wheel): zakres
+     slotu jest dla tego cwiczenia bez znaczenia, wiec bierzemy FRAGMENT
+     jego wlasnego zakresu odpowiadajacy fazie — dol w deloadzie, gora
+     w intensyfikacji.
+   ============================================================ */
+/* Ktora czesc wlasnego zakresu cwiczenia nalezy do ktorej fazy.
+   Kolejnosc jak w PHASES: reaktywacja, budowa, deload, intensyfikacja. */
+const FRAGMENT_FAZY = [[0, 0.6], [0.2, 1], [0, 0.35], [0.45, 1]];
+
+function fragmentFazy(rr, phase){
+  const f = FRAGMENT_FAZY[phase] || [0, 1];
+  const rozp = rr[1] - rr[0];
+  const a = Math.round(rr[0] + rozp * f[0]);
+  const b = Math.round(rr[0] + rozp * f[1]);
+  return [Math.min(a, b), Math.max(a, b)];
+}
+
+function zakresCwiczenia(name, slot, phase){
+  const L = LIB[name] || {};
+  const wlasny = L.rr;
+  const slotowy = slot && slot.rr && slot.rr[phase];
+  if(!wlasny) return slotowy || [8, 12];
+  if(!slotowy) return wlasny;
+
+  const pula = slot.fixed ? [slot.fixed] : (slot.pool || []);
+  const czasowe = pula.filter(n => (LIB[n] || {}).time).length;
+  /* Pula mieszana nie ma jednej jednostki, wiec zaden zakres slotu nie da
+     sie uczciwie zastosowac do wszystkich jej cwiczen. */
+  const zgodne = czasowe === 0 ? !L.time
+               : czasowe === pula.length ? !!L.time
+               : false;
+  if(!zgodne) return fragmentFazy(wlasny, phase);
+
+  const a = Math.max(wlasny[0], Math.min(wlasny[1], slotowy[0]));
+  const b = Math.max(wlasny[0], Math.min(wlasny[1], slotowy[1]));
+  return [Math.min(a, b), Math.max(a, b)];
 }
 
 function suggestLoad(name, slot, phase, tydzien){
@@ -3123,8 +3470,7 @@ function suggestLoad(name, slot, phase, tydzien){
      plank (40 sekund) i po rozdzieleniu ćwiczeń zaproponował „Ab wheel 3×40" —
      czyli czterdzieści powtórzeń zamiast czterdziestu sekund. Ćwiczenie może
      więc podać własny zakres i on ma pierwszeństwo. */
-  const wlasny = (LIB[name] || {}).rr;
-  const [mn,mx] = wlasny || slot.rr[phase];
+  const [mn,mx] = zakresCwiczenia(name, slot, phase);
   if(!sets) return null;
 
   const L = LIB[name] || {inc:2.5, mus:{}};
@@ -3675,7 +4021,10 @@ function odradzamDzis(){
 const BARWY_DNI = {
   push: {a:'#3ddc84', t:'rgba(61,220,132,.13)'},
   pull: {a:'#7c5cff', t:'rgba(124,92,255,.15)'},
-  nogi: {a:'#ff8a3d', t:'rgba(255,138,61,.15)'}
+  nogi: {a:'#ff8a3d', t:'rgba(255,138,61,.15)'},
+  /* Dzien „gora" laczy push i pull, wiec nie moze pozyczyc koloru zadnego
+     z nich — inaczej w pasku tygodnia dwa rozne dni wygladalyby tak samo. */
+  gora: {a:'#38bdf8', t:'rgba(56,189,248,.15)'}
 };
 function barwaDnia(d){
   const g = (PLAN[d] || {}).grp;
@@ -5607,6 +5956,26 @@ function renderSession(){
               '<div class="mala">DOBIERZ</div></div>')+
         '</div>'
       : '<div class="extg">Cel: '+esc(e.target||'')+'</div>';
+    /* DO UPADKU CZY NIE — to musi stac na karcie, a nie w glowie.
+
+       Filip ma 90 serii oznaczonych RPE 6 i martwy ciag 60 kg na 10 przy
+       RPE 6, czyli oszczedza sie wszedzie. Ale odpowiedzia nie jest „upadek
+       zawsze": na przysiadzie i martwym ciagu technika psuje sie PRZED
+       miesniem, wiec ostatnie powtorzenie jest jednoczesnie najgorsze
+       i najbardziej ryzykowne. Do upadku schodzi wylacznie izolacja
+       (`upadek:true` na slocie) i tylko w ostatniej serii. */
+    /* `e.slot` bywa obiektem (swiezo zbudowana sesja) albo samym id
+       (sesja odtworzona z pamieci po zamknieciu aplikacji) — a wtedy
+       `e.slot.upadek` jest ciche undefined i podpowiedz znika akurat wtedy,
+       gdy Filip wraca do treningu po przerwie. */
+    const sl = (e.slot && typeof e.slot === 'object') ? e.slot : slotById(e.slot);
+    const doUpadku = sl && sl.upadek
+      ? '<div class="hm" style="margin-top:4px;color:var(--acc)">'+
+        '<b>Ostatnia seria do upadku</b> — dopóki idzie</div>'
+      : (sl && sl.fixed
+        ? '<div class="hm" style="margin-top:4px;opacity:.7">'+
+          'Bój — zostaw zapas, nie schodź do upadku</div>'
+        : '');
     const ostatnio = last
       ? '<div class="exost">'+esc(last.sets.map(fmtSet).join('  '))+'</div>'
       : '<div class="exost" style="color:var(--warn)">pierwszy raz</div>';
@@ -5632,7 +6001,7 @@ function renderSession(){
         '<div style="min-width:0"><div class="slab">'+esc(e.lab||'')+
           (bije?'<span class="prtag">REKORD</span>':'')+'</div>'+
         '<div class="exn">'+esc(e.name)+'</div>'+
-        cyfry + ostatnio + '</div>'+
+        cyfry + doUpadku + ostatnio + '</div>'+
         '<div class="exc">'+(robocze(e.sets).length
             ? '<b style="color:var(--ok)">'+robocze(e.sets).length+'</b> serii'+
               (e.sets.some(s=>s.wu)?'<br><span style="font-size:10px">+'+
@@ -5708,6 +6077,11 @@ function renderSession(){
           '<button class="btn sm" onclick="addSet('+i+')">Dodaj serię</button>'+
           '<button class="btn ghost sm" onclick="addSet('+i+',true)">Rozgrzewkowa</button>'+
         '</div>'+
+        /* Kasowanie calego cwiczenia stoi osobno, na dole, drobnym drukiem
+           i w kolorze ostrzegawczym — zeby nie dalo sie w nie trafic kciukiem
+           siegajacym po „Dodaj serie". */
+        '<button class="mini" style="color:var(--bad);margin-top:9px" '+
+          'onclick="usunCwiczenie('+i+')">Usuń to ćwiczenie z treningu</button>'+
       '</div></div>';
   }).join('');
   przywrocWpisane();
@@ -5936,6 +6310,33 @@ function wpiszRozgrzewke(i){
   e._open=true; saveSes(); renderSession();
   toast(wu.length+' serie rozgrzewkowe dodane');
 }
+/* USUWANIE CWICZENIA Z TRWAJACEJ SESJI.
+
+   16 wrzesnia Filip dodal cwiczenie w trakcie treningu i nie mial jak go
+   zdjac — zostalo na ekranie do konca sesji. Kasowac dalo sie pojedyncze
+   serie, ale nie cale cwiczenie; „Dodaj cwiczenie" byla droga w jedna strone.
+
+   Cwiczenie z zapisanymi seriami pyta o potwierdzenie i wymienia, co przepada
+   — to jedyne dane w tej aplikacji, ktorych nie odtworzysz z niczego innego.
+   Puste znika od razu, bo nie ma czego tracic. */
+function usunCwiczenie(i){
+  const e = SES && SES.exercises && SES.exercises[i];
+  if(!e) return;
+  const robocze = e.sets.filter(x => !x.wu).length;
+  if(robocze){
+    const opis = e.sets.filter(x => !x.wu)
+      .map(x => (x.w ? fmtKg(x.w) + ' kg × ' : '') + x.r).join(', ');
+    if(!confirm('Usunąć „' + e.name + '" z tego treningu?\n\n' +
+                'Przepadnie ' + robocze + ' ' +
+                (robocze === 1 ? 'seria' : robocze < 5 ? 'serie' : 'serii') +
+                ': ' + opis)) return;
+  }
+  SES.exercises.splice(i, 1);
+  OSTATNIA_SERIA = null;
+  saveSes(); renderSession();
+  toast('Usunięte: ' + e.name);
+}
+
 function delSet(i,j){
   /* Krzyżyk stoi kilka milimetrów od ołówka notatki, a ekran obsługuje się
      spoconą ręką między seriami. Skasowanej serii nie da się odtworzyć —
@@ -7244,6 +7645,36 @@ function aiWyluskajJson(tekst){
       }
     }
   }
+  /* RATOWANIE ODPOWIEDZI URWANEJ W POLOWIE.
+
+     Model z limitem tokenow potrafi skonczyc w srodku obiektu — wtedy nie
+     ma domykajacego nawiasu, petla wyzej nie ma czego sparsowac i uzytkownik
+     dostaje „nie umiem odczytac", choc dziewiec dziesiatych odpowiedzi jest
+     poprawne. Domykamy to, co zostalo otwarte, i obcinamy ostatni niepelny
+     element. Lepiej policzyc z trzech skladnikow niz z zadnego. */
+  if(!wynik && start >= 0){
+    let ogon = t.slice(start);
+    /* ucinamy do ostatniego miejsca, ktore moze byc koncem wartosci */
+    for(let i = ogon.length - 1; i > 0; i--){
+      if(!/[0-9"}\]]/.test(ogon[i])) continue;
+      let proba = ogon.slice(0, i + 1).replace(/,\s*$/, '');
+      /* policz, ile nawiasow trzeba domknac — cudzyslowy pomijamy */
+      let kl = 0, kw = 0, wC = false, uc = false;
+      for(const c of proba){
+        if(uc){ uc = false; continue; }
+        if(c === '\\'){ uc = true; continue; }
+        if(c === '"'){ wC = !wC; continue; }
+        if(wC) continue;
+        if(c === '{') kl++; else if(c === '}') kl--;
+        else if(c === '[') kw++; else if(c === ']') kw--;
+      }
+      if(wC || kl < 0 || kw < 0) continue;
+      try {
+        const o = JSON.parse(proba + ']'.repeat(kw) + '}'.repeat(kl));
+        if(o && typeof o === 'object'){ wynik = o; break; }
+      } catch(e){}
+    }
+  }
   return wynik;
 }
 
@@ -7355,15 +7786,43 @@ async function aiJedzenie(opis, zdjecieBase64){
       'a ze zdjęcia bierz wyłącznie ilości.'
     : (opis || '');
 
-  const odp = await aiZapytaj(
-    [{role: 'system', content: AI_JEDZENIE}, {role: 'user', content: pytanie}],
-    {tryb: 'tekst', max_tokens: 300});
+  /* 300 TOKENOW TO BYLO ZA MALO.
 
-  const wynik = aiWyluskajJson(odp.tresc);
+     Od wersji 62 model oddaje liste skladnikow z waga i gestoscia, a nie
+     trzy gotowe sumy — ta odpowiedz jest kilka razy dluzsza. Przy dwoch
+     tostach z czyms na wierzchu wychodzily trzy, cztery skladniki i JSON
+     urywal sie w polowie, a uzytkownik dostawal „nie umiem odczytac".
+     Limit jest teraz ustawiony pod najdluzsza sensowna odpowiedz. */
+  let odp = await aiZapytaj(
+    [{role: 'system', content: AI_JEDZENIE}, {role: 'user', content: pytanie}],
+    {tryb: 'tekst', max_tokens: 700});
+  let wynik = aiWyluskajJson(odp.tresc);
+
+  /* Jedna ponowna proba, krotsza i ostrzejsza. Modele bywaja gadatliwe
+     losowo — druga proba z jawnym „maksymalnie trzy skladniki, sam JSON"
+     kosztuje sekunde, a ratuje wpis, ktory inaczej trzeba wklepac recznie. */
+  if(!wynik || typeof wynik.bialko !== 'number'){
+    aiZapisz({co: 'jedzenie-nieudane', pytanie: pytanie.slice(0, 200),
+              odpowiedz: (odp.tresc || '').slice(0, 300)});
+    odp = await aiZapytaj(
+      [{role: 'system', content: AI_JEDZENIE +
+        ' ODPOWIADASZ SAMYM JSON-em, bez komentarza i bez bloku kodu. ' +
+        'Najwyzej TRZY skladniki. Krotkie nazwy.'},
+       {role: 'user', content: pytanie}],
+      {tryb: 'tekst', max_tokens: 700});
+    wynik = aiWyluskajJson(odp.tresc);
+  }
+
   aiZapisz({co: 'jedzenie', pytanie: pytanie.slice(0, 200),
-            odpowiedz: (odp.tresc || '').slice(0, 200), bialko: wynik && wynik.bialko});
-  if(!wynik || typeof wynik.bialko !== 'number')
-    throw new Error('Model odpowiedział czymś, czego nie umiem odczytać. Wpisz gramy ręcznie.');
+            odpowiedz: (odp.tresc || '').slice(0, 300), bialko: wynik && wynik.bialko});
+  if(!wynik || typeof wynik.bialko !== 'number'){
+    /* Komunikat pokazuje POCZATEK tego, co naprawde przyszlo. Bez tego
+       „dziwna odpowiedz" nie da sie zdiagnozowac po fakcie — a to jedyna
+       informacja, ktora odroznia model gadajacy od modelu niedostepnego. */
+    const co = String(odp.tresc || '').replace(/\s+/g, ' ').trim().slice(0, 90);
+    throw new Error('Model odpowiedział czymś, czego nie umiem odczytać' +
+      (co ? ': „' + co + '…"' : ' (pusta odpowiedź)') + '. Wpisz gramy ręcznie.');
+  }
   return domknijMakro(wynik);
 }
 
