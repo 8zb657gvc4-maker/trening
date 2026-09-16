@@ -18,12 +18,24 @@
 
    Niebieski został jako `--info` przy rzeczach neutralnych, żeby wykresy
    nie zlewały się z sygnałem „dobrze". */
+/* KINETIC OBSIDIAN — paleta z makiety Stitcha (wrzesien 2026).
+
+   Zmienne zostaly te same, wiec caly plik dalej czyta `var(--acc)` i nie
+   trzeba bylo dotykac zadnej logiki. Zmienily sie wylacznie wartosci:
+
+   - akcent z zieleni na limonke #CCFF00 — ta sama rola („w normie / zrobione /
+     zrob to"), tylko mocniejsza na ciemnym tle i czytelna katem oka,
+   - doszedl cyjan #00E5FF jako kolor TELEMETRII: timer, tetno, zegary.
+     Rozdzielenie jest celowe — limonka znaczy „dzialaj", cyjan „patrz",
+   - czerwien przesunieta na #FF3366, bo stara gubila sie przy limonce,
+   - tlo #0D0F12 zamiast granatowego: na OLED-zie iPhone'a czern jest
+     wygaszonym pikselem, wiec karty odcinaja sie bez zadnej ramki. */
 :root{
-  --bg:#070b12; --card:rgba(19,28,40,.62); --card2:#131c28; --line:#1c2836;
-  --txt:#e6edf7; --dim:#5d6b80;
-  --acc:#3ddc84; --acc2:#2fb56b;
-  --ok:#3ddc84; --warn:#ffc53d; --bad:#e5484d; --run:#7c5cff;
-  --info:#4a9eff;
+  --bg:#0d0f12; --card:#161a1f; --card2:#1e232b; --line:rgba(255,255,255,.08);
+  --txt:#ffffff; --dim:#9ba3af; --dim2:#525b6a;
+  --acc:#ccff00; --acc2:#abd600; --on-acc:#0d0f12;
+  --ok:#ccff00; --warn:#ffc53d; --bad:#ff3366; --run:#7c5cff;
+  --info:#00e5ff; --cyan:#00e5ff;
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
 *{box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -45,7 +57,7 @@ button,.hub,.rpeb,.btn{transition:transform .12s,filter .12s}
 
 /* Świeżo dodana seria błyska na zielono — to jedyne potwierdzenie, jakie
    naprawdę jest potrzebne: „zapisało się". */
-@keyframes blysk{0%{background:rgba(62,207,142,.42)}100%{background:transparent}}
+@keyframes blysk{0%{background:rgba(204,255,0,.30)}100%{background:transparent}}
 .srow.nowa{animation:blysk .55s ease-out}
 
 body{margin:0;padding:0;background:var(--bg);color:var(--txt);
@@ -86,7 +98,7 @@ header{flex:0 0 auto;z-index:50;background:var(--bg);
 .hrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .htitle{font-size:17px;font-weight:700;letter-spacing:-.3px}
 .hsub{font-size:12px;color:var(--dim);margin-top:2px}
-.badge{background:var(--acc);color:#04140a;font-size:11px;font-weight:800;
+.badge{background:var(--acc);color:var(--on-acc);font-size:11px;font-weight:800;
   padding:4px 9px;border-radius:20px;letter-spacing:.3px;flex-shrink:0}
 .back{background:var(--card2);border:1px solid var(--line);border-radius:9px;
   padding:7px 11px;font-size:13px;font-weight:650;flex-shrink:0}
@@ -183,7 +195,7 @@ h2:first-child{margin-top:0}
   flex:1;min-width:0;width:100%;font-size:18px;font-weight:700;
   border-left:none;border-right:none;font-variant-numeric:tabular-nums}
 
-.btn{background:var(--acc);color:#04140a;font-weight:800;padding:13px;
+.btn{background:var(--acc);color:var(--on-acc);font-weight:800;padding:13px;
   border-radius:11px;width:100%;font-size:15px}
 
 
@@ -226,7 +238,7 @@ h2:first-child{margin-top:0}
   border-radius:12px;padding:4px;margin:10px 0 14px}
 .segm button{flex:1;background:transparent;color:var(--dim);border:0;padding:9px 4px;
   border-radius:9px;font-size:12px;font-weight:700;letter-spacing:.2px}
-.segm button.on{background:var(--acc);color:#04140a}
+.segm button.on{background:var(--acc);color:var(--on-acc)}
 
 
 /* Kafelek-stepper: duża liczba, dwa szerokie przyciski. Cel dotykowy ma
@@ -341,7 +353,7 @@ h2:first-child{margin-top:0}
 .dzien .liczby span{display:block;font-size:8.5px;color:var(--dim);
   letter-spacing:.5px;margin-top:3px}
 .dzien .dol{padding:12px 13px 13px}
-.dzien .start{width:100%;background:var(--dzien-a);color:#05130a;border:0;
+.dzien .start{width:100%;background:var(--dzien-a);color:var(--on-acc);border:0;
   border-radius:14px;padding:15px;font-size:14px;font-weight:800;letter-spacing:.3px}
 
 /* Pasek tygodnia w segmentach — jeden na każdy dzień planu. */
@@ -392,7 +404,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 /* --- TIMER --- */
 .tbar{flex:0 0 auto;position:relative;align-self:center;
   width:calc(100% - 24px);max-width:616px;margin:0 auto 9px;
-  background:var(--acc);color:#04140a;border-radius:15px;padding:13px 15px;
+  background:var(--acc);color:var(--on-acc);border-radius:15px;padding:13px 15px;
   display:none;align-items:center;gap:12px;
   box-shadow:0 6px 24px rgba(0,0,0,.5)}
 .tbar.on{display:flex}
@@ -420,7 +432,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .preset{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
 .preset button{background:var(--card2);border:1px solid var(--line);border-radius:11px;
   padding:14px 4px;font-weight:750;font-size:15px}
-.preset button.on{background:var(--acc);color:#04140a;border-color:var(--acc)}
+.preset button.on{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
 
 .kv{display:flex;justify-content:space-between;padding:9px 0;
   border-bottom:1px solid var(--line);font-size:14px;gap:12px}
@@ -652,6 +664,130 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   border-radius:999px;padding:8px 12px;font-size:12.5px;font-weight:700;
   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip small{color:var(--dim);font-weight:600;margin-left:5px}
+
+
+/* ============================================================
+   KINETIC OBSIDIAN — warstwa wygladu
+
+   Osobny blok na koncu arkusza, a nie poprawki rozsiane po czterdziestu
+   regulach wyzej. Powod jest prosty: gdyby ten wyglad sie nie sprawdzil,
+   wystarczy usunac ten jeden blok i wrocic do poprzedniego.
+
+   Trzy rzeczy robia tu caly efekt makiety:
+   1. PIGULKI — wszystko, co sie dotyka, ma promien 999px. To jedyna
+      najmocniejsza sygnatura tego stylu.
+   2. WIEKSZE PROMIENIE KART — 20-24 px zamiast 14-16.
+   3. POSWIATA ZAMIAST CIENIA — cien na czarnym tle robi sie bloto,
+      wiec glebokosc buduje swiatlo wokol elementu aktywnego.
+   ============================================================ */
+
+/* --- typografia: wersaliki HUD i cyfry tabelaryczne --- */
+body{font-feature-settings:'tnum' 1,'cv01' 1;letter-spacing:-.01em}
+h2,.etyk,.mala,.slab{text-transform:uppercase;letter-spacing:.08em;
+  font-weight:800;color:var(--dim)}
+h2{font-size:11px}
+.duza,.liczby b,.dzien .nazwa,.stp .val,.tv,.kafel2 text{
+  font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+/* Nazwa cwiczenia nigdy ponizej 16 px — telefon lezy na lawce metr od oczu. */
+.exn{font-size:16px;font-weight:700}
+
+/* --- karty: wieksze promienie, plaskie tlo --- */
+.card,.hub,.kafel2,.dbtn,.ex,.stp{border-radius:20px;background:var(--card);
+  border:1px solid var(--line)}
+.card,.ex,.hub{margin-bottom:13px}
+.card{-webkit-backdrop-filter:none;backdrop-filter:none}
+.dzien{border-radius:24px}
+.ex.done{border-color:rgba(204,255,0,.45)}
+
+/* --- przyciski: pigulki --- */
+.btn{border-radius:999px;background:var(--acc);color:var(--on-acc);
+  padding:15px;font-weight:800;letter-spacing:.02em;
+  box-shadow:0 0 24px -6px rgba(204,255,0,.45)}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.12);
+  color:var(--dim);box-shadow:none}
+.btn.sm{padding:12px}
+.back,.pill,.badge,.rpeb,.chip,.segm button,.mini,.tbtn{border-radius:999px}
+.badge{background:var(--acc);color:var(--on-acc);letter-spacing:.06em}
+.back{background:var(--card2);border:1px solid var(--line);padding:9px 14px}
+.mini{border-radius:999px;border:1px solid rgba(255,255,255,.12);
+  background:transparent;padding:10px 16px}
+.tip .btn.ghost,.tip .btn.sm{padding:11px 18px;width:auto;min-width:160px}
+
+/* --- glowny przycisk dnia: pigulka z poswiata --- */
+.dzien .start{border-radius:999px;padding:17px;letter-spacing:.06em;
+  box-shadow:0 0 28px -6px var(--dzien-a)}
+
+/* --- RPE: rzad pigulek --- */
+.rpeb{border-radius:16px;background:var(--card2);border:1px solid var(--line)}
+.rpeb.on{background:rgba(204,255,0,.15);border-color:var(--acc);color:var(--acc);
+  box-shadow:0 0 18px -6px rgba(204,255,0,.6)}
+
+/* --- pola liczbowe: ciemniejsze niz karta, jak w makiecie --- */
+.step button{background:var(--card2);color:var(--acc);border-color:var(--line)}
+.step button:first-child{border-radius:16px 0 0 16px}
+.step button:last-child{border-radius:0 16px 16px 0}
+.step input{background:var(--card2);border-color:var(--line);color:var(--txt)}
+.step input:focus{border-color:var(--cyan);outline:none;
+  box-shadow:0 0 0 1px var(--cyan)}
+
+/* --- TELEMETRIA JEST CYJANOWA, NIE LIMONKOWA.
+       Limonka znaczy „zrob to", cyjan „popatrz na to". Timer odpoczynku
+       nie jest wezwaniem do dzialania — jest zegarem, wiec zmienia kolor. --- */
+.tbar{background:var(--cyan);color:#001b1f;border-radius:24px;
+  box-shadow:0 0 26px -6px rgba(0,229,255,.55)}
+.tbar.done{background:var(--acc);color:var(--on-acc);
+  box-shadow:0 0 26px -6px rgba(204,255,0,.6)}
+.tbtn{background:rgba(0,0,0,.18)}
+
+/* --- nawigacja: szklana, aktywna pozycja swieci --- */
+nav{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
+  backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.07)}
+nav button{letter-spacing:.08em;text-transform:uppercase;font-size:9.5px}
+nav button.on{color:var(--acc)}
+nav button.on svg{filter:drop-shadow(0 0 7px rgba(204,255,0,.55))}
+header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
+  backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.07)}
+
+/* --- ramki informacyjne ---
+
+   LIMONKA MA BYC RZADKA. W makiecie na calym ekranie swieci jedna rzecz:
+   przycisk „Rozpocznij trening". Gdy kazda ramka dostala limonkowy pasek,
+   ekran zaczal krzyczec w calosci, czyli nie krzyczal wcale — a to jest
+   dokladnie ten sam blad, ktory popelnia zolte ostrzezenie wiszace zawsze.
+   Domyslna ramka jest wiec neutralna, a kolor dostaje tylko ta, ktora
+   naprawde cos znaczy. */
+.tip{background:var(--card);border:1px solid var(--line);
+  border-left:3px solid rgba(255,255,255,.14);
+  border-radius:4px 16px 16px 4px;color:#d7dbe2;margin-bottom:13px}
+.tip.ok{background:var(--card);border-left-color:var(--acc);color:#e4eccd}
+.tip.warn{background:rgba(255,197,61,.08);border-left-color:var(--warn);color:#ffe3ad}
+.tip.bad{background:rgba(255,51,102,.09);border-left-color:var(--bad);color:#ffc2d1}
+.tip.rn{background:rgba(124,92,255,.1);border-left-color:var(--run);color:#dcc9ff}
+
+/* --- przelacznik sekcji raportu --- */
+.segm{border-radius:999px}
+.segm button.on{background:var(--acc);color:var(--on-acc)}
+
+/* --- DRUGI PLAN JEST CYJANOWY.
+       W makiecie przyciski pomocnicze („Dodaj cwiczenie") sa cyjanowe:
+       przezroczyste tlo, cyjanowa ramka i tekst. Limonka zostaje wylacznie
+       dla akcji glownej, zeby na ekranie swiecila jedna rzecz naraz. --- */
+.wu{background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.16);
+  border-radius:16px;color:#c8e9ee;padding:10px 12px}
+.wubtn{background:rgba(0,229,255,.10);border:1.5px solid rgba(0,229,255,.40);
+  border-radius:999px;color:var(--cyan);padding:11px;font-size:12.5px;
+  letter-spacing:.02em}
+.srow.wus .sn{color:var(--cyan)}
+
+/* --- PRZYCISK STARTU ZAWSZE LIMONKOWY.
+       Kolor dnia zostaje na ramce karty, nazwie i sylwetce — czyli tam, gdzie
+       sluzy rozpoznaniu dnia. Ale akcja glowna ma byc w kazdym dniu tym samym
+       kolorem, inaczej „zielony przycisk" przestaje cokolwiek znaczyc. --- */
+.dzien .start{background:var(--acc);color:var(--on-acc);
+  box-shadow:0 0 28px -6px rgba(204,255,0,.5)}
+
+/* --- kafelki z pierscieniem: etykieta w wersalikach pod spodem --- */
+.kafel2 .etyk{font-size:10px;letter-spacing:.09em;margin-top:6px}
 </style>
 </head>
 <body>
@@ -1875,7 +2011,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '72';
+const WERSJA = '73';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -4018,13 +4154,17 @@ function odradzamDzis(){
 /* Kolor akcentu zależy od tego, co dziś robisz. To nie jest ozdoba:
    trzy palety znaczą trzy rodzaje pracy i po tygodniu rozpoznajesz dzień
    po kolorze, zanim przeczytasz literę. */
+/* Barwy dni na palecie Kinetic Obsidian. Push dostaje limonke — ten sam
+   kolor co akcent aplikacji — bo to dzien, od ktorego zaczyna sie rotacja.
+   Pull cyjan, nogi pomarancz, gora fiolet: cztery odcinki kola barw, ktore
+   na czerni rozroznia sie katem oka, bez czytania litery dnia. */
 const BARWY_DNI = {
-  push: {a:'#3ddc84', t:'rgba(61,220,132,.13)'},
-  pull: {a:'#7c5cff', t:'rgba(124,92,255,.15)'},
+  push: {a:'#ccff00', t:'rgba(204,255,0,.12)'},
+  pull: {a:'#00e5ff', t:'rgba(0,229,255,.13)'},
   nogi: {a:'#ff8a3d', t:'rgba(255,138,61,.15)'},
   /* Dzien „gora" laczy push i pull, wiec nie moze pozyczyc koloru zadnego
      z nich — inaczej w pasku tygodnia dwa rozne dni wygladalyby tak samo. */
-  gora: {a:'#38bdf8', t:'rgba(56,189,248,.15)'}
+  gora: {a:'#a78bfa', t:'rgba(167,139,250,.15)'}
 };
 function barwaDnia(d){
   const g = (PLAN[d] || {}).grp;
