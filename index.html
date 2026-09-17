@@ -1702,24 +1702,27 @@ const DOMYSLNY_PLAN = {
      pool:['Wyciskanie hantlami płasko','Wyciskanie hantli, skos'],
      t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    /* Brama gora→dol stoi pierwsza, bo po wyjsciu dipow z dnia P to jedyne
-       cwiczenie w planie, ktore realnie obciaza DOLNA czesc klatki. */
-    {id:'W3', lab:'Klatka — rozciąganie i dół', upadek:true,
-     pool:['Brama góra→dół','Rozpiętki płasko','Rozpiętki na maszynie','Wyciskanie, skos ujemny'],
+    /* Dolna czesc klatki ma znow dipy w tym samym dniu, wiec ten slot wraca
+       do swojej roli: rozciaganie. Brama i skos ujemny zostaja w puli jako
+       zapas na wypadek zajetej stacji. */
+    {id:'W3', lab:'Klatka — rozciąganie', upadek:true,
+     pool:['Rozpiętki płasko','Rozpiętki na maszynie','Brama góra→dół','Wyciskanie, skos ujemny'],
      t:['3×15','3×12-15','2×15','3×12-15'],
      s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
     {id:'W4', lab:'Bark — bok', upadek:true,
      pool:['Unoszenie bokiem na maszynie','Unoszenie bokiem na wyciągu','Unoszenie hantli bokiem'],
      t:['3×15','3×15-20','2×15','3×15-20'],
      s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
-    /* Jedyne wielostawowe na triceps w planie. Izolacja nie uniesie ciezaru,
-       ktorego ten miesien potrzebuje, zeby urosnac.
+    /* DIPY RAZ W TYGODNIU, I TYLKO TUTAJ.
 
-       `fixed`, a nie pula: drugim wariantem byly dipy, a Filip powiedzial,
-       ze mu nie pasuja. Pula z jednym elementem nie przeszlaby audytu,
-       wiec slot jest po prostu staly. Dipy zostaja w bibliotece — gdyby
-       kiedys wrocily, wystarczy zamienic `fixed` z powrotem na pule. */
-    {id:'W5', lab:'Triceps — wielostawowe', fixed:'Wyciskanie wąsko',
+       Filip najpierw: „tutaj dipy nie pasuja" — o dniu P. Wywalilem je wtedy
+       z obu dni push, co bylo nadinterpretacja; poprawil: „mogles zostawic,
+       zeby raz w tygodniu byly, tylko wywalic tam gdzie ci pisalem".
+
+       Dlatego `fixed`, a nie pula: pula rotuje i w czesci tygodni dipow by
+       nie bylo. Staly slot daje dokladnie jedno wystapienie tygodniowo.
+       Wyciskanie waskie zostaje w bibliotece jako gotowy zamiennik. */
+    {id:'W5', lab:'Triceps — wielostawowe', fixed:'Dipy',
      t:['3×10 RPE6','3×8-12 RPE8','2×10 RPE5','3×8-12 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,12],[10,10],[8,12]]},
     {id:'W6', lab:'Triceps — izolacja', upadek:true,
@@ -2060,7 +2063,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '76';
+const WERSJA = '77';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
