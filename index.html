@@ -1236,6 +1236,11 @@ const DOMYSLNA_LIB = {
   'Francuskie zza głowy':        {inc:2.5, mus:{triceps_dluga:1, triceps_bocz:.5, triceps_przysr:.4},
                                   cue:'Ramię nad głową rozciąga głowę długą — bez tej pozycji jej nie ruszysz.'},
   'Prostowanie zza głowy wyciąg':{inc:2.5, mus:{triceps_dluga:1, triceps_bocz:.4, triceps_przysr:.4}},
+  /* To, co Filip nazywa „uginaniem tricepsa na maszynie". Anatomicznie triceps
+     PROSTUJE ramie, wiec w aplikacji nazywa sie tak jak reszta — ale w silowni
+     szuka sie tego pod „maszyna na triceps". */
+  'Prostowanie ramion na maszynie':{inc:2.5, mus:{triceps_bocz:1, triceps_przysr:.7, triceps_dluga:.4},
+                                  cue:'Oparcie trzyma łokcie w miejscu — dlatego da się tu dołożyć ciężar, którego wyciąg nie utrzyma w tej samej pozycji.'},
   'Uginanie ramion':             {inc:2.5, mus:{biceps_dluga:.9, biceps_krotka:.9, ramienny:.4, przedramie:.3}},
   'Uginanie młotkowe':           {hantle:true, inc:2.5, mus:{ramienny:1, biceps_dluga:.5, biceps_krotka:.3, przedramie:1}},
   'Uginanie na modlitewniku':    {inc:2.5, mus:{biceps_krotka:1, biceps_dluga:.4, ramienny:.4}},
@@ -1588,10 +1593,13 @@ const DOMYSLNY_PLAN = {
      pool:['Unoszenie hantli bokiem','Unoszenie bokiem na wyciągu','Unoszenie bokiem na maszynie'],
      t:['3×15','3×15-20','2×15','3×15-20'],
      s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
-    {id:'P5', lab:'Klatka dół + triceps',
-     pool:['Dipy','Wyciskanie, skos ujemny'],
-     t:['3×10 RPE6','3×8-12 RPE8','2×10 RPE5','3×8-12 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,12],[10,10],[8,12]]},
+    /* Byly tu dipy — Filip: „tutaj dipy nie pasuja". Slot zmienia wiec role
+       z „klatka dol + triceps" na czysty triceps na maszynie. Dolna czesc
+       klatki przechodzi na dzien W, gdzie brama gora→dol stoi pierwsza w puli. */
+    {id:'P5', lab:'Triceps — maszyna', upadek:true,
+     pool:['Prostowanie ramion na maszynie','Prostowanie ramion wyciąg'],
+     t:['3×15','3×12-15','2×15','3×12-15'],
+     s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
     {id:'P6', lab:'Triceps — głowa długa', upadek:true,
      pool:['Francuskie zza głowy','Prostowanie zza głowy wyciąg'],
      t:['3×12','3×10-12','2×12','3×10-12'],
@@ -1604,8 +1612,12 @@ const DOMYSLNY_PLAN = {
      s:[3,3,2,3], rr:[[6,8],[6,10],[6,6],[5,8]]},
     /* Wioslowanie sztanga zeszlo na koniec puli: podciaganie jest juz bojem
        tego dnia, a sztanga dokladala czwarty ciezki ruch kregoslupowy. */
+    /* WIOSLOWANIE TYLKO PODPARTE. Filip: „wioslowanie musi byc na maszynie".
+       Sztanga i hantel wypadaja z puli — zostaje maszyna i wyciag, oba
+       z oparciem, oba bez pracy prostownikow. To zresztą zdejmuje z planu
+       ostatnie zrodlo obciazenia kregoslupa poza martwym ciagiem. */
     {id:'G2', lab:'Ciąg poziomy',
-     pool:['Wiosłowanie na maszynie','Wiosłowanie na wyciągu','Wiosłowanie hantlem','Wiosłowanie sztangą'],
+     pool:['Wiosłowanie na maszynie','Wiosłowanie na wyciągu'],
      t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
     {id:'G3', lab:'Ciąg pionowy',
@@ -1690,8 +1702,10 @@ const DOMYSLNY_PLAN = {
      pool:['Wyciskanie hantlami płasko','Wyciskanie hantli, skos'],
      t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    {id:'W3', lab:'Klatka — rozciąganie', upadek:true,
-     pool:['Rozpiętki płasko','Brama góra→dół','Rozpiętki na maszynie'],
+    /* Brama gora→dol stoi pierwsza, bo po wyjsciu dipow z dnia P to jedyne
+       cwiczenie w planie, ktore realnie obciaza DOLNA czesc klatki. */
+    {id:'W3', lab:'Klatka — rozciąganie i dół', upadek:true,
+     pool:['Brama góra→dół','Rozpiętki płasko','Rozpiętki na maszynie','Wyciskanie, skos ujemny'],
      t:['3×15','3×12-15','2×15','3×12-15'],
      s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
     {id:'W4', lab:'Bark — bok', upadek:true,
@@ -1699,9 +1713,13 @@ const DOMYSLNY_PLAN = {
      t:['3×15','3×15-20','2×15','3×15-20'],
      s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]},
     /* Jedyne wielostawowe na triceps w planie. Izolacja nie uniesie ciezaru,
-       ktorego ten miesien potrzebuje, zeby urosnac. */
-    {id:'W5', lab:'Triceps — wielostawowe',
-     pool:['Wyciskanie wąsko','Dipy'],
+       ktorego ten miesien potrzebuje, zeby urosnac.
+
+       `fixed`, a nie pula: drugim wariantem byly dipy, a Filip powiedzial,
+       ze mu nie pasuja. Pula z jednym elementem nie przeszlaby audytu,
+       wiec slot jest po prostu staly. Dipy zostaja w bibliotece — gdyby
+       kiedys wrocily, wystarczy zamienic `fixed` z powrotem na pule. */
+    {id:'W5', lab:'Triceps — wielostawowe', fixed:'Wyciskanie wąsko',
      t:['3×10 RPE6','3×8-12 RPE8','2×10 RPE5','3×8-12 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,12],[10,10],[8,12]]},
     {id:'W6', lab:'Triceps — izolacja', upadek:true,
@@ -1715,7 +1733,7 @@ const DOMYSLNY_PLAN = {
      t:['3×5 RPE6','3×5 RPE7','2×5 RPE5','3×3-5 RPE8'],
      s:[3,3,2,3], rr:[[5,5],[5,5],[5,5],[3,5]]},
     {id:'M2', lab:'Ciąg poziomy',
-     pool:['Wiosłowanie na maszynie','Wiosłowanie na wyciągu','Wiosłowanie hantlem'],
+     pool:['Wiosłowanie na maszynie','Wiosłowanie na wyciągu'],
      t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×10-12 RPE8'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
     {id:'M3', lab:'Ciąg pionowy',
@@ -2042,7 +2060,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '75';
+const WERSJA = '76';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
