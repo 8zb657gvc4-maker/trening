@@ -664,6 +664,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   border-radius:999px;padding:8px 12px;font-size:12.5px;font-weight:700;
   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip small{color:var(--dim);font-weight:600;margin-left:5px}
+.chip.on{background:rgba(204,255,0,.15);border-color:var(--acc);color:var(--acc)}
 
 
 /* ============================================================
@@ -2063,7 +2064,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '77';
+const WERSJA = '80';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -6468,8 +6469,11 @@ function renderSession(){
         /* Kasowanie calego cwiczenia stoi osobno, na dole, drobnym drukiem
            i w kolorze ostrzegawczym — zeby nie dalo sie w nie trafic kciukiem
            siegajacym po „Dodaj serie". */
-        '<button class="mini" style="color:var(--bad);margin-top:9px" '+
-          'onclick="usunCwiczenie('+i+')">Usuń to ćwiczenie z treningu</button>'+
+        '<div class="btn2" style="margin-top:9px">'+
+          '<button class="mini" onclick="zamienCwiczenie('+i+')">Zamień na inne</button>'+
+          '<button class="mini" style="color:var(--bad)" '+
+            'onclick="usunCwiczenie('+i+')">Usuń z treningu</button>'+
+        '</div>'+
       '</div></div>';
   }).join('');
   przywrocWpisane();
@@ -6776,8 +6780,30 @@ function kandydaciDoDodania(){
     .filter(n => !LIB[n].stare && LIB[n].mus && !isSkipped(n) && !juz.has(kluczNazwy(n)))
     .map(n => ({n, w: potrzebaCwiczenia(n, brak), ost: lastFor(n)}));
 
-  if(q) return {szukane: wolne.filter(x => kluczNazwy(x.n).indexOf(q) >= 0)
-    .sort((a, b) => a.n.localeCompare(b.n, 'pl')).slice(0, 30)};
+  /* SZUKANIE PO MIESNIU, NIE TYLKO PO NAZWIE.
+
+     Filip na dniu nog: „nie bylo nic o brzuchu, a to logiczne, ze ludzie
+     jak robia nogi to czesto dodaja do tego brzuch". Lista domyslna pokazuje
+     to, co pasuje do DZISIEJSZEGO dnia i to, czego najbardziej brakuje —
+     a brzuch na dniu nog nie wpada do zadnej z tych kategorii.
+
+     Teraz wpisanie „brzuch" znajduje ab wheel, allahy i unoszenie nog,
+     bo porownujemy zapytanie takze z nazwa regionu i nazwa grupy miesniowej
+     z REG. Do tego nad polem stoja gotowe przyciski grup. */
+  if(q){
+    const pasuje = (n) => {
+      if(kluczNazwy(n).indexOf(q) >= 0) return true;
+      const mus = (LIB[n] || {}).mus || {};
+      return Object.keys(mus).some(r => {
+        if((mus[r] || 0) < 0.5) return false;       /* tylko miesnie realnie pracujace */
+        const R = REG[r] || {};
+        return kluczNazwy(R.n || r).indexOf(q) >= 0 ||
+               kluczNazwy(R.grp || '').indexOf(q) >= 0;
+      });
+    };
+    return {szukane: wolne.filter(x => pasuje(x.n))
+      .sort((a, b) => (b.w - a.w) || a.n.localeCompare(b.n, 'pl')).slice(0, 30)};
+  }
 
   /* Ćwiczenia, które w ogóle mogą wypaść w dzisiejszym dniu — czyli te
      z pul jego slotów. To jest „pasuje do dziś" liczone z planu, a nie
@@ -6827,26 +6853,99 @@ function szukajCwiczenia(v){
   renderDodajListe();          /* sama lista, żeby nie zabrać kursora z pola */
 }
 
+/* Grupy miesniowe z REG, w stalej kolejnosci — do przyciskow nad wyszukiwarka. */
+function grupyMiesni(){
+  const out = [];
+  Object.keys(REG).forEach(r => {
+    const g = (REG[r] || {}).grp;
+    if(g && out.indexOf(g) < 0) out.push(g);
+  });
+  return out;
+}
+
+function szukajGrupy(g){
+  if(!DODAJ) return;
+  DODAJ.szukaj = (kluczNazwy(DODAJ.szukaj || '') === kluczNazwy(g)) ? '' : g;
+  renderDodaj();
+}
+
 function renderDodaj(){
   const el = document.getElementById('dodajBox');
   if(!el) return;
   if(!DODAJ || !SES){ el.innerHTML = ''; return; }
+  const zamiana = DODAJ.zamiast != null && SES.exercises[DODAJ.zamiast];
+  const teraz = kluczNazwy(DODAJ.szukaj || '');
   el.innerHTML = '<div class="card" style="margin-bottom:11px">'+
-    '<div class="fld"><label>Z biblioteki</label>'+
-      '<input type="text" id="dodajSzukaj" placeholder="szukaj: face pull, przysiad…" '+
+    (zamiana
+      ? '<div class="tip warn" style="margin-bottom:10px"><b>Zamiana: '+
+        esc(SES.exercises[DODAJ.zamiast].name)+'</b><div class="hm" style="margin-top:4px">'+
+        'Wybierz, co robisz zamiast. Serie już wpisane zostają — zmienia się '+
+        'tylko nazwa ćwiczenia i ciężar liczy się od jego własnej historii.</div></div>'
+      : '')+
+    '<div class="fld"><label>'+(zamiana ? 'Zamiast tego' : 'Z biblioteki')+'</label>'+
+      '<input type="text" id="dodajSzukaj" value="'+esc(DODAJ.szukaj||'')+'" '+
+      'placeholder="szukaj: brzuch, biceps, przysiad…" '+
       'oninput="szukajCwiczenia(this.value)"></div>'+
-    '<div class="note" style="margin-top:6px">Na górze to, czego w ostatnich '+
-      '14 dniach było najmniej.</div>'+
+    /* Przyciski grup — bo szukanie dziala, tylko trzeba wiedziec, ze dziala.
+       „Brzuch" jednym dotknieciem rozwiazuje dokladnie ten przypadek,
+       ktory Filip zglosil. */
+    '<div class="chipy">'+ grupyMiesni().map(g =>
+      '<button class="chip'+(teraz === kluczNazwy(g) ? ' on' : '')+'" '+
+      'onclick="szukajGrupy(\''+esc(g).replace(/'/g,"\\'")+'\')">'+esc(g)+'</button>').join('') +
+    '</div>'+
     '<div id="dodajLista"></div>'+
     '<div style="display:flex;gap:8px;margin-top:11px">'+
-      '<button class="btn ghost sm" style="flex:1" onclick="dodajWlasne()">Nie ma na liście</button>'+
+      (zamiana ? '' : '<button class="btn ghost sm" style="flex:1" onclick="dodajWlasne()">Nie ma na liście</button>')+
       '<button class="btn ghost sm" style="flex:1" onclick="zamknijDodaj()">Zamknij</button>'+
     '</div></div>';
   renderDodajListe();
 }
 
+/* ZAMIANA CWICZENIA W TRAKCIE SESJI.
+
+   18 wrzesnia wszystkie stanowiska do przysiadu byly zajete, wiec Filip
+   zrobil hack squat — ale wpisal go pod „Przysiad ze sztanga", bo aplikacja
+   nie dawala jak zamienic. Skutek: historia mowi, ze przysiad poszedl
+   z 50 na 80 kg, i nastepnym razem zaproponuje 82,5 kg na sztandze.
+
+   Zajete stanowisko to nie przypadek brzegowy, tylko normalny wtorek. */
+function zamienCwiczenie(i){
+  if(!SES || !SES.exercises[i]) return;
+  DODAJ = {szukaj: '', zamiast: i};
+  renderSession();
+  setTimeout(() => {
+    const el = document.getElementById('dodajBox');
+    if(el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth', block:'center'});
+  }, 60);
+}
+
 function dodajZBiblioteki(name){
   if(!SES || !LIB[name]) return;
+
+  /* Tryb zamiany: slot zostaje, zmienia sie cwiczenie. Serie juz wpisane
+     zostaja przy nim — bo one sie wydarzyly, tylko pod inna nazwa. */
+  if(DODAJ && DODAJ.zamiast != null && SES.exercises[DODAJ.zamiast]){
+    const i = DODAJ.zamiast, e = SES.exercises[i];
+    if(SES.exercises.some((x, j) => j !== i && kluczNazwy(x.name) === kluczNazwy(name))){
+      toast('To ćwiczenie już jest w sesji'); return;
+    }
+    const stara = e.name;
+    e.name = name;
+    const sl = (e.slot && typeof e.slot === 'object') ? e.slot : slotById(e.slot);
+    if(sl){
+      e.sug = suggestLoad(name, sl, phaseOf(tydzienPlanu()), tydzienPlanu()) || e.sug;
+      e.target = celCwiczenia(name, sl, phaseOf(tydzienPlanu()), e.sug);
+    } else {
+      const ost = lastFor(name), b2 = ost && bestSet(ost.sets, name);
+      e.sug = b2 ? {w: b2.w, r: b2.r, sets: ost.sets.length, tag:'hold'} : null;
+      e.target = 'poza planem';
+    }
+    e._open = true;
+    DODAJ = null; saveSes(); renderSession();
+    toast(stara + ' → ' + name);
+    return;
+  }
+
   if(SES.exercises.some(e => kluczNazwy(e.name) === kluczNazwy(name))){
     toast('To ćwiczenie już jest w sesji'); return;
   }
@@ -7221,6 +7320,44 @@ function openHist(name){ HIST_EX=name; setSub('hist'); }
 let TREN_ID = null;
 function openTrening(id){ TREN_ID = id; setSub('tren'); }
 
+/* POPRAWIANIE NAZWY W ZAPISANYM TRENINGU.
+
+   Dwa realne przypadki z 18 wrzesnia: Filip zrobil hack squat (stanowiska
+   do przysiadu zajete), ale wpisal go pod „Przysiad ze sztanga" — historia
+   mowi teraz, ze przysiad poszedl z 50 na 80 kg. I wpisal „Allahy" zamiast
+   „Allahy na wyciagu", wiec te serie nie policzyly sie w zadnym miesniu.
+
+   Zla nazwa to nie kosmetyka: od niej zalezy nastepny proponowany ciezar
+   i cale pokrycie partii. A serie sa prawdziwe — szkoda je kasowac tylko
+   po to, zeby wpisac je od nowa pod wlasciwa nazwa. */
+function przemianujCwiczenie(idTreningu, ei){
+  const w = DB.workouts.find(x => x.id === idTreningu);
+  const e = w && w.exercises[ei];
+  if(!e) return;
+  const wpis = prompt('Na co zmienić „' + e.name + '"?\n\n' +
+    'Wpisz nazwę z biblioteki — serie zostają bez zmian.', e.name);
+  if(wpis == null) return;
+  const nowa = String(wpis).trim();
+  if(!nowa || nowa === e.name) return;
+  /* Nazwa spoza biblioteki jest dozwolona, ale mowimy wprost, co to znaczy:
+     cwiczenie bez mapowania nie liczy sie do zadnego miesnia. */
+  const znane = Object.keys(LIB).find(n => kluczNazwy(n) === kluczNazwy(nowa));
+  if(!znane && !confirm('„' + nowa + '" nie ma w bibliotece.\n\n' +
+      'Takie ćwiczenie nie policzy się do żadnej partii w Raporcie. Zapisać mimo to?')) return;
+  const stara = e.name;
+  e.name = znane || nowa;
+  /* BEZ TEGO POPRAWKA POTRAFI SIE COFNAC.
+
+     `mergeDB` rozstrzyga konflikt treningu o tym samym id po `updatedAt`.
+     Poprawiony wpis bez swiezego znacznika przegrywa z kopia z serwera,
+     ktora ma stara nazwe — i zmiana znika przy najblizszej synchronizacji,
+     bez sladu. Ten sam blad byl kiedys przy kasowaniu serii. */
+  w.updatedAt = new Date().toISOString();
+  save(); zsynchronizuj();
+  toast(stara + ' → ' + e.name);
+  renderTrening();
+}
+
 function renderTrening(){
   const w = DB.workouts.find(x => x.id === TREN_ID);
   if(!w){ setSub('hub'); return; }
@@ -7241,12 +7378,15 @@ function renderTrening(){
   if(w.flag) h += '<div class="tip warn"><b>Oznaczony:</b> coś było nie tak.</div>';
   if(w.note) h += '<div class="tip"><b>Twoja notatka:</b> '+esc(w.note)+'</div>';
 
-  h += '<h2>Ćwiczenia</h2><div class="card">'+ w.exercises.map(e=>{
+  h += '<h2>Ćwiczenia</h2><div class="card">'+ w.exercises.map((e,ei)=>{
     const rob = e.sets.filter(x=>!x.wu);
     const najlepsza = bestSet(e.sets,e.name);
     return '<div style="padding:11px 0;border-bottom:1px solid var(--line)">'+
       '<div class="hrow"><div class="hd">'+esc(e.name)+'</div>'+
-      '<button class="pill" onclick="openHist(\''+esc(e.name).replace(/'/g,"\\'")+'\')">wykres</button></div>'+
+      '<div style="display:flex;gap:6px;flex-shrink:0">'+
+      '<button class="pill" onclick="przemianujCwiczenie(\''+w.id+'\','+
+        ei+')">nazwa</button>'+
+      '<button class="pill" onclick="openHist(\''+esc(e.name).replace(/'/g,"\\'")+'\')">wykres</button></div></div>'+
       (e.target?'<div class="hm">cel: '+esc(e.target)+'</div>':'')+
       '<div style="margin-top:5px">'+ rob.map((x,i)=>
         '<div class="hm">'+(i+1)+'. '+esc(fmtSet(x, e.name))+(x.n?' — '+esc(x.n):'')+'</div>'
@@ -8113,6 +8253,56 @@ async function aiOpiszZdjecie(zdjecieBase64, opis){
     {tryb: 'obraz', max_tokens: 900, timeout: 45000});
 }
 
+/* TABELA Z OPAKOWANIA TO INNE ZADANIE NIZ TALERZ.
+
+   Filip kupil pierogi w Zabce: kodu nie bylo w Open Food Facts, wiec
+   sfotografowal tabele wartosci odzywczych — i nic z tego nie wyszlo.
+   Slusznie: zdjecie szlo prompt-em napisanym pod TALERZ („napisz, co na nim
+   jest i ile tego jest"), a na opakowaniu nie ma zadnego talerza, tylko
+   siatka liczb.
+
+   To zadanie jest dla modelu DUZO latwiejsze niz szacowanie porcji — tu nie
+   trzeba nic oceniac, wystarczy przepisac cztery liczby z kolumny „na 100 g".
+   Dlatego dostaje wlasne polecenie i wlasna sciezke. */
+async function aiTabelaMakro(zdjecieBase64){
+  const polecenie =
+    'To zdjęcie tabeli wartości odżywczych z opakowania produktu spożywczego.\n' +
+    'Przepisz wartości z kolumny NA 100 G (nie na porcję, nie na opakowanie).\n' +
+    'Odpowiedz WYŁĄCZNIE jedną linią w tej postaci, bez żadnego komentarza:\n' +
+    'NAZWA=nazwa produktu | KCAL=liczba | B=liczba | W=liczba | T=liczba\n' +
+    'B to białko, W to węglowodany, T to tłuszcz, wszystko w gramach na 100 g. ' +
+    'Jeśli nazwy produktu nie widać, wpisz NAZWA=produkt. ' +
+    'Używaj kropki jako separatora dziesiętnego.';
+  return await aiZapytaj(
+    [{role: 'user', content: [{type: 'text', text: polecenie},
+                              {type: 'image_url', image_url: {url: zdjecieBase64}}]}],
+    {tryb: 'obraz', max_tokens: 500, timeout: 45000});
+}
+
+/** Wyciaga NAZWA/KCAL/B/W/T z odpowiedzi modelu. Tolerancyjny: model bywa
+    gadatliwy, a przecinek dziesietny wychodzi mimo prosby o kropke. */
+function wyluskajTabele(tekst){
+  const t = String(tekst || '').replace(/,(?=[0-9])/g, '.');
+  const we = (klucz) => {
+    const m = t.match(new RegExp(klucz + '\\s*[=:]\\s*([0-9]+(?:\\.[0-9]+)?)', 'i'));
+    return m ? parseFloat(m[1]) : null;
+  };
+  const b = we('B'), w = we('W'), tl = we('T');
+  if(b == null || w == null || tl == null) return null;
+  /* Sto gramow nie moze miec wiecej niz sto gramow skladnikow. Gdy model
+     przepisal kolumne „na opakowanie" albo pomylil wiersze, wychodzi
+     dwiescie i wiecej — i lepiej powiedziec, ze nie wyszlo. */
+  if(b + w + tl > 105) return null;
+  const nm = t.match(/NAZWA\s*[=:]\s*([^|\n]+)/i);
+  let kcal = we('KCAL');
+  const zMakro = b * 4 + w * 4 + tl * 9;
+  if(kcal == null || !kcal || Math.abs(kcal - zMakro) > zMakro * 0.25) kcal = Math.round(zMakro);
+  return {
+    nazwa: (nm ? nm[1].trim() : '') || 'Produkt z etykiety',
+    b100: b, w100: w, t100: tl, kcal100: Math.round(kcal)
+  };
+}
+
 /* MODEL ROZUMUJĄCY MYŚLI NA GŁOS — ODPOWIEDŹ JEST W ŚRODKU, NIE NA KOŃCU.
 
    Gemma odsyła dwa tysiące znaków rozumowania po angielsku: rozpoznaje
@@ -8512,19 +8702,36 @@ async function pokazProdukt(kod){
   let p;
   try { p = await produktZKodu(kod); }
   catch(e){
-    jedzenieBox('<div class="tip bad" style="margin-top:9px"><b>'+esc(e.message)+'</b>'+
-      '<div class="hm" style="margin-top:5px">Kod odczytany poprawnie: '+esc(kod)+'. '+
-      'Opisz produkt słowami w polu wyżej — policzę to jak zwykle.</div></div>');
+    /* NIEZNANY KOD TO NIE KONIEC DROGI.
+
+       Open Food Facts jest spoleczna baza — marki wlasne Zabki, Lidla czy
+       Biedronki czesto w niej nie siedza. Do tej pory komunikat konczyl sie
+       na „opisz slowami", czyli na zgadywaniu, chociaz czlowiek trzyma
+       w rece opakowanie z gotowa tabela. Teraz mozna ja sfotografowac,
+       a produkt zapisze sie pod tym kodem NA STALE. */
+    jedzenieBox('<div class="tip warn" style="margin-top:9px"><b>'+esc(e.message)+'</b>'+
+      '<div class="hm" style="margin-top:5px">Kod odczytany poprawnie: <b>'+esc(kod)+'</b>. '+
+      'Sfotografuj tabelę wartości odżywczych z opakowania — zapiszę ten produkt '+
+      'pod tym kodem i następnym razem policzy się od razu.</div>'+
+      '<div class="btn2" style="margin-top:9px">'+
+        '<button class="btn sm" onclick="etykietaZdjecie(\''+esc(kod)+'\')">Zdjęcie tabeli</button>'+
+        '<button class="btn ghost sm" onclick="jedzenieBox(\'\')">Opiszę słowami</button>'+
+      '</div></div>');
     return;
   }
   KOD_PRODUKT = Object.assign({kod}, p);
+  pokazProduktZObiektu(KOD_PRODUKT);
+}
+
+function pokazProduktZObiektu(p){
+  KOD_PRODUKT = p;
   const kcal100 = Math.round(p.b100 * 4 + p.w100 * 4 + p.t100 * 9);
   const domyslne = p.porcja || 100;
   jedzenieBox('<div class="tip ok" style="margin-top:9px">'+
     '<b>'+esc(p.nazwa)+'</b>'+(p.marka ? ' <span class="hm">'+esc(p.marka)+'</span>' : '')+
     '<div class="hm" style="margin-top:4px">Na 100 g: <b>'+kcal100+' kcal</b> · '+
       fmtKg(p.b100)+' g B · '+fmtKg(p.w100)+' g W · '+fmtKg(p.t100)+' g T'+
-      (p.zPamieci ? ' · z pamięci telefonu' : '')+'</div>'+
+      (p.zEtykiety ? ' · z etykiety' : p.zPamieci ? ' · z pamięci telefonu' : '')+'</div>'+
     (p.opak ? '<div class="note" style="margin-top:3px">Opakowanie: '+esc(p.opak)+'</div>' : '')+
     '<div class="fld" style="margin-top:9px"><label>Ile zjadłeś (g)</label>'+
       '<div class="wiersz">'+
@@ -8533,6 +8740,43 @@ async function pokazProdukt(kod){
       '</div></div>'+
     (p.porcja ? '<div class="note" style="margin-top:5px">Porcja z etykiety: '+p.porcja+' g.</div>' : '')+
     '</div>');
+}
+
+/* Kod, ktorego nie bylo w bazie — czeka, zeby przypisac mu etykiete. */
+let KOD_BEZ_PRODUKTU = null;
+
+function etykietaZdjecie(kod){
+  KOD_BEZ_PRODUKTU = kod || null;
+  const el = document.getElementById('etykietaFoto');
+  if(el) el.click();
+}
+
+async function czytajEtykiete(ev){
+  const plik = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if(!plik) return;
+  jedzenieBox('<div class="note" style="margin-top:9px">Czytam tabelę z opakowania…</div>');
+  try {
+    const mini = await zmniejszZdjecie(plik, 900);
+    const odp = await aiTabelaMakro(mini);
+    const t = wyluskajTabele(odp.tresc);
+    aiZapisz({co: 'etykieta', pytanie: KOD_BEZ_PRODUKTU || '[bez kodu]',
+              odpowiedz: (odp.tresc || '').slice(0, 200), model: odp.model});
+    if(!t){
+      const co = String(odp.tresc || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+      throw new Error('Nie odczytałem tabeli' + (co ? ': „' + co + '…"' : '') +
+        '. Sfotografuj samą tabelę, z bliska i prosto.');
+    }
+    const prod = {nazwa: t.nazwa, marka: '', b100: t.b100, w100: t.w100,
+                  t100: t.t100, porcja: null, opak: null};
+    /* Produkt spod kodu zapisujemy NA STALE. Zabka i inne marki wlasne
+       rzadko siedza w Open Food Facts, wiec bez tego to samo opakowanie
+       trzeba by fotografowac co tydzien. */
+    if(KOD_BEZ_PRODUKTU){ kodyZapisz(KOD_BEZ_PRODUKTU, prod); }
+    KOD_PRODUKT = Object.assign({kod: KOD_BEZ_PRODUKTU || ''}, prod, {zEtykiety: true});
+    KOD_BEZ_PRODUKTU = null;
+    pokazProduktZObiektu(KOD_PRODUKT);
+  } catch(e){ bladJedzenia(e); }
 }
 
 function policzZKodu(){
@@ -9128,6 +9372,12 @@ function renderBialko(){
             '<button class="btn ghost sm" onclick="skanujNaZywo()">'+
               'Kod kreskowy</button>'+
           '</div>'+
+          /* Tabela z opakowania dziala TAKZE bez kodu — czasem opakowanie
+             jest rozciete, a etykieta zostala. */
+          '<button class="btn ghost sm" style="width:100%;margin-top:7px" '+
+            'onclick="etykietaZdjecie(null)">Tabela z opakowania</button>'+
+          '<input type="file" id="etykietaFoto" accept="image/*" '+
+            'style="display:none" onchange="czytajEtykiete(event)">'+
           /* Kod kreskowy to jedyna droga w tej aplikacji, która nie zgaduje:
              wartości są z etykiety producenta, nie z modelu językowego. */
           '<input type="file" id="jedzenieKod" accept="image/*" '+
