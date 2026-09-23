@@ -2064,7 +2064,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '80';
+const WERSJA = '81';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -6452,15 +6452,21 @@ function renderSession(){
           }).join('') +'</div>'+
           '<input type="hidden" id="irpe'+i+'" value="'+prefill(e,'rpe')+'">'+
         '</div>'+
-        /* obrazek pokazujemy dopiero po dotknięciu — w trakcie serii nikt
-           nie chce przewijać przez grafikę, żeby dojść do pól z ciężarem */
-        '<button class="mini" onclick="pokazObrazek(\''+esc(e.name).replace(/'/g,"\\'")+'\')">'+
-          (PODGLAD===e.name?'Ukryj obrazek':'Jak to wygląda?')+'</button>'+
-        (PODGLAD===e.name
-          ? '<img class="cwimg" src="'+sciezkaObrazka(e.name)+'" alt="'+esc(e.name)+'" '+
-            'onerror="this.classList.add(\'brak\');this.replaceWith(brakObrazka(\''+
-            esc(e.name).replace(/'/g,"\\'")+'\'))">'
-          : '')+
+        /* LINK ZAMIAST OBRAZKA.
+
+           Do wersji 80 karta probowala pobrac `obrazki/<nazwa>.webp`, a gdy
+           plik nie istnial — podmieniala go na odnosnik do YouTube'a. Na
+           GitHubie tych obrazkow nigdy nie bylo, wiec dzialal wylacznie ten
+           drugi przypadek: kazde dotkniecie konczylo sie nieudanym pobraniem
+           i dopiero potem linkiem.
+
+           Filip: „te obrazki slabo pokazuja cwiczenie, wole tak jak jest,
+           ze jest link do youtube i ja se klikam". Skoro tak, to nie ma po co
+           udawac, ze obrazek zaraz bedzie. Jedno dotkniecie, jeden link,
+           bez pobierania 560 kB plikow, ktore nikomu nie pomagaly. */
+        '<a class="mini" style="display:block;text-align:center;text-decoration:none" '+
+          'href="'+linkTechniki(e.name)+'" target="_blank" rel="noopener">'+
+          'Zobacz technikę na YouTube →</a>'+
         '<div class="plt" id="plt'+i+'"></div>'+
         '<div class="btn2" style="margin-top:11px">'+
           '<button class="btn sm" onclick="addSet('+i+')">Dodaj serię</button>'+
@@ -6621,12 +6627,12 @@ function slugCwiczenia(name){
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
-function sciezkaObrazka(name){ return 'obrazki/' + slugCwiczenia(name) + '.webp'; }
-
-let PODGLAD = null;
-function pokazObrazek(name){
-  PODGLAD = PODGLAD === name ? null : name;
-  renderSession();
+/* Zapytanie do YouTube'a zamiast pliku z obrazkiem — patrz komentarz
+   przy karcie cwiczenia. Nazwa cwiczenia plus dwa slowa wystarcza, zeby
+   pierwszy wynik byl instruktazem, a nie czyims treningiem. */
+function linkTechniki(name){
+  return 'https://www.youtube.com/results?search_query=' +
+    encodeURIComponent(name + ' technika ćwiczenia');
 }
 
 function toggleEx(i){
@@ -6645,15 +6651,6 @@ function bump(i,f,d){
 }
 /* Gdy pliku nie ma, zamiast pustej ramki dajemy link do wyszukiwania —
    brakujący obrazek nie może być ślepym zaułkiem w środku treningu. */
-function brakObrazka(name){
-  const d = document.createElement('div');
-  d.className = 'imgbrak';
-  const q = encodeURIComponent(name + ' technika ćwiczenia');
-  d.innerHTML = 'Nie mam jeszcze obrazka do tego ćwiczenia.<br>'+
-    '<a href="https://www.youtube.com/results?search_query='+q+'" target="_blank" rel="noopener">'+
-    'Zobacz na YouTube →</a>';
-  return d;
-}
 
 function ustawRpe(i, v){
   const pole = document.getElementById('irpe'+i);
