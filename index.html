@@ -1604,7 +1604,36 @@ const DOMYSLNY_PLAN = {
     {id:'P6', lab:'Triceps — głowa długa', upadek:true,
      pool:['Francuskie zza głowy','Prostowanie zza głowy wyciąg'],
      t:['3×12','3×10-12','2×12','3×10-12'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]}
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    /* SKOSNE — I DLACZEGO NIE W DNIU NOG, O KTORY FILIP PROSIL.
+
+       Prosba byla sluszna: „robilem nogi i w wyborze nie bylo nic o brzuchu,
+       a to logiczne, ze ludzie jak robia nogi to czesto dodaja do tego
+       brzuch". Probowalem — i dzien nog po prostu nie ma miejsca. Sufit
+       objetosci to 20 serii roboczych na sesje (powyzej niego sesja przestaje
+       sie miescic w godzinie, a Filipowi dzien N zajal kiedys 96 minut).
+       Nogi sa raz w tygodniu, wiec ich siedem slotow domyka cala partie
+       i kazde ciecie psulo inna liczbe: jednonoz juz zszedl, hip thrust
+       ciety zabral dwuglowym od biodra dwa tygodnie ponizej normy,
+       a czworoglowe ciete zabraly drugiemu ciezkiemu slotowi dorzut
+       w ostatnim tygodniu budowy.
+
+       Dzien P mial 18 serii — dwie wolne. Tulow nie potrzebuje swiezych nog,
+       a deska bokiem po wyciskaniu nie koliduje z niczym.
+
+       To sa SKOSNE, nie drugi slot na brzuch prosty: prosty ma juz M6,
+       a skosne mialy 0.7 serii przy normie do 10 i byly najgorsza liczba
+       w calym raporcie pokrycia. Wlasnego zrodla nie mialy, odkad deska
+       bokiem wypadla z puli M6 — jeden slot nie obsluzy dwoch partii
+       naprzemiennie, bo rotacja zaczyna wybierac jedna i druga schodzi
+       na zero.
+
+       Pula miesza sekundy z powtorzeniami; `zakresCwiczenia` radzi sobie
+       z tym od wersji 71, biorac fragment wlasnego zakresu cwiczenia. */
+    {id:'P7', lab:'Tułów — skośne', upadek:true,
+     pool:['Deska bokiem','Skłon boczny z hantlem'],
+     t:['2×30s','2×40s','1×30s','2×45s'],
+     s:[2,2,1,2], rr:[[30,30],[40,40],[30,30],[45,45]]}
   ]},
 
   G: { name:'Pull — plecy, biceps', grp:'pull', slots:[
@@ -1652,6 +1681,12 @@ const DOMYSLNY_PLAN = {
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
     /* Zamiast rumunskiego. Pelny wyprost bioder, posladki i dwuglowe od
        strony biodra — a kregoslup nie dostaje nic, bo tulow lezy na lawce. */
+    /* HIP THRUST ZOSTAJE NA TRZECH SERIACH. Probowalem sciac go do dwoch,
+       zeby zrobic w dniu nog miejsce na skosne — i dwuglowe od biodra spadly
+       na 4.3 przy normie od 4, z dwoma tygodniami ponizej. Posladki sa tu
+       drugim odbiorca, nie jedynym: ten slot niesie tez tylna tasme uda
+       i nie ma jej skad wziac gdzie indziej (rumunski wypadl swiadomie,
+       zeby oszczedzic kregoslup). Skosne poszly wiec do dnia P. */
     {id:'N3', lab:'Biodra / pośladki',
      pool:['Hip thrust','Hip thrust jednonóż'],
      t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
@@ -1659,22 +1694,32 @@ const DOMYSLNY_PLAN = {
     /* NOGI SA TERAZ RAZ W TYGODNIU, wiec ten dzien musi domknac cala partie.
        Jednonoz i druga glowa lydki zeszly tu z dawnego dnia dolnego, tulow
        poszedl do dnia M — tam zostalo na niego miejsce. */
+    /* JEDNONOZ KOSZTUJE PODWOJNIE. Trzy serie w budowie to szesc wejsc pod
+       ciezar, nie trzy — a dzien N i tak zajmowal Filipowi 96 minut zamiast
+       zakladanych 65. Posladkowy wielki siedzi przy tym na 12.3 serii przy
+       normie do 14, czworoglowe na 8.6 przy 5-14: jest z czego zejsc.
+       Dwie serie w kazdej fazie oddaja miejsce lydkom i skosnym, ktore
+       lezaly na samym dole normy. */
     {id:'N4', lab:'Jednonóż / stabilizacja miednicy',
      pool:['Przysiad bułgarski','Wykroki chodzone'],
-     t:['2×10 RPE6','3×8-10 RPE8','2×10 RPE5','2×8-10 RPE8'],
-     s:[2,3,2,2], rr:[[10,10],[8,10],[10,10],[8,10]]},
+     t:['2×10 RPE6','2×8-10 RPE8','2×10 RPE5','2×8-10 RPE8'],
+     s:[2,2,2,2], rr:[[10,10],[8,10],[10,10],[8,10]]},
     {id:'N5', lab:'Dwugłowe — zginanie kolana', upadek:true,
      pool:['Uginanie nóg leżąc','Uginanie nóg siedząc'],
      t:['3×12','3×10-12','2×12','3×10-12'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    /* LYDKI SIEDZIALY NA SAMYM DNIE NORMY — dokladnie 2.0 przy zakresie 2-8,
+       czyli tyle, ile trzeba, zeby nie stracic, i ani serii wiecej.
+       Nogi sa raz w tygodniu, wiec dwie serie to CALY tygodniowy bodziec
+       na kazda z dwoch glow. Trzecia seria kosztuje niecale trzy minuty. */
     {id:'N6', lab:'Łydki — brzuchaty (stojąc)', upadek:true,
      pool:['Wspięcia na palce stojąc','Wspięcia na palce jednonóż'],
-     t:['2×15','2×12-15','2×15','2×12-15'],
-     s:[2,2,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]},
+     t:['3×15','3×12-15','2×15','3×12-15'],
+     s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
     {id:'N7', lab:'Łydki — płaszczkowaty (siedząc)', upadek:true,
      pool:['Wspięcia na palce siedząc','Wspięcia siedząc z obciążeniem'],
-     t:['2×15','2×15-20','2×15','2×15-20'],
-     s:[2,2,2,2], rr:[[15,15],[15,20],[15,15],[15,20]]}
+     t:['3×15','3×15-20','2×15','3×15-20'],
+     s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]}
   ]},
 
   /* Osiem slotow, ale nie po trzy serie kazdy: przy trzech wychodzilo 24
@@ -1843,11 +1888,24 @@ const LIB_MASA_WLASNA = {
    dochodzą nowe litery E i F, a C zostaje jako wycofany. */
 const DOMYSLNY_ORDER = ['P','G','N','W','M'];
 
+/* OPISY FAZ SA DLA CZLOWIEKA, WIEC MUSZA BYC PRAWDZIWE.
+
+   Te cztery zdania zostaly z pierwszej wersji, gdzie blok mial sztywne osiem
+   tygodni, deload wypadal co szosty i zdejmowal 30%. Cykl zmienil sie dawno
+   — dwa tygodnie budowy, jeden intensyfikacji, jeden deloadu, `skala: 0.8`
+   czyli minus dwadziescia procent — a opisy nie. Filip czytal wiec w aplikacji
+   „co szosty tydzien" i „-30%" w tygodniu, ktory byl czwarty i zdejmowal 20%.
+   To nie jest kosmetyka: na podstawie tych zdan czlowiek decyduje, czy zaufac
+   temu, co aplikacja proponuje.
+
+   `testy.js` liczy teraz dlugosci faz wprost z `phaseOf()` i sprawdza, czy
+   liczby w opisach sie z nimi zgadzaja — razem ze `skala`. Nastepna zmiana
+   cyklu przewroci ten test, zamiast po cichu zostawic klamstwo na ekranie. */
 const DOMYSLNE_PHASES = [
   {n:'Reaktywacja',    rpe:6, skala:1,   d:'Tygodnie 1–2, raz na początku. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
-  {n:'Budowa',         rpe:8, skala:1, narastanie:true, d:'Trzy tygodnie w każdym cyklu. Główna faza — RPE 7–8, objętość rośnie do ostatniego tygodnia. Tu robi się masa.'},
-  {n:'Deload',         rpe:5, skala:0.8, d:'Co szósty tydzień, po najcięższych. Objętość w dół, ciężary −30%. Nie pomijaj — to on decyduje o mocy następnego cyklu.'},
-  {n:'Intensyfikacja', rpe:9, skala:1,   d:'Dwa tygodnie w każdym cyklu. RPE 8–9, niższe zakresy powtórzeń. Masa przekłada się na ciężar na sztandze.'}
+  {n:'Budowa',         rpe:8, skala:1, narastanie:true, d:'Dwa tygodnie w każdym cyklu. Główna faza — RPE 7–8, objętość rośnie do ostatniego tygodnia. Tu robi się masa.'},
+  {n:'Deload',         rpe:5, skala:0.8, d:'Co czwarty tydzień, po najcięższych. Objętość w dół, ciężary −20%, ale wracają zaraz po nim. Nie pomijaj — to on decyduje o mocy następnego cyklu.'},
+  {n:'Intensyfikacja', rpe:9, skala:1,   d:'Jeden tydzień w każdym cyklu. RPE 8–9, niższe zakresy powtórzeń. Masa przekłada się na ciężar na sztandze.'}
 ];
 
 /* ============================================================
@@ -2064,7 +2122,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '81';
+const WERSJA = '84';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2098,7 +2156,7 @@ function blank(){
   const d = new Date(); d.setDate(d.getDate() - ((d.getDay()+6)%7));
   return {v:4, settings:{start:iso(d), rest:90}, workouts:[], daily:[], runs:[],
           measures:[], questions:[], pain:[], skip:[], posilki:[], coach:null, nastepny:null, kosz:[],
-          przelozone:[], odpoczynek:[]};
+          przelozone:[], odpoczynek:[], przerwy:[]};
 }
 function load(){
   try{ const r = localStorage.getItem(KEY); DB = r ? JSON.parse(r) : blank(); }
@@ -2109,6 +2167,7 @@ function load(){
   if(DB.nastepny===undefined) DB.nastepny = null;
   if(!Array.isArray(DB.przelozone)) DB.przelozone = [];
   if(!Array.isArray(DB.odpoczynek)) DB.odpoczynek = [];
+  if(!Array.isArray(DB.przerwy)) DB.przerwy = [];
   if(!Array.isArray(DB.kosz)) DB.kosz = [];
   /* kosz sam się opróżnia po 30 dniach — inaczej rósłby w nieskończoność
      i zjadał miejsce w localStorage, którego jest 5 MB */
@@ -2935,7 +2994,7 @@ function przepadleTygodnie(ref){ return weekNo(ref) - tydzienPlanu(ref); }
    dwa intensyfikacji, tydzień deloadu. Deload PO najcięższych tygodniach,
    nie przed — odciąża się to, co się zmęczyło.
    ============================================================ */
-function phaseOf(w){
+function fazaCyklu(w){
   /* CYKL 3+1, nie 5+1.
      Poprzednio deload wypadał co szósty tydzień: trzy tygodnie budowy, dwa
      intensyfikacji, dopiero potem odciążenie. Dla kogoś, kto wraca po roku,
@@ -2948,6 +3007,59 @@ function phaseOf(w){
   if(w <= 2) return 0;      /* reaktywacja */
   const k = (w - 3) % 4;
   return k <= 1 ? 1 : k === 2 ? 3 : 2;
+}
+
+/* POMINIECIE DELOADU — decyzja czlowieka, nie wyjatek w silniku.
+
+   Deload wypada z arytmetyki cyklu i nie widzi zycia. Filip przelezal tydzien
+   z infekcja, wrocil — i aplikacja zaproponowala mu tydzien odciazenia,
+   bo tak wychodzilo z licznika tygodni. Pytanie „czy to tak mialo byc"
+   bylo cale sluszne i nie mial jak na nie odpowiedziec inaczej niz pytajac mnie.
+
+   Pominiecie zapisuje sie na KONKRETNY tydzien planu, nie jako przelacznik
+   „bez deloadow". Dzieki temu historia zostaje spojna: tydzien, w ktorym
+   trenowal normalnie, na zawsze pokazuje faze budowy — takze w raportach
+   i przy filtrowaniu progresji. Gdyby pominiecie dzialalo tylko „teraz",
+   ten sam tydzien ogladany za miesiac wygladalby jak deload i silnik
+   wyrzucalby z niego ciezary.
+
+   `fazaCyklu()` zostaje czysta — mowi, co przewiduje cykl. `phaseOf()`
+   mowi, co faktycznie obowiazuje. */
+function deloadPominiety(w){
+  const l = (DB && DB.settings && DB.settings.deloadPominiety) || [];
+  return l.indexOf(w) >= 0;
+}
+function phaseOf(w){
+  const f = fazaCyklu(w);
+  /* Pominiety deload nie staje sie „niczym" — przejmuje faze, ktora i tak
+     przyszla by po nim, wiec tydzien ma sensowne serie i zakresy. */
+  if(f === 2 && deloadPominiety(w)) return fazaCyklu(w + 1);
+  return f;
+}
+
+function pomijamDeload(){
+  const w = tydzienPlanu();
+  if(fazaCyklu(w) !== 2){ toast('Ten tydzień i tak nie jest deloadem'); return; }
+  DB.settings = DB.settings || {};
+  DB.settings.deloadPominiety = DB.settings.deloadPominiety || [];
+  if(DB.settings.deloadPominiety.indexOf(w) < 0) DB.settings.deloadPominiety.push(w);
+  /* Plan na dzis byl policzony dla deloadu — trzeba go przeliczyc od nowa. */
+  DB.nastepny = null;
+  ZAPIS_NR++;
+  save(); zsynchronizuj(); renderSub();
+  toast('Deload pominięty — normalne serie i ciężary');
+}
+
+function cofnijPominiecieDeloadu(){
+  const w = tydzienPlanu();
+  const l = (DB.settings && DB.settings.deloadPominiety) || [];
+  const i = l.indexOf(w);
+  if(i < 0) return;
+  l.splice(i, 1);
+  DB.nastepny = null;
+  ZAPIS_NR++;
+  save(); zsynchronizuj(); renderSub();
+  toast('Deload wraca');
 }
 /* Ostatni tydzień bieżącego odcinka tej samej fazy. Przy cyklu nie da się
    już pytać „który tydzień jest ostatni w fazie budowy" — jest ich wiele. */
@@ -3559,7 +3671,22 @@ function przerwaWzgledna(dni){ return dni - (normalnyOdstep() - 7); }
 
 /* Ile zdjąć po przerwie. null = przerwa na tyle krótka, że nic nie zmieniamy.
    Funkcja jest czysta: dostaje liczbę dni i nic poza nią nie czyta. */
-function przerwaSkala(dni){
+/* CHOROBA NIE JEST URLOPEM.
+   Tydzień na kanapie z gorączką i tydzień na wakacjach dają tę samą liczbę dni
+   w kalendarzu, ale nie ten sam stan organizmu. Przy infekcji dochodzi
+   odwodnienie, ujemny bilans kaloryczny, rozpad białka mięśniowego i kilka dni
+   realnego osłabienia PO ustąpieniu objawów — sam kalendarz tego nie widzi.
+
+   Dlatego przerwa oznaczona jako chorobowa liczy się o dziesięć dni dłużej, niż
+   trwała. Tydzień choroby schodzi wtedy na minus dziesięć procent, a dwa tygodnie
+   na minus piętnaście — zamiast zera i pięciu procent, które dałby sam czas. */
+function przerwaSkala(dni, chora){
+  if(chora) dni += 10;
+  const t = drabinkaPrzerwy(dni);
+  if(t && chora) t.why = 'Wracasz po chorobie, nie po wolnym tygodniu. ' + t.why;
+  return t;
+}
+function drabinkaPrzerwy(dni){
   if(dni < 10)  return null;
   if(dni < 15)  return {s:0.95, why:'Dziesięć dni to jeszcze nie utrata siły — pięć procent w dół wystarczy, żeby pierwsza seria nie zaskoczyła.'};
   if(dni < 22)  return {s:0.90, why:'Po dwóch tygodniach wraca głównie wprawa, nie mięśnie. Dziesięć procent w dół i za dwie–trzy sesje jesteś z powrotem.'};
@@ -3679,7 +3806,35 @@ function suggestLoad(name, slot, phase, tydzien){
      akurat wtedy je robiłeś — to odfiltrowanie zostawia pustkę i silnik mówi
      „pierwszy raz, dobierz ciężar", choć doskonale wie, ile podniosłeś.
      Dlatego przy pustym wyniku wracamy do pełnej historii. */
-  const last = lastFor(name, !deload) || lastFor(name, false);
+  let last = lastFor(name, !deload) || lastFor(name, false);
+
+  /* FILTR DELOADU MIAL CHRONIC PRZED LZEJSZYM TYGODNIEM, A NIE WYRZUCAC
+     CIEZSZEGO WYNIKU.
+
+     Poza deloadem pomijamy tygodnie deloadowe, zeby lekki tydzien nie cofal
+     progresji calego bloku — to zostaje. Ale filtr dzialal w obie strony:
+     jesli w tygodniu deloadu wyszlo WIECEJ, niz przed nim (bo ciezar zaokraglil
+     sie w gore, bo maszyna miala inna skale, bo dzien byl dobry), to silnik
+     ten wynik kasowal i wracal do starszej, lzejszej sesji. Efekt: podnioslo
+     sie 20 kg w poniedzialek, a w czwartek aplikacja pisala „Ostatnio 15 kg"
+     i proponowala 15 — mniej, bez slowa wyjasnienia i wbrew temu, co sama
+     miala zapisane.
+
+     Wylapal to nowy niezmiennik „cichy spadek" w fuzz-dlugi: propozycja
+     mniejsza od faktycznie podniesionego ciezaru MUSI miec powod (tag 'down',
+     'coach' albo 'new'), a ta miala tag 'hold'.
+
+     Poprawka jest waska: jesli faktycznie ostatnia sesja byla CIEZSZA od tej,
+     ktora zostala po filtrze, to ona jest punktem odniesienia. Lzejszych
+     tygodni deloadu filtr dalej nie wpuszcza. */
+  if(!deload){
+    const faktyczny = lastFor(name, false);
+    if(faktyczny && faktyczny !== last){
+      const wF = Math.max(...faktyczny.sets.map(x => x.w || 0));
+      const wL = Math.max(...last.sets.map(x => x.w || 0));
+      if(wF > wL) last = faktyczny;
+    }
+  }
   const unit = L.time ? 's' : 'powt';
 
   if(!last) return {w:null, r:mn, sets, tag:'new',
@@ -3707,7 +3862,7 @@ function suggestLoad(name, slot, phase, tydzien){
   const naprawde = lastFor(name, false) || last;
   const przerwa = Math.round((new Date(today()+'T00:00:00') -
                               new Date(naprawde.date+'T00:00:00')) / 864e5);
-  const pr = przerwaSkala(przerwaWzgledna(przerwa));
+  const pr = przerwaSkala(przerwaWzgledna(przerwa), chorobaPoDacie(naprawde.date));
   if(pr){
     /* Ciężar bazowy bierzemy z TEJ SAMEJ sesji, od której liczymy przerwę.
        Wcześniej przerwa liczyła się od ostatniego treningu, a kilogramy
@@ -3816,14 +3971,49 @@ function suggestLoad(name, slot, phase, tydzien){
        deload: 20 kg → 16 kg, czyli z 90 kg całkowitych robi się 86. Skalujemy
        CAŁOŚĆ i odejmujemy ciało — czasem wychodzi zero i to jest poprawny wynik. */
     const udzialC = UDZIAL_CIALA[name];
-    const lekki = (L.bw && udzialC != null)
-      ? Math.max(0, roundTo((wTop + masaCiala()*udzialC) * skala - masaCiala()*udzialC, 2.5))
-      : (L.bw && !wTop ? 0 : roundTo(wTop*skala, 2.5));
-    return {w:lekki, r:mn, sets, tag:'down',
-      why:'Tydzień deloadu. Ostatnio '+prev+' — schodzisz do '+
-        (lekki ? fmtKg(lekki)+' kg' : 'samej masy własnej')+
-        ' i robisz tylko '+sets+' serie. To nie jest cofnięcie się, tylko warunek,'+
-        ' żeby tygodnie 7–8 miały z czego wystartować.'};
+    /* DELOAD SCINAL OBJETOSC **I** CIEZAR NARAZ.
+
+       Dwie serie zamiast trzech to juz minus jedna trzecia pracy. Do tego
+       minus dwadziescia procent na sztandze — razem niecala polowa tygodniowego
+       tonazu. To nie deload, to tydzien stracony, i tak to wlasnie wygladalo
+       z boku: Filip w sobote zobaczyl „dwie serie wszystkiego" i „80 → 65 kg"
+       po tygodniu, ktory i tak przelezal w lozku z infekcja.
+
+       Deload ma dwa uczciwe warianty: sciac OBJETOSC trzymajac ciezar, albo
+       sciac CIEZAR trzymajac objetosc. Pierwszy lepiej utrzymuje sile i wzorzec
+       ruchu, drugi jest lagodniejszy dla stawow i sciegien. Robilismy oba naraz,
+       czyli ani jednego porzadnie.
+
+       Wybor: ciezar ZOSTAJE, schodzi objetosc — dwie serie i powtorzenia scinane
+       do ~60% celu. Osiemdziesiat kilo na cztery powtorzenia to daleko od upadku,
+       wiec RPE samo siada nisko, a staw dostaje ten sam ruch pod tym samym
+       obciazeniem. Filip po chorobie: „wystarczy zejsc do tych dwoch serii
+       i bedzie git".
+
+       `skala` w PHASES zostaje — czyta ja `zDeloadu()` (po tym pozna tydzien
+       deloadu przy filtrowaniu progresji) i tryb, w ktorym ciezar faktycznie
+       schodzi. */
+    const lekki = wTop;
+    /* Powtorzenia: ~60% celu fazy, minimum jedno. Przy 8 wychodzi 5, przy 12 — 7. */
+    const rDeload = Math.max(1, Math.round(mn * 0.6));
+    return {w:lekki, r:rDeload, sets, tag:'down',
+      /* ZDANIE MOWILO O „TYGODNIACH 7-8".
+
+         Zostalo z pierwszej wersji, gdzie blok mial sztywne osiem tygodni
+         i deload wypadal w szostym. Od wersji z cyklem bez konca deload
+         wraca co cztery tygodnie, wiec ten tekst byl po prostu nieprawdziwy:
+         Filip czytal go w tygodniu planu 6 przy kalendarzowym 8 i nie mial
+         zadnego sposobu, zeby go do czegokolwiek odniesc.
+
+         Wazniejsze jest to, czego zdanie NIE mowilo: że po deloadzie ciezar
+         wraca do tego sprzed niego. Silnik tak wlasnie liczy (tygodnie
+         deloadu sa pomijane przy progresji), ale kto tego nie wie, ten widzi
+         „-20%" i sadzi, ze traci dorobek. */
+      why:'Tydzień deloadu. Ciężar zostaje — '+
+        (lekki ? fmtKg(lekki)+' kg' : 'masa własna')+
+        ', ale tylko '+sets+' serie po '+rDeload+' '+unit+' zamiast '+mn+'. '+
+        'Ten sam ruch pod tym samym obciążeniem, o połowę mniej pracy — '+
+        'dlatego nic nie tracisz i w następnym tygodniu dokładasz dalej.'};
   }
 
   /* czasowe — w:0 to poprawna wartość (brak obciążenia), nie brak danych */
@@ -4488,6 +4678,30 @@ function renderDzis(){
       Math.round(vol(zrobiony)).toLocaleString('pl')+' kg objętości</div>'+
       '<button class="btn ghost sm" style="margin-top:9px" onclick="openTrening(\''+zrobiony.id+'\')">Zobacz raport</button></div>';
 
+  /* Przerwa jest odpowiedzią na dziś — ale jeśli trening jednak był, karta
+     „zrobione" ma pierwszeństwo, dlatego to sprawdzenie jest po niej. */
+  const prz = przerwaOtwarta();
+  if(prz)
+    return '<div class="dzien" style="--dzien-a:#4a9eff;--dzien-t:rgba(74,158,255,.13)">'+
+      '<div class="gora">'+ sylwetkaMini(null) +
+        '<div class="tresc">'+
+          '<div class="hm" style="letter-spacing:1.4px;font-size:9.5px">PRZERWA</div>'+
+          '<div class="nazwa" style="color:#4a9eff">'+
+            esc((POWODY[prz.powod] || {n:prz.powod}).n)+' — dzień '+dniPrzerwy(prz)+'</div>'+
+          '<div class="hm" style="margin-top:10px;line-height:1.45">'+
+            'Plan stoi tam, gdzie go zostawiłeś. Tygodnie bez sesji nie przesuwają '+
+            'fazy, więc nic nie uciekło.</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="dol">'+
+        '<div class="note" style="margin-bottom:10px">'+esc(powrotOpis(prz))+'</div>'+
+        '<button class="start" onclick="zakonczPrzerwe()">Wracam do treningu</button>'+
+        '<button class="btn ghost sm" style="width:100%;margin-top:7px" '+
+          'onclick="openPick()">Idę mimo to — pokaż dni</button>'+
+        '<button class="btn ghost sm" style="width:100%;margin-top:7px" '+
+          'onclick="odwolajPrzerwe()">To była pomyłka — usuń przerwę</button>'+
+      '</div></div>';
+
   if((DB.odpoczynek||[]).some(x => x.date === today()))
     return '<div class="tip"><b>Dzień wolny</b><div class="hm" style="margin-top:3px">'+
       'Plan czeka na Twój następny dzień treningowy.</div>'+
@@ -4518,6 +4732,11 @@ function renderDzis(){
         (dalej.day
           ? '<div class="hm" style="margin-bottom:10px">Jutro: '+dalej.day+' — '+
             esc(dayName2(dalej.day))+'</div>' : '')+
+        '<div class="hm" style="margin-bottom:7px">Na dłużej niż dziś?</div>'+
+        '<div class="rpe" style="margin-bottom:11px;flex-wrap:wrap">'+
+        ['choroba','wyjazd','bol'].map(k =>
+          '<button class="rpeb" onclick="zacznijPrzerwe(\''+k+'\')">'+
+          '<span style="font-size:11px">'+esc(POWODY[k].n)+'</span></button>').join('')+'</div>'+
         '<button class="start" onclick="dzienWolny(\'plan\')">Zapisz dzień wolny</button>'+
         '<button class="btn ghost sm" style="width:100%;margin-top:7px" '+
           'onclick="openPick()">Idę mimo to — pokaż dni</button>'+
@@ -4621,7 +4840,44 @@ function potwierdzWersje(){
   renderSub();
 }
 
+/* DELOAD NIE MOZE BYC ZASKOCZENIEM.
+
+   Filip dowiedzial sie o nim w sobote pod szatnia, z komunikatu „dwie serie".
+   Tygodnia, ktory ma byc lzejszy, planuje sie z gory — wiec mowimy o nim
+   tydzien wczesniej, a w jego trakcie dajemy wyjscie. */
+function renderDeload(){
+  const w = tydzienPlanu();
+  const teraz = fazaCyklu(w) === 2;
+  const jutro = fazaCyklu(w + 1) === 2 && !deloadPominiety(w + 1);
+
+  if(teraz && deloadPominiety(w))
+    return '<div class="tip"><b>Deload pominięty</b> — ten tydzień idzie jak '+
+      esc((PHASES[phaseOf(w)] || {}).n || '')+': normalne serie i ciężary.'+
+      '<div style="margin-top:8px"><button class="btn ghost sm" '+
+      'onclick="cofnijPominiecieDeloadu()">Wróć do deloadu</button></div></div>';
+
+  if(teraz)
+    return '<div class="tip"><b>Tydzień deloadu</b> — ciężary zostają, schodzi '+
+      'objętość: dwie serie i krótsze serie. Pierwszy lekki tydzień od '+
+      esc(plDate(DB.settings.start))+'.'+
+      '<div class="note" style="margin-top:8px">Jeśli właśnie wracasz z dłuższej '+
+      'przerwy, deload nie ma czego odciążać — możesz go pominąć i wrócić '+
+      'do normalnego tygodnia.</div>'+
+      '<div style="margin-top:8px"><button class="btn ghost sm" '+
+      'onclick="pomijamDeload()">Pomijam deload</button></div></div>';
+
+  if(jutro)
+    return '<div class="tip"><b>Za tydzień deload</b> — ciężary zostaną, ale '+
+      'serie zejdą do dwóch. Dobry tydzień na to, żeby domknąć zakresy '+
+      'tam, gdzie brakuje jednego powtórzenia.</div>';
+
+  return '';
+}
+
 function renderPrzeloz(){
+  /* W trakcie przerwy nie ma czego przekładać — karta przerwy powiedziała
+     już wszystko, a druga zachęta do odpuszczenia treningu jest szumem. */
+  if(przerwaOtwarta()) return '';
   const n = DB.nastepny;
   if(!n || n.data !== today() || DB.workouts.some(w => w.date === today())) return '';
   const seria = seriaPrzelozen();
@@ -4637,6 +4893,13 @@ function renderPrzeloz(){
     '<div class="rpe" style="margin-top:6px;flex-wrap:wrap">'+
     ['zakwasy','zmeczenie','upal','bol'].map(k =>
       '<button class="rpeb" onclick="dzienWolny(\''+k+'\')">'+
+      '<span style="font-size:11px">'+esc(POWODY[k].n)+'</span></button>').join('')+'</div>'+
+    '<div class="note" style="margin-top:9px"><b>Albo dłuższa przerwa</b> — gdy '+
+    'wiesz, że nie będzie Cię kilka dni. Aplikacja przestanie dopytywać, faza '+
+    'planu poczeka, a pierwsza sesja po powrocie będzie lżejsza.</div>'+
+    '<div class="rpe" style="margin-top:6px;flex-wrap:wrap">'+
+    ['choroba','wyjazd','bol'].map(k =>
+      '<button class="rpeb" onclick="zacznijPrzerwe(\''+k+'\')">'+
       '<span style="font-size:11px">'+esc(POWODY[k].n)+'</span></button>').join('')+'</div>'+
     (dniWolneZRzedu() >= 2
       ? '<div class="note warn" style="margin-top:8px">'+dniWolneZRzedu()+
@@ -4747,6 +5010,7 @@ const POWODY = {
   czas:     {n:'Brak czasu',     opis:'Życie'},
   bol:      {n:'Coś boli',       opis:'Nie zakwasy — ból'},
   choroba:  {n:'Choroba',        opis:'Infekcja, gorszy stan'},
+  wyjazd:   {n:'Wyjazd',         opis:'Brak dostępu do siłowni'},
   /* Powód „z planu" różni się od reszty tym, że nie jest odstępstwem.
      Bez niego wolne po trzech dniach z rzędu zapisywałoby się jako
      „bez powodu" i w raporcie wyglądało jak opuszczony trening. */
@@ -4780,6 +5044,83 @@ function dniWolneZRzedu(){
     else if(i > 0) break;
   }
   return ile;
+}
+
+/* ============================================================
+   DŁUŻSZA PRZERWA — choroba, wyjazd, kontuzja
+
+   Dzień wolny odpowiada na pytanie „co dziś". Przerwa odpowiada na pytanie
+   „co teraz". Bez niej tydzień choroby wyglądał w aplikacji dokładnie tak samo
+   jak tydzień olewania: siedem razy „nie zrobiłeś planu", a po powrocie
+   ciężary sprzed choroby, bo kalendarzowo minęło za mało dni, żeby cokolwiek
+   zdjąć.
+
+   Czego przerwa NIE naprawia, bo nie było zepsute: fazy planu. `tydzienPlanu()`
+   liczy tygodnie z odbytych sesji, nie z kartek kalendarza, więc tydzień bez
+   treningu i tak nie przesuwał planu. Przerwa dokłada trzy rzeczy: aplikacja
+   przestaje dopytywać o niezrobiony trening, powód zostaje w historii,
+   a powrót jest liczony jak powrót po chorobie, nie po wolnym.
+
+   Przerwa jest JEDNA otwarta naraz. Dwie równolegle nie znaczą nic sensownego,
+   a przy liczeniu powrotu trzeba by wybierać, która ważniejsza.
+   ============================================================ */
+function przerwaOtwarta(){ return (DB.przerwy || []).find(p => !p.do) || null; }
+
+function zacznijPrzerwe(powod){
+  DB.przerwy = DB.przerwy || [];
+  if(przerwaOtwarta()){ toast('Przerwa już trwa'); return; }
+  DB.przerwy.push({id: uid('p'), od: today(), do: null, powod: powod || 'choroba',
+                   kiedy: new Date().toISOString()});
+  save(); zsynchronizuj(); renderSub();
+  toast('Przerwa zapisana — plan czeka');
+}
+
+function zakonczPrzerwe(){
+  const p = przerwaOtwarta();
+  if(!p){ toast('Żadna przerwa nie trwa'); return; }
+  /* Dzień powrotu NIE jest dniem przerwy — przerwa kończy się wczoraj.
+     Inaczej dzisiejszy trening wypadałby w środku własnej przerwy i nie dostałby
+     obniżki, o którą w tym całym mechanizmie chodzi. */
+  p.do = przesun(today(), -1);
+  if(p.do < p.od) p.do = p.od;
+  save(); zsynchronizuj(); renderSub();
+  toast('Witaj z powrotem — pierwsza sesja na lekko');
+}
+
+function odwolajPrzerwe(){
+  const p = przerwaOtwarta();
+  if(!p) return;
+  DB.przerwy = DB.przerwy.filter(x => x !== p);
+  save(); zsynchronizuj(); renderSub();
+  toast('Przerwa usunięta');
+}
+
+/* Dni przerwy łącznie z pierwszym i ostatnim — przerwa zaczęta i zakończona
+   tego samego dnia trwa jeden dzień, nie zero. */
+function dniPrzerwy(p){
+  const a = new Date(p.od + 'T00:00:00');
+  const b = new Date((p.do || today()) + 'T00:00:00');
+  return Math.round((b - a) / 864e5) + 1;
+}
+
+/* Czy przerwa, która dzieli nas od podanej daty, miała charakter chorobowy.
+   Liczy się każda chorobowa przerwa zachodząca na ten okres — także taka, która
+   zaczęła się przed ostatnim treningiem i skończyła po nim, bo pierwsze dni
+   infekcji często wypadają jeszcze przed odpuszczeniem sesji. */
+function chorobaPoDacie(odKiedy){
+  return (DB.przerwy || []).some(p => p.powod === 'choroba' &&
+    (p.do || today()) >= odKiedy);
+}
+
+/* Co stanie się przy powrocie — powiedziane ZAWCZASU, nie po fakcie.
+   Ta sama drabinka, z której liczy silnik, więc karta nie może obiecać czegoś
+   innego, niż zaproponuje pierwsza sesja. */
+function powrotOpis(p){
+  const s = przerwaSkala(przerwaWzgledna(dniPrzerwy(p)), p.powod === 'choroba');
+  if(!s) return 'Przy powrocie ciężary zostają bez zmian — tak krótka przerwa '+
+    'nie zabiera siły.';
+  return 'Przy powrocie ciężary zejdą o '+Math.round((1 - s.s) * 100)+
+    '%, a pierwsza seria pójdzie z dolnej granicy zakresu.';
 }
 
 function przeloz(powod){
@@ -5948,7 +6289,7 @@ function renderHub(){
        stał na „+0%" niż mówił cokolwiek. */
     planBox +
     renderKolejne() +
-    renderBraki() + coach + odpBox + czekaBox + renderPrzeloz() + syncBox;
+    renderBraki() + coach + odpBox + czekaBox + renderDeload() + renderPrzeloz() + syncBox;
 }
 
 /* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
@@ -10341,7 +10682,7 @@ function raportDnia(){
   if(dzisiejszy) return '';                       /* jest sesja — jest jej raport */
 
   const dz = DB.daily.find(x => x.date === d) || {};
-  const wolne = (DB.odpoczynek || []).find(x => x.date === d);
+  const wolne = (DB.odpoczynek || []).find(x => x.date === d) || przerwaOtwarta();
   const przel = (DB.przelozone || []).slice().reverse().find(x => x.z === d);
   const g = gotowosc();
   const maDane = dz.samopoczucie != null || dz.sleep != null || dz.hrv != null;
