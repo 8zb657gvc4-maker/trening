@@ -31,15 +31,30 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   if (new URL(req.url).origin !== location.origin) return;
 
+  /* Dwie poprawki z 26 września:
+     1. LIMIT CZASU. Na siłowni zasięg bywa szczątkowy — telefon „ma sieć",
+        ale odpowiedź nie przychodzi. Bez limitu aplikacja wisiała na białym
+        ekranie, aż fetch się podda (potrafi to trwać kilkadziesiąt sekund).
+        Po 4 s pokazujemy kopię z cache'u; sieć dociąga w tle i odświeża
+        cache na następne otwarcie.
+     2. BŁĘDY NIE IDĄ DO CACHE'U. Wcześniej każda odpowiedź lądowała w cache'u,
+        także 404/500 z GitHub Pages w trakcie przebudowy — i nadpisywała
+        dobrą kopię. Offline aplikacja pokazywała wtedy stronę błędu. */
+  const zSieci = fetch(req, { cache: 'no-cache' }).then(fresh => {
+    if (fresh.ok) {
+      const kopia = fresh.clone();
+      caches.open(CACHE).then(c => c.put(req, kopia)).catch(() => {});
+    }
+    return fresh;
+  });
   e.respondWith((async () => {
     try {
-      const fresh = await fetch(req, { cache: 'no-cache' });
-      const c = await caches.open(CACHE);
-      c.put(req, fresh.clone()).catch(() => {});
-      return fresh;
+      return await Promise.race([zSieci,
+        new Promise((_, nie) => setTimeout(() => nie(new Error('za wolno')), 4000))]);
     } catch (err) {
-      const hit = await caches.match(req);
-      return hit || await caches.match('./index.html');
+      const hit = (await caches.match(req)) || (await caches.match('./index.html'));
+      if (hit) return hit;
+      return zSieci;   /* nic w cache'u — zostaje tylko czekać na sieć */
     }
   })());
 });

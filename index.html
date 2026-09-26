@@ -1904,7 +1904,7 @@ const DOMYSLNY_ORDER = ['P','G','N','W','M'];
 const DOMYSLNE_PHASES = [
   {n:'Reaktywacja',    rpe:6, skala:1,   d:'Tygodnie 1–2, raz na początku. Celowo za lekko: RPE 6–7, ciężary ~55–65% dawnych. Ścięgna potrzebują więcej czasu niż mięśnie.'},
   {n:'Budowa',         rpe:8, skala:1, narastanie:true, d:'Dwa tygodnie w każdym cyklu. Główna faza — RPE 7–8, objętość rośnie do ostatniego tygodnia. Tu robi się masa.'},
-  {n:'Deload',         rpe:5, skala:0.8, d:'Co czwarty tydzień, po najcięższych. Objętość w dół, ciężary −20%, ale wracają zaraz po nim. Nie pomijaj — to on decyduje o mocy następnego cyklu.'},
+  {n:'Deload',         rpe:5, skala:0.8, d:'Co czwarty tydzień, po najcięższych. Ciężar zostaje, schodzi objętość: dwie serie, powtórzenia ok. 60% celu. Pomiń go tylko, gdy tydzień wcześniej i tak był lżejszy — choroba, wyjazd.'},
   {n:'Intensyfikacja', rpe:9, skala:1,   d:'Jeden tydzień w każdym cyklu. RPE 8–9, niższe zakresy powtórzeń. Masa przekłada się na ciężar na sztandze.'}
 ];
 
@@ -2122,7 +2122,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '84';
+const WERSJA = '85';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2891,6 +2891,15 @@ function save(){
   ZAPIS_NR++;          /* unieważnia pamięć podręczną braków w regionach */
   try{ localStorage.setItem(KEY, JSON.stringify(DB)); kopiaZrob(); ZAPIS_PADL = false; }
   catch(e){
+    /* Najwięcej miejsca zajmują NASZE kopie zapasowe — do trzech pełnych
+       kopii bazy (patrz kopiaZrob). Zanim alarmujemy, oddajemy to miejsce
+       zapisowi głównemu: bieżący trening jest ważniejszy niż kopia sprzed dni. */
+    try{
+      localStorage.removeItem(KOPIEKEY);
+      localStorage.setItem(KEY, JSON.stringify(DB)); ZAPIS_PADL = false;
+      toast('Mało miejsca — usunąłem kopie zapasowe, trening zapisany');
+      return;
+    }catch(e3){}
     /* Najgorszy możliwy moment: właśnie skończyłeś trening, a on nie ma
        gdzie się zapisać. Toast znika po dwóch sekundach i można go przegapić,
        więc od teraz zostaje ostrzeżenie na ekranie, dopóki zapis nie wróci. */
@@ -2898,8 +2907,7 @@ function save(){
     try { alert('BRAK MIEJSCA W PAMIĘCI TELEFONU\n\n'+
       'Trening NIE zapisał się na stałe. Zanim zamkniesz aplikację:\n'+
       '1. Dane → Eksportuj (zapisz plik)\n'+
-      '2. Dane → Wyślij do iCloud, potem wyczyść stare treningi\n\n'+
-      'Zdjęcia zajmują najwięcej miejsca.'); } catch(e2){}
+      '2. Dane → Wyślij do iCloud, potem wyczyść stare treningi'); } catch(e2){}
     toast('BŁĄD ZAPISU — zrób eksport zanim zamkniesz');
   }
 }
@@ -2910,8 +2918,7 @@ function renderZapis(){
   if(!ZAPIS_PADL) return '';
   return '<div class="tip bad"><b>Ostatni zapis się nie udał — brak miejsca</b>'+
     '<div class="note" style="margin-top:4px">To, co widzisz, siedzi tylko w pamięci '+
-    'otwartej aplikacji. Zamknięcie jej = utrata. Zrób eksport w zakładce Dane '+
-    'i usuń kilka zdjęć sylwetki.</div></div>';
+    'otwartej aplikacji. Zamknięcie jej = utrata. Zrób eksport w zakładce Dane.</div></div>';
 }
 
 /* ============================================================
@@ -3192,6 +3199,31 @@ function zDeloadu(data){
    `pomijajDeload` odcina tygodnie deloadowe: po nich progresja musi
    wracać do ciężarów sprzed deloadu, a nie liczyć się od obniżonych.
    Bez tego jeden lekki tydzień cofałby cały blok. */
+/* Nazwy wszystkich ćwiczeń, które mogą wypaść w danym dniu (bój + pule). */
+function nazwyDnia(day){
+  const out = new Set();
+  ((PLAN[day] || {}).slots || []).forEach(s => (s.fixed ? [s.fixed] : (s.pool || [])).forEach(n => out.add(n)));
+  return [...out];
+}
+/* Ostatnia sesja ćwiczenia z e1RM wyższym o PROG niż najlepsza wcześniej.
+   40%, bo na prawdziwych danych 20–30% zdarza się przy powrocie po przerwie
+   i przy maszynach; pomyłka w nazwie daje zwykle 45–50%. */
+function podejrzaneSkoki(nazwy, PROG){
+  PROG = PROG || 0.4;
+  const out = [];
+  (nazwy || []).forEach(n => {
+    const ses = [];
+    DB.workouts.forEach(w => {
+      const e = (w.exercises || []).find(x => x.name === n); if(!e) return;
+      const b = bestSet(e.sets, n); if(b && b.w > 0) ses.push({date:w.date, s:b, e:e1rm(b, n)});
+    });
+    if(ses.length < 2) return;
+    const ost = ses[ses.length-1], przed = Math.max(...ses.slice(0,-1).map(x => x.e));
+    if(przed > 0 && ost.e > przed*(1+PROG))
+      out.push({name:n, date:ost.date, s:ost.s, wzrost:Math.round((ost.e/przed-1)*100)});
+  });
+  return out;
+}
 function lastFor(name, pomijajDeload){
   for(let i=DB.workouts.length-1;i>=0;i--){
     const w = DB.workouts[i];
@@ -3199,9 +3231,15 @@ function lastFor(name, pomijajDeload){
     const e = w.exercises.find(x=>x.name===name);
     if(!e) continue;
     const r = robocze(e.sets);
-    if(r.length) return {sets:r, date:w.date};
+    if(r.length) return {sets:r, date:w.date, target:e.target||null};
   }
   return null;
+}
+/* Dolna granica celu, który stał nad ćwiczeniem W TAMTEJ sesji: „3×8-10 RPE8"
+   → 8. null, gdy celu nie ma albo nie da się go odczytać (stare sesje). */
+function dolnaGranicaCelu(t){
+  const m = String(t || '').match(/×\s*([0-9]+)/);
+  return m ? +m[1] : null;
 }
 /* nazwa dnia odporna na uszkodzone dane z importu */
 function dayName2(d){ return PLAN[d] ? PLAN[d].name : 'nieznany dzień'; }
@@ -4053,6 +4091,23 @@ function suggestLoad(name, slot, phase, tydzien){
   if(minR<mn && maxR>=mn){
     return {w:wTop, r:mn, sets, tag:'hold',
       why:'Ostatnio '+prev+' — końcówka się urwała, ale w najlepszej serii zakres domknąłeś. Powtórz ten sam ciężar i domknij wszystkie '+sets+' serii. Jedna słabsza seria to nie powód, żeby zjeżdżać z obciążeniem.'};
+  }
+  /* ZMIANA FAZY TO NIE PORAŻKA. Wypychanie 100 kg × 9 w intensyfikacji
+     (cel 8–10 — trafiony) po przejściu do budowy (dolna granica 10) wpadało
+     w gałąź niżej: „nawet najlepsza seria nie sięgnęła dolnej granicy, zejdź
+     do 92,5". Silnik oceniał starą sesję zakresem NOWEJ fazy. Jeśli cel
+     z tamtej sesji był osiągnięty, przeliczamy ciężar na nowy zakres (Epley,
+     w dół do 2,5 kg) i mówimy wprost, że to zmiana zakresu, nie cofnięcie. */
+  const mnWtedy = dolnaGranicaCelu(last.target);
+  if(maxR<mn && mnWtedy != null && maxR >= mnWtedy && wTop > 0){
+    const KROK = 2.5;
+    let nowy = Math.floor(wTop*(1+maxR/30)/(1+mn/30)/KROK)*KROK;
+    if(nowy >= wTop || nowy <= 0 || (wTop-nowy)/wTop > 0.15) nowy = wTop;
+    return {w:nowy, r:mn, sets, tag: nowy < wTop ? 'down' : 'hold',
+      why:'Ostatnio '+prev+' — cel tamtej sesji ('+mnWtedy+'+ powt.) osiągnięty. '+
+        'Teraz faza ma wyższy zakres ('+mn+'–'+mx+'), więc '+(nowy < wTop
+          ? 'ciężar przeliczony na nowy zakres: '+fmtKg(nowy)+' kg. To nie cofnięcie — ten sam wysiłek na więcej powtórzeń.'
+          : 'zostaw '+fmtKg(wTop)+' kg i celuj w '+mn+' powt.')};
   }
   if(maxR<mn){
     /* −8% zaokrąglone do 2,5 kg potrafiło wrócić na TEN SAM ciężar: 15 kg → 13,8
@@ -5600,7 +5655,14 @@ function suggestNext(naJutro){
      obie liczby wypadają na końcu swojej fazy i wynik wychodzi ten sam —
      zgadzają się przez przypadek, nie dlatego, że są tą samą liczbą. */
   const w = tydzienPlanu(ref), p = phaseOf(w);
-  const doneWeek = DB.workouts.filter(x=>inWeek(x.date,w));
+  /* …ale „co zrobiłeś W TYM TYGODNIU" to pytanie o KALENDARZ, nie o fazę.
+     `inWeek(data, w)` z tygodniem planu patrzył w zły tydzień: 26 września
+     plan liczył 6, kalendarz 8, więc brał sesje z 7–13 września (stare dni
+     D i E) i pisał „zrobiłeś 2 z 5. Brakuje: P, G, N, W, M". Lista braków
+     idzie dalej do wyboru dnia, więc po każdej przerwie mogła go przekłamać.
+     Faza — z tygodnia planu. Rozliczenie tygodnia — z kalendarza. */
+  const wKal = weekNo(ref);
+  const doneWeek = DB.workouts.filter(x=>inWeek(x.date,wKal));
   const doneDays = doneWeek.map(x=>x.day);
   const todayDone = DB.workouts.filter(x=>x.date===ref);
   const notes = [];
@@ -5854,13 +5916,27 @@ function suggestNext(naJutro){
   if(hNow!=null && hBase!=null && hNow<hBase*0.85)
     notes.push(['warn','HRV o '+Math.round((1-hNow/hBase)*100)+'% niżej niż Twoja norma. Ciało sygnalizuje, że nie nadąża z regeneracją.']);
 
+  /* PODEJRZANY SKOK. 18 września hack squat trafił do dziennika jako
+     „Przysiad ze sztangą" (80 kg × 8), przy dotychczasowym najlepszym
+     55 kg × 7. Silnik wziął to za prawdę i zaproponował 80 kg przysiadu —
+     o połowę więcej niż realny ciężar. Nie poprawiamy danych sami (reguła 3),
+     tylko pytamy, zanim ktoś wejdzie pod sztangę. */
+  podejrzaneSkoki(nazwyDnia(day)).forEach(x=>{
+    notes.push(['warn', x.name+': ostatnia sesja ('+plDate(x.date)+', '+fmtKg(x.s.w)+' kg × '+x.s.r+
+      ') jest o '+x.wzrost+'% mocniejsza niż wszystko wcześniej. Jeśli to było inne ćwiczenie '+
+      'albo inna maszyna, popraw nazwę w Dzienniku — silnik liczy z tego ciężar. '+
+      'Jeśli to prawdziwy wynik — zignoruj.']);
+  });
+
   zastojeWszedzie().forEach(({name,z})=>{
     notes.push(['warn', name+': trzy sesje bez poprawy, najlepszy wynik o '+z.spadek+
       '% wyżej niż ostatni. Jeśli to się utrzyma, zejdź o 10% na jeden tydzień albo zamień wariant — '+
       'walenie głową w ten sam ciężar rzadko kończy się przełamaniem.']);
   });
 
-  if(p===2) notes.push(['','Tydzień deloadu — ciężary i serie są celowo niższe. Nie próbuj tego nadrabiać.']);
+  /* Od 84 deload trzyma ciężar i ścina objętość. Ta uwaga do 85 dalej
+     twierdziła, że ciężary są obniżone — przy propozycji „80 kg, 2×5". */
+  if(p===2) notes.push(['','Tydzień deloadu — ciężar zostaje, mniej serii i powtórzeń. Nie dokładaj serii, żeby to nadrobić.']);
 
   return {day, rest:false, week:w, phase:p, data:ref, head:'Dzień '+day+' — '+PLAN[day].name, why, notes};
 }
@@ -8050,7 +8126,7 @@ function radaBiegowa(){
   const wKal = weekNo(), w = tydzienPlanu(), p = phaseOf(w), f = PHASES[p] || {}, out = [];
 
   if(f.skala && f.skala < 1)
-    out.push(['down','Tydzień deloadu — zejdź z biegami tak samo jak z ciężarami: '+
+    out.push(['down','Tydzień deloadu — odpuść też biegi: '+
       'zostaw środowe Z2, sobotnią jakość zamień na spokojne 20-25 minut. '+
       'Odciążenie tylko na siłowni to odciążenie połowiczne.']);
 
@@ -8074,7 +8150,10 @@ function radaBiegowa(){
 
 function renderRun(){
   const w=tydzienPlanu(), r=biegTygodnia(w);
-  const mine=DB.runs.filter(x=>inWeek(x.date,w) && czyBieg(x));
+  /* Zestaw biegów wybiera tydzień PLANU, ale przebiegnięte liczymy w tygodniu
+     KALENDARZA — ten sam błąd co w suggestNext: po przerwie `inWeek(…, w)`
+     patrzył w tydzień sprzed tygodni i pokazywał „0 z 2", choć bieg był. */
+  const mine=DB.runs.filter(x=>inWeek(x.date,weekNo()) && czyBieg(x));
   /* „planu" dopisane celowo: to ten sam licznik co w nagłówku raportu.
      Bez tego słowa dwa ekrany pokazywały „Tydzień" z dwóch różnych liczników
      i wyglądało to na błąd nawet wtedy, gdy liczby się zgadzały. */
@@ -9373,7 +9452,7 @@ function dodajMakro(porcja, opis){
   /* dodatnie wpisy to posiłki; ujemne to ręczna korekta i nie zaśmiecają listy */
   if(b > 0 || w > 0 || t > 0 || kcal > 0){
     DB.posilki = (DB.posilki || []).concat([{
-      id: uid('p'), date: dzis, godzina: new Date().toISOString().slice(11,16),
+      id: uid('p'), date: dzis, godzina: new Date().toTimeString().slice(0,5),   /* czas lokalny; toISOString dawał UTC, czyli 2 h za wcześnie */
       opis: (opis || 'Dopisane ręcznie').slice(0, 80),
       bialko: Math.round(b), wegle: Math.round(w), tluszcz: Math.round(t),
       kcal: Math.round(kcal)
