@@ -1199,7 +1199,7 @@ const DOMYSLNA_LIB = {
                                   cue:'Lekkie pochylenie do przodu. Ból z przodu barku = schodzisz za nisko.'},
   'Rozpiętki płasko':            {hantle:true, inc:2.5, mus:{klatka_srodek:1}},
   'Rozpiętki na maszynie':       {inc:2.5, mus:{klatka_srodek:1, klatka_gora:.2}},
-  'Brama dół→góra':              {inc:2.5, mus:{klatka_gora:1},
+  'Brama dół→góra':              {inc:2.5, stos:'brama', mus:{klatka_gora:1},
                                   cue:'Ciągniesz od bioder w górę i do środka — to trafia w część obojczykową.'},
   'Brama góra→dół':              {inc:2.5, mus:{klatka_dol:1},
                                   cue:'Od góry w dół i do środka, ręce spotykają się na wysokości bioder.'},
@@ -1236,7 +1236,7 @@ const DOMYSLNA_LIB = {
   'Prostowanie ramion wyciąg':   {inc:2.5, mus:{triceps_bocz:1, triceps_dluga:.3, triceps_przysr:.7}},
   'Francuskie zza głowy':        {inc:2.5, mus:{triceps_dluga:1, triceps_bocz:.5, triceps_przysr:.4},
                                   cue:'Ramię nad głową rozciąga głowę długą — bez tej pozycji jej nie ruszysz.'},
-  'Prostowanie zza głowy wyciąg':{inc:2.5, mus:{triceps_dluga:1, triceps_bocz:.4, triceps_przysr:.4}},
+  'Prostowanie zza głowy wyciąg':{inc:2.5, stos:'brama', mus:{triceps_dluga:1, triceps_bocz:.4, triceps_przysr:.4}},
   /* To, co Filip nazywa „uginaniem tricepsa na maszynie". Anatomicznie triceps
      PROSTUJE ramie, wiec w aplikacji nazywa sie tak jak reszta — ale w silowni
      szuka sie tego pod „maszyna na triceps". */
@@ -2134,7 +2134,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '86';
+const WERSJA = '87';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3829,7 +3829,50 @@ function zakresCwiczenia(name, slot, phase){
   return [Math.min(a, b), Math.max(a, b)];
 }
 
+/* ============================================================
+   STOSY CIĘŻARÓW MASZYN
+   Brama na siłowni Filipa nie ma kroku 2,5 kg — ma stopnie
+   10, 15, 20, 25, 30, 40, 50 … 90 (Filip, 27 września: „nie mogę sobie
+   przeskoczyć na 27,5"). Silnik proponował 27,5 kg prostowania zza głowy,
+   czyli liczbę, której nie da się ustawić. Ćwiczenie z polem `stos`
+   dostaje propozycję wyrównaną do stopni tego stosu.
+   ============================================================ */
+const STOSY = {
+  brama: {nazwa:'brama', kg:[10,15,20,25,30,40,50,60,70,80,90]}
+};
+/* Wyrównanie do stosu. kier: 'gora' — najmniejszy stopień ≥ w,
+   'dol' — największy ≤ w, inaczej najbliższy (remis w dół). */
+function naStos(name, w, kier){
+  const st = STOSY[(LIB[name] || {}).stos];
+  if(!st || !(w > 0)) return w;
+  const k = st.kg;
+  if(kier === 'gora'){ const x = k.find(v => v >= w - 1e-9); return x != null ? x : k[k.length-1]; }
+  if(kier === 'dol'){ const x = k.filter(v => v <= w + 1e-9).pop(); return x != null ? x : k[0]; }
+  return k.reduce((a, v) => Math.abs(v - w) < Math.abs(a - w) - 1e-9 ? v : a, k[0]);
+}
+
 function suggestLoad(name, slot, phase, tydzien){
+  const s = suggestLoadSurowe(name, slot, phase, tydzien);
+  const L = LIB[name] || {};
+  const st = STOSY[L.stos];
+  if(!s || !st || !(s.w > 0) || s.tag === 'coach') return s;
+  if(st.kg.includes(s.w)) return s;
+  const ost = lastFor(name, false);
+  const wPop = ost ? Math.max(...ost.sets.map(x => x.w || 0)) : null;
+  /* Ciężar, na którym Filip naprawdę ćwiczył, na tej maszynie istnieje —
+     nawet jeśli nie ma go w naszej liście („mniej więcej" 10, 15, 20…). */
+  if(s.w === wPop) return s;
+  const kier = wPop == null ? null : (s.w > wPop ? 'gora' : 'dol');
+  const w = naStos(name, s.w, kier);
+  let why = String(s.why || '').split(fmtKg(s.w) + ' kg').join(fmtKg(w) + ' kg');
+  why += ' Na ' + st.nazwa + 'ie nie ma ' + fmtKg(s.w) + ' kg — najbliższy stopień to ' + fmtKg(w) + ' kg.';
+  if(kier === 'gora' && wPop > 0 && (w - wPop) / wPop > 0.2)
+    why += ' To duży skok (+' + Math.round((w - wPop) / wPop * 100) + '%). Jeśli nie wejdzie ' + s.r +
+      ' powt., wróć do ' + fmtKg(wPop) + ' kg i dokładaj powtórzenia ponad zakres.';
+  return {...s, w, why};
+}
+
+function suggestLoadSurowe(name, slot, phase, tydzien){
   const sets = serieSlotu(slot, phase, tydzien);
   /* Slot ma jeden zakres powtórzeń dla całej puli, co przestaje działać, gdy
      w puli siedzą ćwiczenia mierzone inaczej. Slot tułowia był ustawiony pod
@@ -5510,7 +5553,8 @@ function dostosuj(lista, day){
     if(!x.sug) return x;
     const L = LIB[x.name] || {};
     const w = (x.sug.w != null && x.sug.w > 0 && !L.time)
-      ? roundTo(x.sug.w * skala, L.inc || 2.5) : x.sug.w;
+      ? (L.stos && skala < 1 ? naStos(x.name, x.sug.w * skala, 'dol')   /* stopnie maszyny, nie 2,5 kg */
+                             : roundTo(x.sug.w * skala, L.inc || 2.5)) : x.sug.w;
     return {...x, sug: {...x.sug, w, sufitRpe: sufit, tag: 'down',
       why: 'Gotowość '+pkt+'/100 — '+(w !== x.sug.w ? 'ciężar w dół o '+
            Math.round((1-skala)*100)+'%. ' : '')+'Sufit RPE '+sufit+'. '+
@@ -6661,8 +6705,11 @@ function korektaWSesji(ses){
        Skoro decyzja zapadła, zmiana musi wynosić co najmniej jeden krok
        sprzętu. Zaokrąglenie nie ma prawa jej zjeść. */
     cwiczenia: pozostale.map(e => {
-      let na = roundTo(e.sug.w * skala, 2.5);
-      if(na === e.sug.w) na = e.sug.w + (wDol ? -2.5 : 2.5);
+      const stos = (LIB[e.name] || {}).stos;
+      let na = stos ? naStos(e.name, e.sug.w * skala, wDol ? 'dol' : 'gora')
+                    : roundTo(e.sug.w * skala, 2.5);
+      if(na === e.sug.w) na = stos ? naStos(e.name, e.sug.w + (wDol ? -0.01 : 0.01), wDol ? 'dol' : 'gora')
+                                   : e.sug.w + (wDol ? -2.5 : 2.5);
       return {slot: e.slot, name: e.name, z: e.sug.w, na: Math.max(2.5, na)};
     }).filter(x => x.na !== x.z)
   };
