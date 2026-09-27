@@ -1284,6 +1284,10 @@ const DOMYSLNA_LIB = {
   'Uginanie nóg siedząc':        {inc:2.5, mus:{dwuglowe_kol:1, dwuglowe:.2},
                                   cue:'Wersja siedząca rozciąga dwugłowe mocniej niż leżąca.'},
   'Hip thrust':                  {inc:5,   mus:{posladki:1, posladki_sr:.2, dwuglowe:.4}},
+  /* Maszyna stojąca, jedna noga naraz. Filip zrobił ją 26 września zamiast
+     hip thrustu i poprosił, żeby została na stałe (slot N3). */
+  'Uginanie nogi stojąc':        {inc:2.5, strona:'nogę', mus:{dwuglowe_kol:1, dwuglowe:.3},
+                                  cue:'Biodro przyklejone do oparcia — ruch tylko w kolanie, bez wyginania lędźwi.'},
   'Hip thrust jednonóż':         {inc:2.5, mus:{posladki:1, posladki_sr:.2, dwuglowe:.4},
                                   cue:'Jedna noga naraz wyrównuje różnice między stronami.'},
   'Good morning':                {inc:2.5, mus:{dwuglowe:1, dwuglowe_kol:.1, prostowniki:.8, posladki:.6},
@@ -1687,10 +1691,18 @@ const DOMYSLNY_PLAN = {
        drugim odbiorca, nie jedynym: ten slot niesie tez tylna tasme uda
        i nie ma jej skad wziac gdzie indziej (rumunski wypadl swiadomie,
        zeby oszczedzic kregoslup). Skosne poszly wiec do dnia P. */
-    {id:'N3', lab:'Biodra / pośladki',
-     pool:['Hip thrust','Hip thrust jednonóż'],
-     t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
+    /* OD 85: HIP THRUST WYPADA — decyzja Filipa z 26 września: „nie lubię
+       hip thrustów… po przysiadzie i wypychaniu to już za dużo ćwiczeń
+       wielostawowych, zrobiłem coś typowo pod izolację". Slot zostaje na
+       trzech seriach, więc sufit 20 serii się nie zmienia. Pośladki tracą
+       główne źródło, ale mają przysiad, wypychanie i bułgarski — `pokrycie.js`
+       pilnuje, czy zostają w normie. Dwa sloty zginania kolana (N3 i N5)
+       to świadomy wybór: pula N3 i N5 się pokrywa, a `pickVariant` nie
+       daje dwa razy tej samej maszyny. */
+    {id:'N3', lab:'Tył uda — izolacja', upadek:true,
+     pool:['Uginanie nogi stojąc','Uginanie nóg siedząc'],
+     t:['3×12','3×10-12','2×12','3×10-12'],
+     s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
     /* NOGI SA TERAZ RAZ W TYGODNIU, wiec ten dzien musi domknac cala partie.
        Jednonoz i druga glowa lydki zeszly tu z dawnego dnia dolnego, tulow
        poszedl do dnia M — tam zostalo na niego miejsce. */
@@ -2122,7 +2134,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '85';
+const WERSJA = '86';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
