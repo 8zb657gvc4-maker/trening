@@ -1229,7 +1229,7 @@ const DOMYSLNA_LIB = {
                                   cue:'Stojąc albo leżąc na boku, noga prosta, unosisz ją w bok bez skręcania miednicy. Guma albo linka wyciągu.'},
   'Chód boczny z gumą':          {bw:true, rr:[15,25], mus:{posladki_sr:1, posladki:.2},
                                   cue:'Guma nad kolanami, półprzysiad, kroki w bok. Kolana cały czas rozpychają gumę.'},
-  'Face pull':                   {inc:2.5, mus:{bark_tyl:1, plecy_gora:.6}},
+  'Face pull':                   {inc:2.5, stos:'brama', mus:{bark_tyl:1, plecy_gora:.6}},
   'Odwrotne rozpiętki':          {inc:2.5, mus:{bark_tyl:1, plecy_gora:.4}},
 
   /* --- ramiona --- */
@@ -1246,6 +1246,11 @@ const DOMYSLNA_LIB = {
   'Uginanie młotkowe':           {hantle:true, inc:2.5, mus:{ramienny:1, biceps_dluga:.5, biceps_krotka:.3, przedramie:1}},
   'Uginanie na modlitewniku':    {inc:2.5, mus:{biceps_krotka:1, biceps_dluga:.4, ramienny:.4}},
   'Uginanie na wyciągu':         {inc:2.5, mus:{biceps_dluga:.9, biceps_krotka:.8, ramienny:.3}},
+  /* Filip, 30 września: uginanie ramion zamienić na spider curl — na
+     hantlach i na wyciągu na zmianę. Wersja z wyciągu: klatka na skosie
+     przodem do bramy, linka z dołu; napięcie zostaje też na górze ruchu. */
+  'Spider curl na wyciągu':      {inc:2.5, mus:{biceps_krotka:1, biceps_dluga:.5, ramienny:.3},
+                                  cue:'Klatka oparta o skos przodem do wyciągu, ramiona pionowo. Linka z dołu, ruch tylko w łokciu.'},
 
   /* CZTERY DOPISANE PRZY PRZEBUDOWIE PLANU (wrzesien 2026).
 
@@ -1605,8 +1610,12 @@ const DOMYSLNY_PLAN = {
      pool:['Prostowanie ramion na maszynie','Prostowanie ramion wyciąg'],
      t:['3×15','3×12-15','2×15','3×12-15'],
      s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
+    /* Filip, 30 września: prostowanie zza głowy robił na hantlach, ale woli
+       na bramie („lepiej wchodzi"). Brama jest domyślna; hantle zostają
+       w puli jako zamiennik, gdy brama zajęta albo odznaczona. */
     {id:'P6', lab:'Triceps — głowa długa', upadek:true,
-     pool:['Francuskie zza głowy','Prostowanie zza głowy wyciąg'],
+     preferowany:'Prostowanie zza głowy wyciąg',
+     pool:['Prostowanie zza głowy wyciąg','Francuskie zza głowy'],
      t:['3×12','3×10-12','2×12','3×10-12'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
     /* SKOSNE — I DLACZEGO NIE W DNIU NOG, O KTORY FILIP PROSIL.
@@ -1665,8 +1674,10 @@ const DOMYSLNY_PLAN = {
      pool:['Face pull','Odwrotne rozpiętki'],
      t:['3×15','4×15-20','2×15','4×15-20'],
      s:[3,4,2,4], rr:[[15,15],[15,20],[15,15],[15,20]]},
+    /* Od 90 bez uginania ramion (sztangą) — Filip go nie chce; drugi wariant
+       to uginanie na wyciągu, które zwolniło się w dniu M. */
     {id:'G5', lab:'Biceps — głowa długa', upadek:true,
-     pool:['Uginanie hantlami na skosie','Uginanie ramion'],
+     pool:['Uginanie hantlami na skosie','Uginanie na wyciągu'],
      t:['3×12','3×10-12','2×12','3×8-10'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
     {id:'G6', lab:'Mięsień ramienny', upadek:true,
@@ -1801,12 +1812,16 @@ const DOMYSLNY_PLAN = {
      pool:['Ściąganie wąsko podchwytem','Ściąganie drążka'],
      t:['3×12','3×10-12','2×12','3×10-12'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
+    /* Spider curl przeszedł do M5 (na zmianę z wyciągiem), więc tu zostaje
+       modlitewnik i uginanie na wyciągu — inaczej dwa spider curle w dniu. */
     {id:'M4', lab:'Biceps — głowa krótka', upadek:true,
-     pool:['Uginanie na modlitewniku','Spider curl'],
+     pool:['Uginanie na modlitewniku','Uginanie na wyciągu'],
      t:['3×12','3×10-12','2×12','3×10-12'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]},
-    {id:'M5', lab:'Biceps — wyciąg', upadek:true,
-     pool:['Uginanie na wyciągu','Uginanie ramion'],
+    /* `naprzemian`: wariant zmienia się CO SESJĘ, nie co HOLD sesji —
+       „na hantlach i wyciągu na zmianę" (Filip, 30 września). */
+    {id:'M5', lab:'Biceps — spider curl', upadek:true, naprzemian:true,
+     pool:['Spider curl','Spider curl na wyciągu'],
      t:['2×15','2×12-15','2×15','2×12-15'],
      s:[2,2,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]},
     /* Pula tulowia zostaje przy BRZUCHU PROSTYM. Pierwsza proba dorzucila tu
@@ -2134,7 +2149,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '88';
+const WERSJA = '90';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3610,6 +3625,17 @@ function pickVariant(slot, zajete){
   /* Trzymanie wariantu ustepuje bezpieczenstwu: gdy kregoslup jest juz
      obciazony przez boj, nie zostajemy przy wolnym ciezarze w skłonie
      tylko dlatego, ze stal tu ostatnim razem. */
+  /* Slot z `preferowany`: ten wariant zawsze, dopóki jest dostępny
+     (nieodznaczony, niezajęty w tym dniu). Rotacja tylko jako zapas. */
+  if(slot.preferowany && pool.indexOf(slot.preferowany) >= 0)
+    return {name:slot.preferowany, rot:'hold', why:'Twój wybór dla tego miejsca w planie.'};
+
+  /* Slot `naprzemian` zmienia wariant co sesję — wtedy obecny wypada z puli,
+     o ile jest dokąd przejść. */
+  if(slot.naprzemian && cur && pool.length > 1 && pool.indexOf(cur) >= 0){
+    const inny = pool.filter(n => n !== cur)[0];
+    return {name:inny, rot:'switch', why:'Na zmianę z „'+cur+'" — co sesję inny wariant.'};
+  }
   if(cur && pool.indexOf(cur)>=0 && streak < HOLD && !karaZaKregoslup(cur, juz)){
     return {name:cur, rot:'hold', streak,
       why:'Zostaje na kolejną sesję ('+(streak+1)+' z '+HOLD+'). Wariant trzymamy kilka sesji, żeby dało się sensownie dobrać ciężar.'};
@@ -3930,8 +3956,15 @@ function suggestLoadSurowe(name, slot, phase, tydzien){
   }
   const unit = L.time ? 's' : 'powt';
 
+  /* Deska bokiem dostawała „dobierz ciężar tak, żeby po 30 s zostały 3–4
+     w zapasie" — ćwiczenie na czas, bez ciężaru, i „3–4" czego? Tekst musi
+     pasować do tego, jak ćwiczenie się mierzy. */
   if(!last) return {w:null, r:mn, sets, tag:'new',
-    why:'Pierwszy raz w tym planie. Dobierz ciężar tak, żeby po '+mn+' '+unit+' zostały jeszcze 3–4 w zapasie.'};
+    why: L.time
+      ? 'Pierwszy raz w tym planie. Trzymaj '+mn+' s na stronę — tak, żeby dało się wytrzymać jeszcze ok. 10 s dłużej.'
+      : L.bw
+      ? 'Pierwszy raz w tym planie. Zrób '+mn+' powt. na masie własnej i zostaw 2–3 w zapasie.'
+      : 'Pierwszy raz w tym planie. Dobierz ciężar tak, żeby po '+mn+' powt. zostały jeszcze 3–4 w zapasie.'};
 
   /* ---- POWRÓT PO PRZERWIE ----
      Do tej pory silnik brał ostatnią sesję niezależnie od tego, czy była
@@ -4559,7 +4592,13 @@ function zetnij(n, pkt, skala, ile, sufit, opis){
   const cw = n.cwiczenia.filter(c => zostaja.has(c) || c.tag === 'coach').map(c => {
     const w = c.ciezar ? Math.max(2.5, Math.round(c.ciezar * skala / 2.5) * 2.5) : c.ciezar;
     if(w === c.ciezar) return c;
+    /* Tag 'down', nie odziedziczony 'hold'. 30 września fuzz długi (ziarno
+       256) złapał tu „cichy spadek": wypychanie 20 → 15 kg z tagiem 'hold',
+       czyli strzałką „bez zmian" przy ciężarze niższym o ćwierć. Wyszło
+       dopiero po `pipefail` — wcześniej fuzz długi nie mógł niczego zepsuć.
+       Pozycje trenera zostają 'coach'. */
     return Object.assign({}, c, {ciezar: w, ciezarPlan: c.ciezar,
+      tag: c.tag === 'coach' ? 'coach' : (w < c.ciezar ? 'down' : c.tag),
       zmiana: 'gotowosc',
       why: (c.tag === 'coach' ? 'Trener ustawił ' : 'Planowane ') + fmtKg(c.ciezar) +
            ' kg, aplikacja zeszła do ' + fmtKg(w) + ' kg. ' + opis +
@@ -9330,7 +9369,8 @@ const AI_TRENER = 'Jesteś trenerem siłowym. Dostajesz FAKTY z trwającego tren
   '2. Ćwiczenie z pola "nie_ruszamy" jest już zrobione i jego liczby są zamknięte. ' +
   'Możesz je wspomnieć jako FAKT z przeszłości, ale NIE WOLNO Ci mówić, ile ' +
   'powtórzeń albo kilogramów w nim zrobić.\n' +
-  '3. Nie zmieniaj żadnej liczby i nie dodawaj własnych.\n' +
+  '3. Nie zmieniaj żadnej liczby i nie dodawaj własnych. Jedyne liczby, jakie ' +
+  'wolno Ci napisać, to kilogramy z pola "zmiany". Żadnych powtórzeń, serii ani RPE.\n' +
   'Bez emotikon. Bez zwrotów typu "pamiętaj, żeby".';
 
 /* Komentarz kosztuje zapytanie do modelu, a `renderSession` odpala się po każdej
@@ -9366,10 +9406,17 @@ async function aiKomentarzSesji(){
   const k = korektaWSesji(SES);
   if(!k || !aiDostepne()) return null;
 
-  const podpis = podpisKorekty(k);
-  if(SES.aiPodpis === podpis) return SES.aiKomentarz || null;
+  /* RAZ NA KIERUNEK, NIE RAZ NA LISTĘ. Do 89 podpisem była cała lista zmian,
+     a ona kurczy się po każdym zrobionym ćwiczeniu — więc 29 września to samo
+     „dziś masz lepszy dzień" poszło do modelu pięć razy w 17 minut. Pytamy raz
+     na kierunek korekty w sesji. Gdy lista się zmieni, stare zdanie mogłoby
+     mówić o ćwiczeniu już zrobionym — wtedy go nie pokazujemy (zostaje zdanie
+     z silnika), ale też nie pytamy ponownie. */
+  const podpis = k.kierunek, pelny = podpisKorekty(k);
+  if(SES.aiPodpis === podpis) return SES.aiPelny === pelny ? (SES.aiKomentarz || null) : null;
   SES.aiPodpis = podpis;        /* blokujemy OD RAZU — dwa przerysowania w tej
                                    samej chwili inaczej wyślą dwa pytania */
+  SES.aiPelny = pelny;
   SES.aiKomentarz = null;
 
   const zrobione = SES.exercises
@@ -9404,6 +9451,16 @@ async function aiKomentarzSesji(){
       wolno.indexOf(rdzen(n)) < 0 &&
       zdanie.toLowerCase().indexOf(rdzen(n)) >= 0 &&
       rozkaz.test(zdanie));
+
+    /* FILTR LICZB (reguła 2). Model dostaje gotowe liczby i ma je tylko
+       powtórzyć — a 29 września napisał „martwy ciąg z ciężarem 50 kg",
+       choć było 70, i „145 → 137,5 kg" przy łydkach, których nikt nie liczył.
+       Każda liczba w zdaniu musi być jedną z liczb decyzji (z → na).
+       Inaczej zostaje zdanie z silnika. */
+    const dozwolone = new Set([].concat(...k.cwiczenia.map(z => [z.z, z.na])).map(Number));
+    const liczby = (zdanie.replace(/([0-9]),([0-9])/g, '$1.$2').match(/[0-9]+(?:\.[0-9]+)?/g) || []).map(Number);
+    const zleLiczby = liczby.filter(n => !dozwolone.has(n));
+    if(zleLiczby.length) podejrzane.push('liczby: ' + zleLiczby.join(', '));
 
     aiZapisz({co: 'sesja', pytanie: k.powod, odpowiedz: zdanie.slice(0, 250),
               odrzucone: podejrzane.length ? podejrzane : undefined});
