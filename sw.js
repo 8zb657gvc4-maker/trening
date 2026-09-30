@@ -98,7 +98,7 @@ function pushUstawienia() {
 
 self.addEventListener('push', e => {
   e.waitUntil((async () => {
-    let tytul = 'Trening', tekst = 'Zajrzyj do aplikacji.';
+    let tytul = 'Trening', tekst = 'Zajrzyj do aplikacji.', tag = 'trening-dzien';
     try {
       const u = await pushUstawienia();
       if (u && u.adres && u.token) {
@@ -107,6 +107,9 @@ self.addEventListener('push', e => {
         if (r.ok) {
           const d = await r.json();
           if (d && d.tekst) { tekst = d.tekst; tytul = d.tytul || tytul; }
+          /* Koniec przerwy ma własny tag: nie zastępuje planu dnia,
+             a kolejna przerwa zastępuje poprzednią zamiast robić stos. */
+          if (d && d.tag === 'przerwa') tag = 'przerwa';
         }
       }
     } catch (err) { /* pokażemy tekst zapasowy — byle coś pokazać */ }
@@ -115,8 +118,8 @@ self.addEventListener('push', e => {
       body: tekst,
       /* Bez `icon`: iOS i tak bierze ikonę aplikacji z ekranu głównego,
          a wskazywanie pliku, którego nie ma, dawałoby ciche 404. */
-      tag: 'trening-dzien',      /* nowe zastępuje stare, nie zbiera się stos */
-      renotify: false,
+      tag,                       /* nowe zastępuje stare, nie zbiera się stos */
+      renotify: tag === 'przerwa',   /* przerwa ma zadzwonić, nawet gdy poprzednia wisi */
     });
   })());
 });

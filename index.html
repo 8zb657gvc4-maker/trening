@@ -2134,7 +2134,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '87';
+const WERSJA = '88';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -7982,6 +7982,25 @@ function startTimer(sec, cwiczenie){
   const bar=document.getElementById('tbar'); bar.classList.add('on'); bar.classList.remove('done');
   document.getElementById('tLab').textContent=etykietaPrzerwy();
   clearInterval(TICK); paint(); TICK=setInterval(paint,250); wakeOn();
+  przerwaSerwer(T_END);
+}
+/* KONIEC PRZERWY PRZEZ SERWER. Przy zgaszonym ekranie albo innej aplikacji
+   na wierzchu iOS zamraża JavaScript — licznik staje, `finishRest` nie
+   startuje i powiadomienie nigdy nie wyskakuje. Do 88 tak właśnie było
+   (Filip, 30 września). Teraz aplikacja podaje Workerowi godzinę końca,
+   a ten wysyła push z wyzwalacza co minutę, co do sekundy
+   (serwer/worker.js → przerwaPilnuj). `null` odwołuje. Bez D1 po stronie
+   Workera zapytanie dostaje 503 i nic się nie psuje — zostaje dźwięk. */
+let PRZERWA_NA_SERWERZE;
+function przerwaSerwer(koniec){
+  if(!srvGotowy() || pushStan() !== 'granted') return;
+  if(koniec === PRZERWA_NA_SERWERZE) return;
+  PRZERWA_NA_SERWERZE = koniec;
+  try {
+    fetch(srvUrl('push/przerwa'), {method:'POST', keepalive:true,
+      headers: srvNaglowki({'Content-Type':'application/json'}),
+      body: JSON.stringify({koniec: koniec == null ? null : Math.round(koniec)})}).catch(()=>{});
+  } catch(e){}
 }
 /* Nazwa cwiczenia w pasku. Miedzy seriami ekran bywa przewiniety gdzie indziej,
    a pasek jest przypiety na stale — bez nazwy nie wiadomo, do czego liczy. */
@@ -8015,11 +8034,14 @@ function finishRest(){
   document.getElementById('tProg').style.width='0%';
   if(navigator.vibrate) navigator.vibrate([250,120,250,120,400]);
   beep(); notifyRest();
+  /* Ekran jest przed oczami — push z serwera byłby tylko echem. */
+  if(document.visibilityState === 'visible') przerwaSerwer(null);
   setTimeout(()=>{ if(!TICK) stopTimer(); },12000);
 }
-function addTime(s){ if(!TICK){ startTimer(s); return; } T_END+=s*1000; T_LEN+=s; paint(); }
+function addTime(s){ if(!TICK){ startTimer(s); return; } T_END+=s*1000; T_LEN+=s; paint(); przerwaSerwer(T_END); }
 function stopTimer(){
   clearInterval(TICK); TICK=null;
+  if(T_END > Date.now()) przerwaSerwer(null);   /* przerwane przed końcem — odwołaj push */
   try{ localStorage.removeItem(TIMKEY); }catch(e){}
   const b=document.getElementById('tbar'); b.classList.remove('on'); b.classList.remove('done'); wakeOff();
 }
@@ -8037,9 +8059,19 @@ function beep(){
     });
   }catch(e){}
 }
+/* `new Notification()` w aplikacji z ekranu głównego na iPhonie po prostu
+   rzuca wyjątkiem — iOS pozwala pokazywać powiadomienia wyłącznie przez
+   service workera. Dlatego do 88 nie wyskakiwało nic, nawet gdy JavaScript
+   jeszcze żył. Pokazujemy tylko wtedy, gdy aplikacji nie widać; ten sam tag
+   co push z serwera, więc dwa sygnały nie zrobią dwóch powiadomień. */
 function notifyRest(){
-  try{ if('Notification' in window && Notification.permission==='granted')
-    new Notification('Przerwa minęła',{body:'Czas na kolejną serię',tag:'rest'}); }catch(e){}
+  try{
+    if(document.visibilityState === 'visible') return;
+    if(!('Notification' in window) || Notification.permission!=='granted') return;
+    if(navigator.serviceWorker && navigator.serviceWorker.ready)
+      navigator.serviceWorker.ready.then(r => r.showNotification('Przerwa minęła',
+        {body:'Czas na kolejną serię.', tag:'przerwa', renotify:true})).catch(()=>{});
+  }catch(e){}
 }
 function askNotify(){
   try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){}
@@ -8752,18 +8784,31 @@ async function aiTabelaMakro(zdjecieBase64){
   return await aiZapytaj(
     [{role: 'user', content: [{type: 'text', text: polecenie},
                               {type: 'image_url', image_url: {url: zdjecieBase64}}]}],
-    {tryb: 'obraz', max_tokens: 500, timeout: 45000});
+    /* 1500, nie 500: Gemma najpierw „myśli na głos" po angielsku i przy 500
+       tokenach urywała się, zanim doszła do linii z liczbami (29 września). */
+    {tryb: 'obraz', max_tokens: 1500, timeout: 60000});
 }
 
 /** Wyciaga NAZWA/KCAL/B/W/T z odpowiedzi modelu. Tolerancyjny: model bywa
     gadatliwy, a przecinek dziesietny wychodzi mimo prosby o kropke. */
 function wyluskajTabele(tekst){
-  const t = String(tekst || '').replace(/,(?=[0-9])/g, '.');
+  /* ODPOWIEDŹ JEST NA KOŃCU ROZUMOWANIA. 29 września Gemma oddała najpierw
+     „* Input… * Task… * Output Format: NAZWA=name | KCAL=value…", potem
+     szkice, a dopiero na końcu właściwą linię. Pierwsze dopasowanie w całym
+     tekście trafiało w szablon albo w szkic. Bierzemy OSTATNIĄ linię, w której
+     B, W i T mają liczby; cały tekst — tylko gdy takiej linii nie ma. */
+  const linie = String(tekst || '').replace(/,(?=[0-9])/g, '.').split('\n')
+    .map(l => l.replace(/[`*]/g, ''));
+  const maLiczby = l => ['B|Białko', 'W|Węglowodany', 'T|Tłuszcz'].every(k =>
+    new RegExp('(?:^|[^A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż])(?:' + k + ')\\s*[=:]\\s*[0-9]', 'i').test(l));
+  const kandydaci = linie.filter(maLiczby);
+  const t = kandydaci.length ? kandydaci[kandydaci.length - 1] : linie.join('\n');
   const we = (klucz) => {
-    const m = t.match(new RegExp(klucz + '\\s*[=:]\\s*([0-9]+(?:\\.[0-9]+)?)', 'i'));
+    const m = t.match(new RegExp('(?:^|[^A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż])(?:' + klucz +
+      ')\\s*[=:]\\s*([0-9]+(?:\\.[0-9]+)?)', 'i'));
     return m ? parseFloat(m[1]) : null;
   };
-  const b = we('B'), w = we('W'), tl = we('T');
+  const b = we('B|Białko'), w = we('W|Węglowodany'), tl = we('T|Tłuszcz');
   if(b == null || w == null || tl == null) return null;
   /* Sto gramow nie moze miec wiecej niz sto gramow skladnikow. Gdy model
      przepisal kolumne „na opakowanie" albo pomylil wiersze, wychodzi
@@ -9233,11 +9278,15 @@ async function czytajEtykiete(ev){
   if(!plik) return;
   jedzenieBox('<div class="note" style="margin-top:9px">Czytam tabelę z opakowania…</div>');
   try {
-    const mini = await zmniejszZdjecie(plik, 900);
+    /* 1600 px i wyższa jakość: talerz model rozpozna z 800 px, ale drobny
+       druk tabeli wartości przy 900 px zlewa się w szare kreski. */
+    const mini = await zmniejszZdjecie(plik, 1600, 0.85);
     const odp = await aiTabelaMakro(mini);
     const t = wyluskajTabele(odp.tresc);
+    /* W dzienniku KONIEC odpowiedzi — tam jest wynik albo miejsce, w którym
+       model się urwał. Początek to zawsze to samo „Input: … Task: …". */
     aiZapisz({co: 'etykieta', pytanie: KOD_BEZ_PRODUKTU || '[bez kodu]',
-              odpowiedz: (odp.tresc || '').slice(0, 200), model: odp.model});
+              odpowiedz: (odp.tresc || '').slice(-300), model: odp.model, odczytane: !!t});
     if(!t){
       const co = String(odp.tresc || '').replace(/\s+/g, ' ').trim().slice(0, 80);
       throw new Error('Nie odczytałem tabeli' + (co ? ': „' + co + '…"' : '') +
@@ -9766,7 +9815,7 @@ async function policzJedzenieZdjecie(ev){
   } catch(e){ bladJedzenia(e); }
 }
 
-function zmniejszZdjecie(plik, maxBok){
+function zmniejszZdjecie(plik, maxBok, jakosc){
   return new Promise((zwroc, odrzuc) => {
     const czyt = new FileReader();
     czyt.onerror = () => odrzuc(new Error('Nie udało się odczytać zdjęcia'));
@@ -9778,7 +9827,7 @@ function zmniejszZdjecie(plik, maxBok){
         const c = document.createElement('canvas');
         c.width = Math.round(img.width * sk); c.height = Math.round(img.height * sk);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        zwroc(c.toDataURL('image/jpeg', 0.7));
+        zwroc(c.toDataURL('image/jpeg', jakosc || 0.7));
       };
       img.src = czyt.result;
     };
