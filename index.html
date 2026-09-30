@@ -1687,11 +1687,19 @@ const DOMYSLNY_PLAN = {
   ]},
 
   N: { name:'Nogi', grp:'nogi', slots:[
-    {id:'N1', lab:'Główny bój', fixed:'Przysiad ze sztangą',
+    /* OD 92 GŁÓWNYM BOJEM JEST HACK SQUAT. Filip dwa razy z rzędu (18 i 26
+       września) zrobił hack squat zamiast przysiadu ze sztangą — „tam jest
+       wygodniej" — i 30 września potwierdził: „wolę hack squata jako główne
+       ćwiczenie". Przysiad ze sztangą zostaje w bibliotece i w historii
+       (sierpień, 50–55 kg); na hack squacie historia startuje od 80 × 8
+       i 75 × 10. Plecy odpoczywają: hack squat nie ładuje prostowników. */
+    {id:'N1', lab:'Główny bój', fixed:'Hack squat',
      t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
      s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
+    /* Hack squat przeszedł do N1 — tu zostaje wypychanie, a na zmianę
+       prostowanie nóg (izolacja; jak maszyna do wypychania zajęta). */
     {id:'N2', lab:'Czworogłowe — maszyna',
-     pool:['Wypychanie nogami','Hack squat'],
+     pool:['Wypychanie nogami','Prostowanie nóg'],
      t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
     /* Zamiast rumunskiego. Pelny wyprost bioder, posladki i dwuglowe od
@@ -2149,7 +2157,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '90';
+const WERSJA = '92';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2207,7 +2215,46 @@ function load(){
   /* identyfikatory treningów — potrzebne do scalania przy imporcie */
   DB.workouts.forEach((w,i)=>{ if(!w.id) w.id = 'w'+w.date+'_'+(w.day||'x')+'_'+i; });
   DB.v = 4;
+  if(poprawNazwy()) save();
   zastosujPlan();
+}
+
+/* JEDNORAZOWE POPRAWKI NAZW W HISTORII — potwierdzone przez Filipa.
+   Reguła 5 mówi, że nazwy nie zmieniają się wstecz, i dalej obowiązuje:
+   to nie jest zmiana nazwy ćwiczenia, tylko poprawka ZŁEGO wpisu, który
+   silnik brał za prawdę. 18 i 26 września hack squat trafił do dziennika jako
+   „Przysiad ze sztangą" / „Hack squad" (Filip, 30 września: „to był hack
+   squat na maszynie, bo tam jest wygodniej") — przez to aplikacja proponowała
+   80 kg przysiadu ze sztangą przy realnych 55. Uginanie nogi stojąc zapisało
+   się jako drugie „Uginanie nóg leżąc" (10 kg obok 60 kg leżąc), rozpiętki
+   z 20 września były na innej maszynie (talerzowej).
+
+   Każda poprawka trafia w KONKRETNY trening (id) i wykonuje się raz
+   (DB.settings.poprawkiNazw). Brak treningu = poprawka czeka, a nie znika. */
+const POPRAWKI_NAZW = [
+  {id:'n1', trening:'wmu7905riqoqi', z:'Przysiad ze sztangą', na:'Hack squat'},
+  {id:'n2', trening:'wmu7905riqoqi', z:'Allahy', na:'Allahy na wyciągu'},
+  {id:'n3', trening:'wmuiyptgz9sa6', z:'Hack squad', na:'Hack squat'},
+  {id:'n4', trening:'wmuiyptgz9sa6', z:'Uginanie nóg leżąc', na:'Uginanie nogi stojąc', doKg:15},
+  {id:'n5', trening:'wmu9qjbxq58ej', z:'Rozpiętki na maszynie', na:'Rozpiętki na maszynie talerzowej'}
+];
+function poprawNazwy(){
+  if(!DB || !DB.settings || !Array.isArray(DB.workouts)) return false;
+  const zrobione = Array.isArray(DB.settings.poprawkiNazw) ? DB.settings.poprawkiNazw : [];
+  let zmiana = false;
+  POPRAWKI_NAZW.forEach(p => {
+    if(zrobione.indexOf(p.id) >= 0) return;
+    const w = DB.workouts.find(x => x.id === p.trening);
+    if(!w) return;
+    (w.exercises || []).forEach(e => {
+      const maks = Math.max(0, ...(e.sets || []).map(x => x.w || 0));
+      if(e.name === p.z && (p.doKg == null || maks <= p.doKg)){ e.name = p.na; zmiana = true; }
+    });
+    zrobione.push(p.id);
+    zmiana = true;
+  });
+  DB.settings.poprawkiNazw = zrobione;
+  return zmiana;
 }
 function uid(p){ return (p||'r')+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
