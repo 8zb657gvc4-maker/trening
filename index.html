@@ -843,6 +843,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
   <!-- WYBOR DNIA -->
   <div class="sub" id="s-pick">
     <h2>Wybierz dzień</h2>
+    <div id="silowniaPick"></div>
     <div class="dgrid" id="dayBtns"></div>
   </div>
 
@@ -2157,7 +2158,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '92';
+const WERSJA = '93';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3288,6 +3289,7 @@ function podejrzaneSkoki(nazwy, PROG){
   (nazwy || []).forEach(n => {
     const ses = [];
     DB.workouts.forEach(w => {
+      if(!tuSieLiczy(w, n)) return;        /* inna siłownia = inna maszyna */
       const e = (w.exercises || []).find(x => x.name === n); if(!e) return;
       const b = bestSet(e.sets, n); if(b && b.w > 0) ses.push({date:w.date, s:b, e:e1rm(b, n)});
     });
@@ -3298,10 +3300,59 @@ function podejrzaneSkoki(nazwy, PROG){
   });
   return out;
 }
-function lastFor(name, pomijajDeload){
+/* ============================================================
+   SIŁOWNIE
+   Filip trenuje na dwóch: Silver Gym i Well Fitness. Bramy i maszyny mają
+   tam inne przełożenie — „30 kg" na jednej to inny opór niż na drugiej
+   (1 października: „na Well Fitness się ciężej robi"). Wspólna historia
+   dawała fałszywe skoki i spadki, a propozycje skakały między siłowniami.
+
+   Więc: przed treningiem wybierasz siłownię (zapamiętana w ustawieniach),
+   trening ją zapisuje, a historia MASZYN i WYCIĄGÓW liczy się osobno dla
+   każdej. Sztanga, hantle i masa własna ważą wszędzie tyle samo — ich
+   historia zostaje wspólna. Stare treningi bez pola = Silver Gym (tak było).
+   ============================================================ */
+const SILOWNIE = {
+  silver: {n:'Silver Gym',   stosy:{brama:[10,15,20,25,30,40,50,60,70,80,90]}},
+  well:   {n:'Well Fitness', stosy:{}}
+};
+function silowniaTeraz(){
+  const k = DB && DB.settings && DB.settings.silownia;
+  return SILOWNIE[k] ? k : 'silver';
+}
+function silowniaTreningu(w){ return w && SILOWNIE[w.silownia] ? w.silownia : 'silver'; }
+/* Maszyna albo wyciąg — opór zależy od konkretnego sprzętu. Hack squat
+   i wypychanie są ładowane talerzami, ale sanie i kąt różnią się między
+   maszynami, więc też liczą się osobno. */
+function maszynowe(name){
+  const L = LIB[name] || {};
+  if(L.hantle || L.bw || L.time) return false;
+  return !sztangowe(name) || /Wypychanie|Hack/i.test(name);
+}
+function tuSieLiczy(w, name){ return !maszynowe(name) || silowniaTreningu(w) === silowniaTeraz(); }
+function wybierzSilownie(k){
+  if(!SILOWNIE[k] || silowniaTeraz() === k) return;
+  DB.settings.silownia = k;
+  /* Plan na dziś był liczony z historią drugiej siłowni — liczymy od nowa,
+     chyba że to plan sprawdzony przez trenera (tego nie ruszamy po cichu). */
+  if(DB.nastepny && !DB.nastepny.sprawdzony) DB.nastepny = planNastepnego();
+  save();
+  try { renderSuggest(); } catch(e){}
+  try { renderPick(); } catch(e){}
+  toast('Siłownia: ' + SILOWNIE[k].n);
+}
+function wyborSilowniHtml(){
+  const t = silowniaTeraz();
+  return '<div class="btn2" style="margin-bottom:10px">' + Object.keys(SILOWNIE).map(k =>
+    '<button class="btn sm' + (k === t ? '' : ' ghost') + '" onclick="wybierzSilownie(\'' + k + '\')">' +
+    SILOWNIE[k].n + '</button>').join('') + '</div>';
+}
+
+function lastFor(name, pomijajDeload, wszedzie){
   for(let i=DB.workouts.length-1;i>=0;i--){
     const w = DB.workouts[i];
     if(pomijajDeload && zDeloadu(w.date)) continue;
+    if(!wszedzie && !tuSieLiczy(w, name)) continue;
     const e = w.exercises.find(x=>x.name===name);
     if(!e) continue;
     const r = robocze(e.sets);
@@ -3348,6 +3399,7 @@ function historia(name){
   const out=[];
   for(let i=DB.workouts.length-1;i>=0;i--){
     const w=DB.workouts[i];
+    if(!tuSieLiczy(w, name)) continue;   /* maszyny: tylko ta siłownia */
     const e=w.exercises.find(x=>x.name===name);
     if(e && e.sets.length) out.push({date:w.date, day:w.day, sets:e.sets, note:w.note});
   }
@@ -3910,13 +3962,18 @@ function zakresCwiczenia(name, slot, phase){
    czyli liczbę, której nie da się ustawić. Ćwiczenie z polem `stos`
    dostaje propozycję wyrównaną do stopni tego stosu.
    ============================================================ */
-const STOSY = {
-  brama: {nazwa:'brama', kg:[10,15,20,25,30,40,50,60,70,80,90]}
-};
+/* Od 93 stosy są PER SIŁOWNIA — patrz SILOWNIE niżej. Stopnie 10…90
+   należą do Silver Gym. Na Well Fitness brama ma inne przełożenie i krok
+   2,5 kg (Filip, 1 października), więc tam stosu nie ma — zwykłe 2,5 kg. */
+function stosDla(name){
+  const L = LIB[name] || {};
+  const kg = L.stos && ((SILOWNIE[silowniaTeraz()] || {}).stosy || {})[L.stos];
+  return kg ? {nazwa: L.stos, kg} : null;
+}
 /* Wyrównanie do stosu. kier: 'gora' — najmniejszy stopień ≥ w,
    'dol' — największy ≤ w, inaczej najbliższy (remis w dół). */
 function naStos(name, w, kier){
-  const st = STOSY[(LIB[name] || {}).stos];
+  const st = stosDla(name);
   if(!st || !(w > 0)) return w;
   const k = st.kg;
   if(kier === 'gora'){ const x = k.find(v => v >= w - 1e-9); return x != null ? x : k[k.length-1]; }
@@ -3926,8 +3983,7 @@ function naStos(name, w, kier){
 
 function suggestLoad(name, slot, phase, tydzien){
   const s = suggestLoadSurowe(name, slot, phase, tydzien);
-  const L = LIB[name] || {};
-  const st = STOSY[L.stos];
+  const st = stosDla(name);
   if(!s || !st || !(s.w > 0) || s.tag === 'coach') return s;
   if(st.kg.includes(s.w)) return s;
   const ost = lastFor(name, false);
@@ -4006,6 +4062,17 @@ function suggestLoadSurowe(name, slot, phase, tydzien){
   /* Deska bokiem dostawała „dobierz ciężar tak, żeby po 30 s zostały 3–4
      w zapasie" — ćwiczenie na czas, bez ciężaru, i „3–4" czego? Tekst musi
      pasować do tego, jak ćwiczenie się mierzy. */
+  if(!last && maszynowe(name)){
+    const gdzieIndziej = lastFor(name, false, true);
+    if(gdzieIndziej){
+      const wI = Math.max(...gdzieIndziej.sets.map(x => x.w || 0));
+      const inna = SILOWNIE[silowniaTreningu(DB.workouts.find(w => w.date === gdzieIndziej.date))] || {};
+      return {w:null, r:mn, sets, tag:'new',
+        why:'Pierwszy raz na tej maszynie w ' + SILOWNIE[silowniaTeraz()].n + '. ' +
+          (inna.n ? 'Na ' + inna.n : 'Gdzie indziej') + ' robiłeś ' + fmtKg(wI) + ' kg — tu przełożenie ' +
+          'jest inne, więc dobierz ciężar na pierwszej serii tak, żeby po ' + mn + ' powt. zostały 2–3 w zapasie.'};
+    }
+  }
   if(!last) return {w:null, r:mn, sets, tag:'new',
     why: L.time
       ? 'Pierwszy raz w tym planie. Trzymaj '+mn+' s na stronę — tak, żeby dało się wytrzymać jeszcze ok. 10 s dłużej.'
@@ -6557,6 +6624,8 @@ function delWorkout(id){
    WYBÓR DNIA
    ============================================================ */
 function renderPick(){
+  const ws = document.getElementById('silowniaPick');
+  if(ws) ws.innerHTML = wyborSilowniHtml();
   const s=suggestNext();
   document.getElementById('dayBtns').innerHTML = ORDER.map(k=>{
     const last=DB.workouts.filter(x=>x.day===k).slice(-1)[0];
@@ -6581,6 +6650,7 @@ function renderSuggest(){
     document.getElementById('sugBody').innerHTML=h;
     return;
   }
+  h+=wyborSilowniHtml();
   h+='<div class="tip ok"><b>'+esc(s.head)+'</b><br>'+s.why.map(esc).join('<br>')+'</div>';
   h+=s.notes.filter(n=>n[1]).map(n=>'<div class="tip '+n[0]+'">'+esc(n[1])+'</div>').join('');
 
@@ -6625,7 +6695,7 @@ function startSession(day, withSug){
   const w=weekNo(), tp=tydzienPlanu(), p=phaseOf(tp);
   const gotowy = planNaDzis(day);
   const zbudowane = buildDay(day,p,tp);
-  SES={date:today(), day:day, week:w, tygPlanu:tp, t0:Date.now(), note:'',
+  SES={date:today(), day:day, week:w, tygPlanu:tp, t0:Date.now(), note:'', silownia: silowniaTeraz(),
     /* Skrót dnia jest DECYZJĄ, więc jedzie razem z sesją i zostaje w historii —
        inaczej za tydzień nie da się odczytać, czemu ta sesja miała trzy
        ćwiczenia zamiast sześciu. */
@@ -6642,7 +6712,7 @@ function startSession(day, withSug){
     })};
   if(gotowy) toast(gotowy.sprawdzony ? 'Plan sprawdzony przez trenera' : 'Plan z wczoraj');
   saveSes();
-  document.getElementById('sesName').textContent=day+' — '+dayName2(day);
+  document.getElementById('sesName').textContent=day+' — '+dayName2(day)+' · '+SILOWNIE[SES.silownia].n;
   setSub('ses');
   askNotify();
 }
@@ -7566,6 +7636,7 @@ function finishSession(){
   const dur = SES.t0 ? Math.max(1, Math.round((Date.now()-SES.t0)/60000)) : null;
   const wpis={id:uid('w'), date:SES.date, day:SES.day, week:SES.week,
               tygPlanu: SES.tygPlanu != null ? SES.tygPlanu : tydzienPlanu(SES.date),
+              silownia: SES.silownia || silowniaTeraz(),
               exercises:ex};
   if(SES.rozgrzewka) wpis.rozgrzewka=true;
   /* iOS potrafi ubić aplikację w tle. Gdy wrócisz do niej rano i klikniesz
