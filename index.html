@@ -1191,6 +1191,12 @@ const DOMYSLNE_REG = {
 const DOMYSLNA_LIB = {
   /* --- klatka --- */
   'Wyciskanie leżąc':            {inc:2.5, mus:{klatka_srodek:1, klatka_dol:.3, triceps_bocz:.4, triceps_przysr:.3, bark_przod:.3}},
+  /* Maszyna na talerze, każda ręka osobno. Filip zrobił ją 30 września,
+     gdy ławki i hantle były zajęte — zapisała się „poza planem" i aplikacja
+     nie wiedziała, co trenuje. Maszyna, więc historia osobno dla każdej
+     siłowni (patrz `maszynowe`). */
+  'ISO lateral bench press':     {inc:5, mus:{klatka_srodek:1, klatka_dol:.3, triceps_bocz:.4, triceps_przysr:.3, bark_przod:.3},
+                                  cue:'Łopatki ściągnięte i przyklejone do oparcia. Obie ręce równo — maszyna nie wyrówna słabszej strony za Ciebie.'},
   'Wyciskanie hantlami płasko':  {hantle:true, inc:2.5, mus:{klatka_srodek:1, klatka_gora:.2, bark_przod:.3, triceps_bocz:.3, triceps_przysr:.2}},
   'Wyciskanie hantli, skos':     {hantle:true, inc:2.5, mus:{klatka_gora:1, klatka_srodek:.4, bark_przod:.4, triceps_bocz:.3},
                                   cue:'Ławka 30°. Wyżej niż 45° i robota przenosi się na barki.'},
@@ -2159,7 +2165,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '94';
+const WERSJA = '95';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
