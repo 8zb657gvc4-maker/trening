@@ -1700,6 +1700,7 @@ const DOMYSLNY_PLAN = {
     /* Hack squat przeszedł do N1 — tu zostaje wypychanie, a na zmianę
        prostowanie nóg (izolacja; jak maszyna do wypychania zajęta). */
     {id:'N2', lab:'Czworogłowe — maszyna',
+     preferowany:'Wypychanie nogami',   /* prostowanie nóg tylko jako zamiennik, nie w rotacji */
      pool:['Wypychanie nogami','Prostowanie nóg'],
      t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×8-10 RPE8'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
@@ -2158,7 +2159,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '93';
+const WERSJA = '94';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3362,6 +3363,11 @@ function lastFor(name, pomijajDeload, wszedzie){
 }
 /* Dolna granica celu, który stał nad ćwiczeniem W TAMTEJ sesji: „3×8-10 RPE8"
    → 8. null, gdy celu nie ma albo nie da się go odczytać (stare sesje). */
+/* Liczba serii z celu tamtej sesji: „3×8-10 RPE8" → 3. */
+function serieCelu(t){
+  const m = String(t || '').match(/^\s*([0-9]+)\s*×/);
+  return m ? +m[1] : null;
+}
 function dolnaGranicaCelu(t){
   const m = String(t || '').match(/×\s*([0-9]+)/);
   return m ? +m[1] : null;
@@ -4196,7 +4202,14 @@ function suggestLoadSurowe(name, slot, phase, tydzien){
   const top  = last.sets.filter(s=>(s.w||0)===wTop);
   const minR = Math.min(...top.map(s=>s.r||0));
   const maxR = Math.max(...top.map(s=>s.r||0));
-  const full = top.length >= sets;
+  /* „Komplet serii" liczymy względem celu Z TAMTEJ sesji, nie z dzisiejszej.
+     2 października: hack squat 75 kg × 8/8/8 przy celu 3×8, wszystko na
+     RPE 6 — a propozycja „ten sam ciężar, celuj w 8, dopiero wtedy dokładasz".
+     Powód: ostatni tydzień budowy dokłada czwartą serię, więc trzy zrobione
+     serie przestawały być kompletem i progresja stawała w miejscu dokładnie
+     wtedy, gdy plan chce jej najwięcej. */
+  const serieWtedy = serieCelu(last.target);
+  const full = top.length >= Math.min(sets, serieWtedy || sets);
   const rpe  = avg(top.map(s=>s.rpe));
   const prev = wTop ? fmtKg(wTop)+' kg × '+top.map(s=>s.r).join('/') : top.map(s=>s.r).join('/')+' '+unit;
 
