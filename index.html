@@ -2165,7 +2165,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '99';
+const WERSJA = '100';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2244,7 +2244,12 @@ const POPRAWKI_NAZW = [
   {id:'n2', trening:'wmu7905riqoqi', z:'Allahy', na:'Allahy na wyciągu'},
   {id:'n3', trening:'wmuiyptgz9sa6', z:'Hack squad', na:'Hack squat'},
   {id:'n4', trening:'wmuiyptgz9sa6', z:'Uginanie nóg leżąc', na:'Uginanie nogi stojąc', doKg:15},
-  {id:'n5', trening:'wmu9qjbxq58ej', z:'Rozpiętki na maszynie', na:'Rozpiętki na maszynie talerzowej'}
+  {id:'n5', trening:'wmu9qjbxq58ej', z:'Rozpiętki na maszynie', na:'Rozpiętki na maszynie talerzowej'},
+  /* 3 października: „uginanie na skosie robiłem na bramie" (20 kg to brama,
+     nie hantle po 20 kg na rękę) oraz „40 kg na biceps to niemożliwe — to był
+     triceps" (25 września, ten sam ciężar co prostowanie ramion 13 września). */
+  {id:'n6', trening:'wmuskbgf0y1mx', z:'Uginanie hantlami na skosie', na:'Uginanie na wyciągu'},
+  {id:'n7', trening:'wmugyxtymj5ct', z:'Uginanie na wyciągu', na:'Prostowanie ramion wyciąg'}
 ];
 function poprawNazwy(){
   if(!DB || !DB.settings || !Array.isArray(DB.workouts)) return false;
@@ -2256,7 +2261,10 @@ function poprawNazwy(){
     if(!w) return;
     (w.exercises || []).forEach(e => {
       const maks = Math.max(0, ...(e.sets || []).map(x => x.w || 0));
-      if(e.name === p.z && (p.doKg == null || maks <= p.doKg)){ e.name = p.na; zmiana = true; }
+      if(e.name === p.z && (p.doKg == null || maks <= p.doKg)){
+        e.name = p.na; zmiana = true;
+        w.updatedAt = new Date().toISOString();   /* inaczej scalanie z serwerem cofnie poprawkę */
+      }
     });
     zrobione.push(p.id);
     zmiana = true;
