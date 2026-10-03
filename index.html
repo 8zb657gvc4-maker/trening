@@ -2165,7 +2165,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '96';
+const WERSJA = '97';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -7987,6 +7987,20 @@ function openTrening(id){ TREN_ID = id; setSub('tren'); }
    Zla nazwa to nie kosmetyka: od niej zalezy nastepny proponowany ciezar
    i cale pokrycie partii. A serie sa prawdziwe — szkoda je kasowac tylko
    po to, zeby wpisac je od nowa pod wlasciwa nazwa. */
+function zmienSilownieTreningu(id){
+  const w = DB.workouts.find(x => x.id === id);
+  if(!w) return;
+  const klucze = Object.keys(SILOWNIE);
+  const nowa = klucze[(klucze.indexOf(silowniaTreningu(w)) + 1) % klucze.length];
+  if(!confirm('Przenieść ten trening do: ' + SILOWNIE[nowa].n + '?\n\n' +
+    'Maszyny i wyciągi z tej sesji będą liczyć się do historii tej siłowni.')) return;
+  w.silownia = nowa;
+  w.updatedAt = new Date().toISOString();   /* inaczej synchronizacja cofnie zmianę — patrz przemianujCwiczenie */
+  if(DB.nastepny && !DB.nastepny.sprawdzony) DB.nastepny = planNastepnego();
+  save(); zsynchronizuj();
+  toast('Trening: ' + SILOWNIE[nowa].n);
+  renderTrening();
+}
 function przemianujCwiczenie(idTreningu, ei){
   const w = DB.workouts.find(x => x.id === idTreningu);
   const e = w && w.exercises[ei];
@@ -8034,6 +8048,11 @@ function renderTrening(){
 
   if(w.flag) h += '<div class="tip warn"><b>Oznaczony:</b> coś było nie tak.</div>';
   if(w.note) h += '<div class="tip"><b>Twoja notatka:</b> '+esc(w.note)+'</div>';
+  /* Siłownia treningu — z możliwością poprawki. Zapomniany przełącznik przed
+     treningiem wrzuca całą sesję do historii maszyn złej siłowni. */
+  h += '<div class="hrow" style="margin:10px 0"><div class="hm">Siłownia: <b>'+
+    SILOWNIE[silowniaTreningu(w)].n+'</b></div>'+
+    '<button class="pill" onclick="zmienSilownieTreningu(\''+w.id+'\')">zmień</button></div>';
 
   h += '<h2>Ćwiczenia</h2><div class="card">'+ w.exercises.map((e,ei)=>{
     const rob = e.sets.filter(x=>!x.wu);
@@ -10875,8 +10894,79 @@ function renderCoverage(){
 /* ============================================================
    TRENDY — siła w bojach i waga
    ============================================================ */
+/* Główne boje aktualnego planu (sloty `fixed` w dniach rotacji). */
+function bojePlanu(){
+  const out = [];
+  ORDER.forEach(d => ((PLAN[d] || {}).slots || []).forEach(sl => {
+    if(sl.fixed && sl.lab === 'Główny bój' && out.indexOf(sl.fixed) < 0) out.push(sl.fixed); }));
+  return out;
+}
+
+/* ============================================================
+   SIŁA OD POCZĄTKU
+   Filip, 3 października: „pokaż mi, jak poszła moja siła do góry, odkąd
+   zacząłem trenować — i w aplikacji, żebym to widział".
+
+   Dla każdego ćwiczenia z co najmniej dwiema sesjami: najlepsza seria
+   pierwszej sesji kontra najlepsza seria ostatniej, przeliczone na
+   szacowany maks na jedno powtórzenie (e1RM) — bo 60 kg × 8 i 70 kg × 5
+   nie da się porównać inaczej. Maszyny i wyciągi tylko z WYBRANEJ siłowni
+   (historia() już to filtruje), więc zmiana sprzętu nie udaje postępu
+   ani spadku. Ćwiczenia na czas pomijamy — to nie siła.
+   ============================================================ */
+function silaOdPoczatku(){
+  const nazwy = [];
+  DB.workouts.forEach(w => (w.exercises || []).forEach(e => { if(nazwy.indexOf(e.name) < 0) nazwy.push(e.name); }));
+  const boje = bojePlanu();
+  const out = [];
+  nazwy.forEach(name => {
+    const L = LIB[name] || {};
+    if(L.time) return;
+    const h = historia(name).slice().reverse()
+      .map(x => ({d: x.date, s: bestSet(x.sets, name)})).filter(x => x.s && (x.s.r || 0) > 0);
+    if(h.length < 2) return;
+    const pkt = h.map(x => ({v: e1rm(x.s, name), d: x.d}));
+    const p0 = pkt[0].v, pN = pkt[pkt.length - 1].v;
+    if(!(p0 > 0)) return;
+    out.push({name, sesje: h.length, od: h[0].d, do: h[h.length - 1].d,
+      pierwszy: h[0].s, ostatni: h[h.length - 1].s,
+      zmiana: Math.round((pN / p0 - 1) * 100),
+      szczyt: Math.round((Math.max(...pkt.map(x => x.v)) / p0 - 1) * 100),
+      boj: boje.indexOf(name) >= 0, pkt});
+  });
+  out.sort((a, b) => (b.boj - a.boj) || (b.sesje - a.sesje) || a.name.localeCompare(b.name));
+  return out;
+}
+function raportSily(){
+  const r = silaOdPoczatku();
+  if(!r.length || !DB.workouts.length)
+    return '<div class="empty">Za mało danych.<br>Potrzeba dwóch sesji tego samego ćwiczenia.</div>';
+  const pierwsza = DB.workouts[0].date;
+  const tyg = Math.max(1, Math.round((new Date(today()+'T00:00:00') - new Date(pierwsza+'T00:00:00')) / (7*864e5)));
+  const PROG = 3;   /* poniżej 3% to szum pomiaru, nie zmiana */
+  const up = r.filter(x => x.zmiana >= PROG).length, dol = r.filter(x => x.zmiana <= -PROG).length;
+  const zm = x => '<span class="' + (x.zmiana >= PROG ? 'up' : x.zmiana <= -PROG ? 'down' : 'hm') + '">' +
+    (x.zmiana >= 0 ? '+' : '') + x.zmiana + '%</span>';
+  let h = '<div class="tip"><b>Od ' + plDate(pierwsza) + '</b> · ' + DB.workouts.length + ' treningów · ' + tyg + ' tyg.' +
+    '<br>W górę: <b>' + up + '</b> · bez zmian: <b>' + (r.length - up - dol) + '</b> · w dół: <b>' + dol + '</b></div>';
+  const dlugie = r.filter(x => x.sesje >= 3), krotkie = r.filter(x => x.sesje < 3);
+  h += dlugie.map(x =>
+    '<div class="card"><div class="chdr">' + esc(x.name) + (x.boj ? ' <span class="hm">· bój</span>' : '') + zm(x) + '</div>' +
+    sparkline(x.pkt, x.zmiana <= -PROG ? 'var(--warn)' : 'var(--info)') +
+    '<div class="cfoot"><span>' + plDate(x.od) + ': ' + fmtSet(x.pierwszy, x.name) + '</span>' +
+    '<span>' + plDate(x.do) + ': ' + fmtSet(x.ostatni, x.name) + '</span></div>' +
+    (x.szczyt > x.zmiana + PROG ? '<div class="hm" style="margin-top:4px">Najlepszy wynik po drodze: +' + x.szczyt + '%.</div>' : '') +
+    '</div>').join('');
+  if(krotkie.length)
+    h += '<h2>Dopiero dwie sesje</h2><div class="card">' + krotkie.map(x =>
+      kv(x.name, fmtSet(x.pierwszy, x.name) + ' → ' + fmtSet(x.ostatni, x.name) + ' ' + zm(x))).join('') + '</div>';
+  h += '<div class="hm" style="margin-top:10px">Procent = zmiana szacowanego maksa na 1 powtórzenie, ' +
+    'pierwsza sesja kontra ostatnia. Maszyny: tylko ' + SILOWNIE[silowniaTeraz()].n + '.</div>';
+  return h;
+}
+
 function renderTrendy(){
-  const BOJE=['Przysiad ze sztangą','Wyciskanie leżąc','Martwy ciąg klasyczny','Podciąganie','Wyciskanie żołnierskie'];
+  const BOJE=bojePlanu();
   let bloki='';
 
   BOJE.forEach(name=>{
@@ -11157,7 +11247,7 @@ function renderReport(){
   const dPrev=DB.daily.filter(x=>inWeek(x.date,w-1));
   const rCur=DB.runs.filter(x=>inWeek(x.date,w));
   const [ws,we]=weekRange(w);
-  const SEKCJE = [['teraz','Teraz'],['tydzien','Tydzień'],['cialo','Mięśnie'],['jedzenie','Jedzenie']];
+  const SEKCJE = [['teraz','Teraz'],['tydzien','Tydzień'],['sila','Siła'],['cialo','Mięśnie'],['jedzenie','Jedzenie']];
   if(!SEKCJE.some(x => x[0] === RAPORT_SEKCJA)) RAPORT_SEKCJA = 'teraz';
   const sek = RAPORT_SEKCJA;
 
@@ -11168,6 +11258,7 @@ function renderReport(){
     '</div>';
 
   if(sek === 'teraz') h += raportDnia();
+  if(sek === 'sila') h += raportSily();
 
   /* NAJŚWIEŻSZY RAPORT SESJI — na górze zakładki, gdzie go szukasz.
 
@@ -11213,7 +11304,9 @@ function renderReport(){
         '% wobec poprzedniego tygodnia'+(rCur.length?' · biegi '+rCur.length+'/2':'')+'</div>'
       : '');
 
-  const KEYLIFTS=['Przysiad ze sztangą','Wyciskanie leżąc','Martwy ciąg klasyczny','Podciąganie','Wyciskanie żołnierskie'];
+  /* Boje z planu, nie z listy wpisanej na sztywno — po zmianie boju nóg na
+     hack squat (92) ta lista dalej pytała o przysiad ze sztangą. */
+  const KEYLIFTS=bojePlanu();
   const rows=KEYLIFTS.map(name=>{
     const c=bestIn(cur,name), pr=bestIn(prev,name);
     if(!c) return null;
