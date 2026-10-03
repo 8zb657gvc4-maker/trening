@@ -1252,7 +1252,7 @@ const DOMYSLNA_LIB = {
   'Uginanie ramion':             {inc:2.5, mus:{biceps_dluga:.9, biceps_krotka:.9, ramienny:.4, przedramie:.3}},
   'Uginanie młotkowe':           {hantle:true, inc:2.5, mus:{ramienny:1, biceps_dluga:.5, biceps_krotka:.3, przedramie:1}},
   'Uginanie na modlitewniku':    {inc:2.5, mus:{biceps_krotka:1, biceps_dluga:.4, ramienny:.4}},
-  'Uginanie na wyciągu':         {inc:2.5, mus:{biceps_dluga:.9, biceps_krotka:.8, ramienny:.3}},
+  'Uginanie na wyciągu':         {inc:2.5, stos:'brama', mus:{biceps_dluga:.9, biceps_krotka:.8, ramienny:.3}},
   /* Filip, 30 września: uginanie ramion zamienić na spider curl — na
      hantlach i na wyciągu na zmianę. Wersja z wyciągu: klatka na skosie
      przodem do bramy, linka z dołu; napięcie zostaje też na górze ruchu. */
@@ -2165,7 +2165,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '98';
+const WERSJA = '99';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
