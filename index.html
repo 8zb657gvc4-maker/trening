@@ -518,6 +518,11 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .wubtn{display:block;width:100%;margin-top:7px;background:rgba(74,158,255,.18);
   border:1px solid rgba(74,158,255,.4);border-radius:7px;padding:7px;
   font-size:11.5px;font-weight:700;color:var(--acc)}
+.srow.rek .sn{background:var(--ok);color:#04211a;font-weight:800}
+.cwnota{font-size:11.5px;color:var(--dim);padding:7px 10px;margin:2px 0 8px;border-radius:9px;
+  border:1px dashed var(--line);cursor:pointer;line-height:1.4;-webkit-tap-highlight-color:transparent}
+.cwnota.jest{border-style:solid;color:var(--txt)}
+.cwnota b{font-weight:650}
 .srow.wus{opacity:.58}
 .srow.wus .sn{background:transparent;border:1px dashed var(--line);color:var(--acc)}
 .plt{font-size:11.5px;color:var(--dim);margin-top:8px;text-align:center}
@@ -1739,10 +1744,20 @@ const DOMYSLNY_PLAN = {
        normie do 14, czworoglowe na 8.6 przy 5-14: jest z czego zejsc.
        Dwie serie w kazdej fazie oddaja miejsce lydkom i skosnym, ktore
        lezaly na samym dole normy. */
+    /* OD 101: JEDNONÓŻ WYPADA Z DNIA NÓG. Dzień N zajął Filipowi 96 minut
+       (18 września) i 111 minut (2 października) przy założonych 65 — a ten
+       slot kosztuje podwójnie, bo każdą serię robi się na obie nogi osobno.
+       Pasuje to też do tego, co powiedział 26 września o hip thruście:
+       „po przysiadzie i wypychaniu to już za dużo ćwiczeń wielostawowych".
+       `pokrycie.js` po zdjęciu: czworogłowe 6,6 (norma 5–14), pośladkowy
+       wielki 5,9 (4–14), dwugłowe bez zmian — wszystko w normie, 18 serii
+       zamiast 20. Slot ZOSTAJE w planie z zerem serii: historia odwołuje
+       się do 'N4' i musi umieć go nazwać; przywrócenie to zmiana czterech
+       cyfr w `s`. */
     {id:'N4', lab:'Jednonóż / stabilizacja miednicy',
      pool:['Przysiad bułgarski','Wykroki chodzone'],
      t:['2×10 RPE6','2×8-10 RPE8','2×10 RPE5','2×8-10 RPE8'],
-     s:[2,2,2,2], rr:[[10,10],[8,10],[10,10],[8,10]]},
+     s:[0,0,0,0], rr:[[10,10],[8,10],[10,10],[8,10]]},
     {id:'N5', lab:'Dwugłowe — zginanie kolana', upadek:true,
      pool:['Uginanie nóg leżąc','Uginanie nóg siedząc'],
      t:['3×12','3×10-12','2×12','3×10-12'],
@@ -2165,8 +2180,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '100';
-const WERSJA_DATA = '2026-09-15';
+const WERSJA = '101';
+const WERSJA_DATA = '2026-10-03';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 let DB = null, SES = null, SUB = 'hub';
@@ -2204,6 +2219,18 @@ function blank(){
 function load(){
   try{ const r = localStorage.getItem(KEY); DB = r ? JSON.parse(r) : blank(); }
   catch(e){ DB = blank(); }
+  uzupelnijDB();
+  if(poprawNazwy()) save();
+  zastosujPlan();
+}
+/* Uzupełnienie brakujących pól i migracje — wydzielone z `load()`, żeby
+   KAŻDA droga, którą do `DB` trafia stan z zewnątrz, przechodziła przez
+   to samo. Import z opcją „zastąp" podstawiał wczytany plik wprost: plik
+   sprzed kosza albo posiłków zostawiał `DB.kosz` i `DB.posilki` jako
+   undefined i pierwsze usunięcie treningu albo wejście w Dane kończyło się
+   wyjątkiem — do następnego uruchomienia aplikacji. Znalezione testem
+   importu, którego wcześniej nie było. */
+function uzupelnijDB(){
   if(!DB.settings) DB.settings = {start:iso(new Date()), rest:90};
   ['workouts','daily','runs','measures','questions','pain','skip','posilki'].forEach(k=>{ if(!Array.isArray(DB[k])) DB[k]=[]; });
   if(DB.coach===undefined) DB.coach = null;
@@ -2223,8 +2250,6 @@ function load(){
   /* identyfikatory treningów — potrzebne do scalania przy imporcie */
   DB.workouts.forEach((w,i)=>{ if(!w.id) w.id = 'w'+w.date+'_'+(w.day||'x')+'_'+i; });
   DB.v = 4;
-  if(poprawNazwy()) save();
-  zastosujPlan();
 }
 
 /* JEDNORAZOWE POPRAWKI NAZW W HISTORII — potwierdzone przez Filipa.
@@ -2456,7 +2481,7 @@ function pushStan(){
 }
 
 /* IndexedDB zamiast localStorage — patrz komentarz wyżej. */
-function pushZapiszDlaSW(dane){
+function pushZapiszDlaSW(dane, klucz){
   return new Promise(zwroc => {
     let gotowe = false;
     const koniec = () => { if(!gotowe){ gotowe = true; zwroc(); } };
@@ -2467,7 +2492,7 @@ function pushZapiszDlaSW(dane){
       zad.onsuccess = () => {
         try {
           const t = zad.result.transaction('ust', 'readwrite');
-          t.objectStore('ust').put(dane, 'serwer');
+          t.objectStore('ust').put(dane, klucz || 'serwer');
           t.oncomplete = koniec; t.onerror = koniec;
         } catch(e){ koniec(); }
       };
@@ -2588,8 +2613,8 @@ function renderPush(){
     return;
   }
   el.innerHTML = naglowek +
-    '<div class="note">Jedno powiadomienie rano: co dziś robisz i jaka jest gotowość. '+
-    'Treść składa aplikacja, serwer tylko budzi telefon.</div>'+
+    '<div class="note">Jedno powiadomienie rano: noc z zegarka i co dziś robisz. '+
+    'Do tego sygnał końca przerwy przy zgaszonym ekranie.</div>'+
     '<button class="btn ghost sm" style="margin-top:8px;width:100%" '+
     'onclick="wlaczPowiadomienia()">Włącz powiadomienia</button>';
 }
@@ -2666,20 +2691,62 @@ async function wylaczPowiadomienia(){
    Worker jest listonoszem: przechowuje ostatnie zdanie i budzi telefon.
    Wysyłamy przy każdej synchronizacji, więc zdanie jest tak świeże,
    jak ostatnie otwarcie aplikacji. */
-function trescPowiadomienia(){
-  const n = planDoPokazania();
-  if(n && n.dzien && PLAN[n.dzien]){
-    const g = gotowosc();
-    return {tytul: 'Dziś: ' + n.dzien + ' — ' + PLAN[n.dzien].name,
-            tekst: (g.nieznana ? 'Wpisz dane poranne i ruszaj.'
-                               : 'Gotowość ' + gotowoscDnia(n.dzien, g) + '/100.') +
-                   ' ' + n.cwiczenia.length + ' ćwiczeń.'};
+/* PLAN NA KONKRETNĄ DATĘ, NIE „NA DZIŚ" (od wersji 101).
+
+   Do 100 szło jedno zdanie liczone w chwili synchronizacji — a ta dzieje
+   się przy otwarciu aplikacji, czyli zwykle wieczorem po treningu. Rano
+   powiadomienie mówiło więc o dniu, który był już zrobiony, albo — gdy
+   zdanie się zestarzało — tylko „zajrzyj do aplikacji". Filip, 3 paździer-
+   nika: „wolę jedno fajne powiadomienie z rana, że pobrało dane z zegarka
+   i co dzisiaj mnie czeka na siłowni".
+
+   Teraz aplikacja wysyła zdania na dziś i dwa kolejne dni, każde pod swoją
+   datą. Worker rano wybiera wpis z dzisiejszą datą i dokleja noc z zegarka.
+   Liczby (serie, minuty, ciężar boju) pochodzą z silnika — nie z modelu
+   i nie z Workera. */
+function zdanieDnia(przes){
+  const data = przesun(today(), przes);
+  const wolne = {data, tytul: 'Dziś wolne',
+    tekst: 'Dzień bez siłowni — regeneracja jest częścią planu.'};
+  if(przes === 0 && (przerwaOtwarta() || (DB.odpoczynek||[]).some(x => x.date === data)))
+    return wolne;
+  /* Dziś bierzemy to samo, co pokazuje ekran główny: plan trenera albo
+     zaległy ma pierwszeństwo przed świeżym wyliczeniem. */
+  const gp = przes === 0 ? planDoPokazania() : null;
+  let dzien = null, lista = null;
+  if(gp && gp.dzien && PLAN[gp.dzien]){
+    dzien = gp.dzien;
+    lista = gp.cwiczenia.map(c => ({name: c.name, serie: c.serie, w: c.ciezar}));
+  } else {
+    const s = suggestNext(przes);
+    if(s && !s.rest && s.day && PLAN[s.day]){
+      dzien = s.day;
+      lista = buildDayCache(s.day, s.phase, s.week)
+        .map(e => ({name: e.name, serie: (e.sug || {}).sets, w: (e.sug || {}).w}));
+    }
   }
-  const md = makroDnia(), cm = celeMakro();
-  if(md && md.kcal === 0)
-    return {tytul: 'Trening', tekst: 'Dziś wolne. Nie zapisałeś jeszcze nic z jedzenia — '+
-            'cel to ' + cm.b.min + ' g białka.'};
-  return {tytul: 'Trening', tekst: 'Dziś wolne. Zajrzyj wieczorem i wpisz dane dnia.'};
+  if(!dzien || !lista || !lista.length) return wolne;
+  const serie = lista.reduce((a, e) => a + (e.serie || 0), 0);
+  const boj = lista[0];
+  return {data, tytul: 'Dziś: ' + dzien + ' — ' + PLAN[dzien].name,
+    tekst: lista.length + ' ćwiczeń, ' + serie + ' serii, ok. ' + minutySesji(dzien, serie) + ' min.' +
+      (boj ? ' Główne: ' + boj.name + (boj.w ? ' ' + fmtKg(boj.w) + ' kg' : '') + '.' : '')};
+}
+
+function trescPowiadomienia(){
+  const dni = {};
+  let dzis = null;
+  [0, 1, 2].forEach(p => {
+    let z = null;
+    try { z = zdanieDnia(p); } catch(e){ z = null; }
+    if(!z) return;
+    dni[z.data] = {tytul: z.tytul, tekst: z.tekst};
+    if(p === 0) dzis = z;
+  });
+  /* `tytul` i `tekst` zostają dla Workera sprzed wersji 101, który nie zna
+     pola `dni` — do czasu wgrania nowego serwera nic się nie psuje. */
+  return {tytul: (dzis || {}).tytul || 'Trening',
+          tekst: (dzis || {}).tekst || 'Zajrzyj do aplikacji.', dni};
 }
 
 async function pushWyslijTresc(cicho){
@@ -2849,6 +2916,11 @@ function mergeDB(a, b){
   scal('questions', q => q.id, (nowy, stary) => !!nowy.answer && !stary.answer);
   out.skip = [...new Set([...(a.skip||[]), ...(b.skip||[])])];
   out.settings = Object.assign({}, a.settings, b.settings);
+  /* Notatki do ćwiczeń scalamy klucz po kluczu, z pierwszeństwem kopii
+     lokalnej (`a`). Zwykłe `assign` wyżej podmienia cały obiekt: starsza
+     kopia z serwera kasowałaby notatkę dopisaną przed chwilą w telefonie. */
+  const na = (a.settings || {}).notatkiCw, nb = (b.settings || {}).notatkiCw;
+  if(na || nb) out.settings.notatkiCw = Object.assign({}, nb || {}, na || {});
   /* uwagi trenera bierzemy nowsze */
   const da = a.coach && a.coach.date, db = b.coach && b.coach.date;
   out.coach = (!da || (db && db >= da)) ? (b.coach || a.coach) : a.coach;
@@ -3340,6 +3412,10 @@ function silowniaTeraz(){
   return SILOWNIE[k] ? k : 'silver';
 }
 function silowniaTreningu(w){ return w && SILOWNIE[w.silownia] ? w.silownia : 'silver'; }
+/* „Silver" / „Well" — do list historii. Bez tego nie widać, który trening
+   poszedł do historii maszyn której siłowni, dopóki nie otworzy się każdego
+   z osobna (a dwa z końca września leżą w złej). */
+function silowniaKrotko(w){ return SILOWNIE[silowniaTreningu(w)].n.split(' ')[0]; }
 /* Maszyna albo wyciąg — opór zależy od konkretnego sprzętu. Hack squat
    i wypychanie są ładowane talerzami, ale sanie i kąt różnią się między
    maszynami, więc też liczą się osobno. */
@@ -3596,6 +3672,32 @@ function regionNeed(reg, cov){
   if(c < R.min) return 2 + (R.min-c)/Math.max(1,R.min);
   if(c < R.max) return 1 - (c-R.min)/Math.max(1,R.max-R.min);
   return -0.5;
+}
+
+/* CZAS SESJI Z WŁASNEJ HISTORII, NIE ZE STAŁEJ.
+
+   Kafelek „MINUT" liczył trzy minuty na serię plus osiem na rozgrzewkę —
+   i pokazywał 70 minut przy dniu nóg, który Filipowi zajął 96 i 111.
+   Jego realne tempo to 3,7–5,3 minuty na serię, zależnie od dnia: nogi
+   idą wolniej (dłuższe przerwy, przekładanie talerzy), ręce szybciej.
+
+   Bierzemy medianę z ostatnich sesji TEGO dnia — medianę, nie średnią, bo
+   jedna sesja przerwana w połowie (45 minut) albo przegadana (93 minuty na
+   14 serii) nie powinna przestawiać prognozy. Gdy dzień ma mniej niż dwie
+   sesje, liczymy ze wszystkich; gdy historii nie ma wcale — 4 minuty. */
+function minNaSerie(dzien){
+  const tempo = lista => lista
+    .filter(w => w.dur && !w.durSzac && w.dur >= 20 && setCount(w) >= 6)
+    .slice(-6).map(w => w.dur / setCount(w)).sort((a, b) => a - b);
+  let t = tempo(DB.workouts.filter(w => w.day === dzien));
+  if(t.length < 2) t = tempo(DB.workouts.filter(w => PLAN[w.day] && !PLAN[w.day].wycofany));
+  if(t.length < 2) t = tempo(DB.workouts);
+  if(!t.length) return 4;
+  const m = t.length % 2 ? t[(t.length - 1) / 2] : (t[t.length / 2 - 1] + t[t.length / 2]) / 2;
+  return Math.max(3, Math.min(6, m));
+}
+function minutySesji(dzien, serie){
+  return serie ? Math.round(serie * minNaSerie(dzien) / 5) * 5 : 0;
 }
 
 /* historia slotu — które warianty i kiedy, od najnowszego */
@@ -4529,7 +4631,7 @@ function renderPlanPelny(){
        Cwiczenia skladamy dopiero dla dnia ROZWINIETEGO. */
     const sloty = (P.slots || []).filter(x => (x.s || [])[f] > 0);
     const serie = sloty.reduce((a, x) => a + x.s[f], 0);
-    const minuty = serie ? Math.round((serie * 3 + 8) / 5) * 5 : 0;
+    const minuty = minutySesji(d, serie);
     let poz = [];
     if(otw){ try { poz = buildDayCache(d, f, tydzienPlanu()); } catch(e){ poz = []; } }
 
@@ -5084,7 +5186,7 @@ function renderDzis(){
     ileP = sloty.length;
     serieP = sloty.reduce((a, x) => a + (x.s[fz] || 0), 0);
   }
-  const minuty = serieP ? Math.round((serieP * 3 + 8) / 5) * 5 : 0;
+  const minuty = minutySesji(dzien, serieP);
   const kropka = !maOdp ? 'var(--dim)'
     : g.pkt >= 85 ? 'var(--acc)' : g.pkt >= 55 ? '#ffc53d' : '#e5484d';
 
@@ -5109,14 +5211,14 @@ function renderDzis(){
          zostaje tylko kropka koloru i — gdy danych brak — zdanie, ktore mowi,
          co z tym zrobic. Ta sama liczba w dwoch miejscach na jednym ekranie
          nie dodaje nic poza szumem. */
-      '<div class="hm" style="display:flex;align-items:center;gap:6px;margin-bottom:10px">'+
-        (g.nieznana
-          ? '<i style="width:7px;height:7px;border-radius:50%;background:'+kropka+';flex:none"></i>'+
-            '<b>Gotowość nieznana — wpisz dane poranne</b>'
-          : '')+
-        (gp ? '<span class="autor '+(gp.sprawdzony?'trener':'apka')+'" '+
-              'style="margin-left:auto">'+(gp.sprawdzony?'TRENER':'APLIKACJA')+'</span>' : '')+
-      '</div>'+
+      /* O BRAKU DANYCH PORANNYCH MÓWI JEDNO MIEJSCE, NIE TRZY. Do 100 ten sam
+         brak zgłaszały naraz: zdanie tutaj, kafelek GOTOWOŚĆ („wpisz dane
+         z rana") i żółty pasek „Brakuje z dziś". Trzy komunikaty o jednej
+         rzeczy uczą tylko tego, żeby ich nie czytać. Zostaje kafelek — bo
+         to w niego się dotyka, żeby dane wpisać. */
+      (gp ? '<div class="hm" style="display:flex;margin-bottom:10px">'+
+              '<span class="autor '+(gp.sprawdzony?'trener':'apka')+'" '+
+              'style="margin-left:auto">'+(gp.sprawdzony?'TRENER':'APLIKACJA')+'</span></div>' : '')+
       '<button class="start" onclick="openSuggest()">ROZPOCZNIJ TRENING</button>'+
       '<button class="btn ghost sm" style="width:100%;margin-top:7px" '+
         'onclick="openPick()">Wolę dziś inny dzień</button>'+
@@ -5181,7 +5283,23 @@ function renderPrzeloz(){
   const n = DB.nastepny;
   if(!n || n.data !== today() || DB.workouts.some(w => w.date === today())) return '';
   const seria = seriaPrzelozen();
-  return '<div class="tip"><b>Nie dziś?</b> Przełóż trening zamiast go gubić — '+
+  /* PIĘTNAŚCIE GUZIKÓW I CZTERY AKAPITY — CODZIENNIE, NA EKRANIE GŁÓWNYM.
+     Ta karta stała rozwinięta w każdy dzień treningowy i zajmowała więcej
+     miejsca niż sam plan dnia, a potrzebna jest raz na dwa tygodnie. Teraz
+     to jedna linijka; rozwija się po dotknięciu. Ostrzeżenia (drugie
+     przełożenie z rzędu, dni wolne pod rząd) zostają widoczne bez
+     rozwijania, bo to jedyna część, której nie wolno przegapić. */
+  const ostrz = (dniWolneZRzedu() >= 2 || seria >= 2);
+  return zwijka('przeloz', 'Nie dziś?', 'Przełóż trening, weź dzień wolny albo zgłoś przerwę',
+    null, przelozTresc) +
+    (ostrz && !zwijOtwarta('przeloz')
+      ? '<div class="tip warn">' + (seria >= 2
+          ? 'Przekładasz ten trening ' + seria + ' raz z rzędu — rozwiń „Nie dziś?".'
+          : dniWolneZRzedu() + ' dni wolne z rzędu — rozwiń „Nie dziś?".') + '</div>' : '');
+}
+function przelozTresc(){
+  const seria = seriaPrzelozen();
+  return '<div class="tip" style="margin:0"><b>Przełóż trening</b> zamiast go gubić — '+
     'zostanie w planie tygodnia, tylko z jutrzejszą datą.'+
     '<div class="rpe" style="margin-top:7px;flex-wrap:wrap">'+
     Object.entries(POWODY).map(([k,v]) =>
@@ -5218,6 +5336,10 @@ function renderPrzeloz(){
 function renderBraki(){
   const b = brakiDnia();
   if(!b.length) return '';
+  /* Dopóki gotowość jest nieznana, o brakach mówi kafelek GOTOWOŚĆ —
+     ten pasek byłby drugim komunikatem o tym samym. Wraca, gdy gotowość
+     już się policzyła, a czegoś nadal brakuje. */
+  if(gotowosc().nieznana) return '';
   /* Było na to zdanie tłumaczące, po co uzupełniać. Zdanie było prawdziwe
      i po dwudziestu wyświetleniach zupełnie niewidoczne — a zajmowało dwa
      wiersze na ekranie, który ma powiedzieć, co robić teraz. Zostaje sama
@@ -5885,8 +6007,10 @@ function zakwasyDnia(day, data){
 
 function suggestNext(naJutro){
   /* `naJutro` pozwala zaplanować sesję z wyprzedzeniem, zaraz po zakończeniu
-     dzisiejszej — inaczej funkcja zawsze odpowiadałaby „dziś już trenowałeś". */
-  const ref = przesun(today(), naJutro ? 1 : 0);
+     dzisiejszej — inaczej funkcja zawsze odpowiadałaby „dziś już trenowałeś".
+     Od 101 przyjmuje też liczbę dni naprzód (poranne powiadomienie liczy
+     plan na dziś, jutro i pojutrze); `true` znaczy jak dotąd „jutro". */
+  const ref = przesun(today(), naJutro === true ? 1 : (Number(naJutro) || 0));
   /* JEDEN LICZNIK TYGODNI, NIE DWA.
 
      Było tu `weekNo(ref)` — tydzień KALENDARZA — a faza liczyła się
@@ -6356,8 +6480,11 @@ function kafelGotowosc(){
   const kolor = pkt == null ? 'var(--dim)' : pkt >= 85 ? 'var(--ok)' : pkt >= 55 ? 'var(--warn)' : 'var(--bad)';
   return '<div class="kafel2" onclick="przelaczPoranne()">'+
     (pkt == null
-      ? '<div style="height:78px;display:flex;align-items:center;justify-content:center;'+
-        'font-size:13px;color:var(--dim);padding:0 6px">wpisz dane<br>z rana</div>'
+      ? '<div style="height:78px;display:flex;flex-direction:column;align-items:center;'+
+        'justify-content:center;font-size:13px;color:var(--acc);font-weight:650;padding:0 6px">'+
+        'Wpisz dane<br>z rana<span style="font-size:10.5px;color:var(--dim);font-weight:400;'+
+        'margin-top:3px">'+(brakiDnia().some(x => x === 'sen' || x === 'HRV')
+          ? 'zegarek jeszcze nic nie przysłał' : 'samopoczucie i zakwasy')+'</span></div>'
       : pierscien(pkt, 100, kolor, '/100'))+
     '<div class="etyk">GOTOWOŚĆ</div></div>';
 }
@@ -6505,7 +6632,8 @@ function renderHub(){
       '<div class="hd">'+x.day+' · '+esc(dayName2(x.day))+
         (x.flag?' <span class="prtag" style="background:var(--warn);color:#2a1a05">!</span>':'')+'</div>'+
       '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii · '+
-        Math.round(vol(x)/1000*10)/10+'t'+(x.dur?' · '+x.dur+"'":'')+'</div></div>'+
+        Math.round(vol(x)/1000*10)/10+'t'+(x.dur?' · '+x.dur+"'":'')+
+        ' · '+silowniaKrotko(x)+'</div></div>'+
       '<div class="pill">T'+weekNo(x.date)+'</div></div>';
   }).join('');
   const ost = rec[0];
@@ -7069,8 +7197,13 @@ function renderSession(){
       '<div class="exb'+(e._open?' on':'')+'" id="exb'+i+'">'+
         '<div class="exacts">'+
           '<button class="mini" onclick="openHist(\''+esc(e.name).replace(/'/g,"\\'")+'\')">Historia</button>'+
-          (e.pool&&e.pool.length>1?'<button class="mini" onclick="swapEx('+i+')">Zamień ('+e.pool.length+')</button>':'')+
+          /* „Zamień (2)" przeskakiwało tylko po wariantach slotu i znikało
+             przy boju — czyli dokładnie tam, gdzie stanowisko bywa zajęte
+             najczęściej. „Zajęte" działa wszędzie: najpierw wariant z planu,
+             potem najbliższe ćwiczenie z biblioteki na te same mięśnie. */
+          '<button class="mini" onclick="zajeteCw('+i+')">Zajęte — daj zamiennik</button>'+
         '</div>'+
+        notatkaCwHtml(e, i, last)+
         wuTxt+
         (function(){ let nr=0; return e.sets.map((s,j)=>{
           if(!s.wu) nr++;
@@ -7078,8 +7211,11 @@ function renderSession(){
              na ekranie obsługiwanym spoconą ręką. Notatkę otwiera się teraz
              dotknięciem CAŁEGO wiersza, a kasowanie zostało odsunięte na
              prawy skraj i powiększone do pełnego celu dotykowego. */
-          return '<div class="srow'+(s.wu?' wus':'')+'" id="sr'+i+'_'+j+'">'+
-            '<div class="sn">'+(s.wu?'R':nr)+'</div>'+
+          /* Rekord widać przy konkretnej serii, nie tylko jako plakietkę na
+             całej karcie — po treningu chce się wiedzieć, KTÓRA to była. */
+          const rek = bije && s === teraz;
+          return '<div class="srow'+(s.wu?' wus':'')+(rek?' rek':'')+'" id="sr'+i+'_'+j+'">'+
+            '<div class="sn">'+(s.wu?'R':(rek?'★':nr))+'</div>'+
             '<div class="sv" onclick="noteSet('+i+','+j+')" '+
               'style="cursor:pointer;-webkit-tap-highlight-color:transparent">'+
               esc(fmtSet(s, e.name))+
@@ -7195,20 +7331,10 @@ function noteSet(i,j){
   s.n = v.trim()||null;
   SES.exercises[i]._open=true; saveSes(); renderSession();
 }
-function swapEx(i){
-  zbierzWpisane();
-  const e=SES.exercises[i];
-  if(!e.pool||e.pool.length<2) return;
-  /* Po zamianie ćwiczenia wpisany ciężar dotyczy już czegoś innego —
-     20 kg z wyciskania nie ma nic wspólnego z rozpiętkami. */
-  if(SES_WPISANE){ delete SES_WPISANE['iw'+i]; delete SES_WPISANE['ir'+i]; }
-  if(e.sets.length && !confirm('Zamienić ćwiczenie? Zapisane serie tego ćwiczenia przepadną.')) return;
-  const k=(e.pool.indexOf(e.name)+1)%e.pool.length;
-  e.name=e.pool[k]; e.sets=[]; e._open=true;
-  const slot=slotById(e.slot);
-  if(slot){ const tp = SES.tygPlanu || SES.week; e.sug=suggestLoad(e.name, slot, phaseOf(tp), tp); }
-  saveSes(); renderSession(); toast('Zamieniono na: '+e.name);
-}
+/* `swapEx` („Zamień (2)") mieszkało tutaj do wersji 100. Zastąpiło je
+   `zajeteCw`: robi to samo dla slotów z pulą, a do tego działa przy boju
+   i przy ćwiczeniach spoza planu. Dwa guziki do jednej rzeczy to jeden
+   za dużo. */
 /* BŁĄD zgłoszony w przeglądzie: każde przerysowanie sesji odtwarzało pola
    z historii, kasując to, co już wpisałeś, ale czego jeszcze nie dodałeś.
    Wpisujesz 22,5, dotykasz innego ćwiczenia albo obrazka — i pole wraca do
@@ -7347,13 +7473,199 @@ function addSet(i, rozgrzewka){
   }
   const s={w:w,r:r,rpe:rozgrzewka?null:rpe};
   if(rozgrzewka) s.wu=true;
+  /* PYTANIE PRZY CIĘŻARZE, KTÓRY NIE PASUJE DO HISTORII.
+
+     25 września Filip zapisał 40 kg pod „Uginanie na wyciągu" — to było
+     prostowanie na triceps, wybrane ćwiczenie się nie zgadzało. Wyszło po
+     tygodniu, gdy aplikacja zaproponowała 40 kg na biceps. Pytanie zadane
+     od razu kosztuje jedno dotknięcie; pomyłka znaleziona po tygodniu —
+     poprawianie historii i przeliczanie planu. Potwierdzony ciężar nie
+     pyta drugi raz w tej samej sesji. */
+  if(!rozgrzewka){
+    const o = odstajacyCiezar(e, w);
+    if(o && e._potw !== w &&
+       !confirm('„' + e.name + '": ' + fmtKg(w) + ' kg, a ' + o.skad + ' było ' + fmtKg(o.ref) +
+         ' kg (' + (o.proc > 0 ? '+' : '') + o.proc + '%).\n\n' +
+         'OK — zapisz tak.\nAnuluj — popraw ciężar albo zmień ćwiczenie.')) return;
+    if(o) e._potw = w;
+  }
+  /* Rekord liczymy PRZED dopisaniem serii: po dopisaniu `pr()` dalej patrzy
+     tylko w zapisane treningi, ale wcześniejsze serie tej sesji też mogą
+     być lepsze — wtedy to nie jest nowy rekord, tylko słabsza powtórka. */
+  let nowyRekord = false;
+  if(!rozgrzewka && !(LIB[e.name] || {}).time){
+    const rek = pr(e.name);
+    const juzLepiej = e.sets.some(x => !x.wu && e1rm(x, e.name) >= e1rm(s, e.name));
+    nowyRekord = !!(rek && e1rm(s, e.name) > e1rm(rek.set, e.name) && !juzLepiej);
+  }
   e.sets.push(s); e._open=true;
   OSTATNIA_SERIA = i + ':' + (e.sets.length - 1);
   saveSes();
   renderSession();
   /* po rozgrzewkowej przerwa jest krótsza — nie ma po czym odpoczywać 3 minut */
   startTimer(rozgrzewka ? Math.min(60, DB.settings.rest) : przerwaDla(e.name), e.name);
-  sygnal(35);
+  sygnal(nowyRekord ? 120 : 35);
+  if(nowyRekord) toast('Rekord: ' + fmtSet(s, e.name));
+}
+
+/** Ciężar wyraźnie inny niż dotąd — albo null, gdy wszystko się zgadza.
+    Punkt odniesienia to poprzednia seria robocza tej sesji, a gdy jej nie
+    ma — najcięższa seria z ostatniego treningu (na tej samej siłowni, bo
+    `lastFor` już tego pilnuje). Dwa progi naraz: 40% I co najmniej 7,5 kg.
+    Sam procent krzyczałby przy 5 → 7,5 kg na hantlach, czyli przy zwykłym
+    kroku w górę. */
+function odstajacyCiezar(e, w){
+  if(!(w > 0)) return null;
+  const L = LIB[e.name] || {};
+  if(L.bw || L.time) return null;
+  const wSesji = e.sets.filter(s => !s.wu && s.w > 0).map(s => s.w);
+  let ref = null, skad = '';
+  if(wSesji.length){ ref = wSesji[wSesji.length - 1]; skad = 'w poprzedniej serii'; }
+  else {
+    const ost = lastFor(e.name);
+    const m = ost ? Math.max(0, ...ost.sets.filter(s => !s.wu).map(s => s.w || 0)) : 0;
+    if(m > 0){ ref = m; skad = 'ostatnio (' + plDate(ost.date) + ')'; }
+  }
+  if(!(ref > 0)) return null;
+  if(Math.abs(w / ref - 1) < 0.4 || Math.abs(w - ref) < 7.5) return null;
+  return {ref, skad, proc: Math.round((w / ref - 1) * 100)};
+}
+
+/* „ZAJĘTE" — JEDNO DOTKNIĘCIE ZAMIAST SZUKANIA.
+
+   Zajęte stanowisko to normalny wtorek: 18 i 26 września przysiad, 1 paź-
+   dziernika ławki i hantle („ten iso był robiony, bo były zajęte ławki"),
+   3 października skos („uginanie na skosie robiłem sobie na bramie").
+   Za każdym razem Filip musiał sam wymyślić zamiennik i znaleźć go w wyszu-
+   kiwarce — albo wpisać serie pod starą nazwą, co potem psuło historię.
+
+   Kolejność: najpierw inny wariant z puli slotu (to ćwiczenia wybrane do
+   planu), potem najbliższe z całej biblioteki na te same mięśnie. Kolejne
+   dotknięcie daje następną propozycję, bo to, co już odrzucone, pamiętamy
+   w `_zajete`. Gdy propozycje się skończą, otwiera się zwykła wyszukiwarka. */
+/* Jak bardzo dwa ćwiczenia robią tę samą robotę: cosinus między ich
+   rozkładami na mięśnie (1 = identyczny rozkład, 0 = nic wspólnego).
+   Suma wag, której używa `zastepstwoDlaSlotu`, premiuje ćwiczenia złożone:
+   dla uginania na wyciągu pierwsze wychodziło podciąganie podchwytem, bo
+   „też ma biceps". Cosinus patrzy na proporcje, więc najbliżej uginania
+   jest inne uginanie. */
+function podobienstwoCw(a, b){
+  const A = (LIB[a] || {}).mus || {}, B = (LIB[b] || {}).mus || {};
+  let il = 0, na = 0, nb = 0;
+  Object.keys(A).forEach(r => { il += A[r] * (B[r] || 0); na += A[r] * A[r]; });
+  Object.values(B).forEach(v => { nb += v * v; });
+  return (na && nb) ? il / Math.sqrt(na * nb) : 0;
+}
+/* Czego nie podsuwamy w danym dniu, nawet jako zamiennika. Dipy w dniu P
+   Filip odrzucił wprost — mają zostać tylko w dniu W. */
+const ZAMIENNIK_NIE_W_DNIU = {P: ['Dipy']};
+function zamiennikDla(e, pominiete){
+  const sl = (e.slot && typeof e.slot === 'object') ? e.slot : slotById(e.slot);
+  const wSesji = SES.exercises.map(x => x.name);
+  const zakaz = ZAMIENNIK_NIE_W_DNIU[SES.day] || [];
+  const odpada = n => pominiete.includes(n) || wSesji.includes(n) || isSkipped(n) || zakaz.includes(n);
+  const zPuli = ((sl && sl.pool) || e.pool || []).find(n => LIB[n] && !odpada(n));
+  if(zPuli) return zPuli;
+  /* Wzorzec to ćwiczenie, które miało być robione; gdy ma własną nazwę
+     spoza biblioteki, bierzemy pierwsze z puli slotu. */
+  const wzor = LIB[e.name] ? e.name
+    : (sl ? [sl.fixed].concat(sl.pool || []).find(n => n && LIB[n]) : null);
+  if(!wzor) return null;
+  const W = LIB[wzor];
+  const glowny = Object.entries(W.mus || {}).sort((a, b) => b[1] - a[1])[0][0];
+  const kand = Object.keys(LIB)
+    .filter(n => n !== wzor && LIB[n].mus && !LIB[n].stare && !odpada(n))
+    .filter(n => !!LIB[n].time === !!W.time)
+    /* Zamiast maszyny czy sztangi nie proponujemy ćwiczeń z trybu
+       wyjazdowego (masa własna bez możliwości dołożenia ciężaru): przysiad
+       bułgarski bez obciążenia nie zastąpi hack squata na 80 kg. Drążek
+       i poręcze zostają — mają `inc`, czyli da się je dociążyć, i są
+       normalnym zamiennikiem zajętego wyciągu. */
+    .filter(n => !(LIB[n].bw && !LIB[n].inc) || !!W.bw)
+    /* Zamiennik musi mocno pracować tym samym GŁÓWNYM mięśniem. Samo
+       podobieństwo rozkładu puszczało uginanie ramion jako zamiennik
+       ściągania podchwytem — bo ściąganie podchwytem „też ma dużo bicepsa". */
+    .filter(n => (LIB[n].mus[glowny] || 0) >= 0.6)
+    .map(n => ({n, sc: podobienstwoCw(wzor, n)}))
+    .filter(x => x.sc >= 0.6)
+    .sort((a, b) => b.sc - a.sc || a.n.localeCompare(b.n, 'pl'));
+  return kand.length ? kand[0].n : null;
+}
+function zajeteCw(i){
+  const e = SES && SES.exercises[i];
+  if(!e) return;
+  if(e.sets.some(s => !s.wu)){
+    toast('Masz tu już serie — użyj „Zamień na inne" na dole karty'); return;
+  }
+  zbierzWpisane();
+  /* Po zamianie ćwiczenia wpisany ciężar dotyczy już czegoś innego —
+     20 kg z wyciskania nie ma nic wspólnego z rozpiętkami. */
+  if(SES_WPISANE){ delete SES_WPISANE['iw'+i]; delete SES_WPISANE['ir'+i]; }
+  e._zajete = (e._zajete || []).concat([e.name]);
+  const nowa = zamiennikDla(e, e._zajete);
+  if(!nowa){
+    e._zajete = [];
+    toast('Nie mam już zamiennika — wybierz sam');
+    zamienCwiczenie(i); return;
+  }
+  const stara = e.name;
+  e.name = nowa; e.sets = []; e._potw = null;
+  const sl = (e.slot && typeof e.slot === 'object') ? e.slot : slotById(e.slot);
+  const tp = SES.tygPlanu || SES.week || tydzienPlanu();
+  if(sl){
+    e.sug = suggestLoad(nowa, sl, phaseOf(tp), tp) || null;
+    e.target = celCwiczenia(nowa, sl, phaseOf(tp), e.sug);
+  } else {
+    const ost = lastFor(nowa), b = ost && bestSet(ost.sets, nowa);
+    e.sug = b ? {w: b.w, r: b.r, sets: ost.sets.length, tag:'hold'} : null;
+    e.target = 'poza planem';
+  }
+  e._open = true;
+  saveSes(); renderSession();
+  toast('Zajęte: ' + stara + ' → ' + nowa);
+}
+
+/* NOTATKA STAŁA DO ĆWICZENIA.
+
+   Notatka przy serii („dotknij, żeby dopisać") opisuje jedną serię i ginie
+   w historii. A są rzeczy, które chce się widzieć ZA KAŻDYM RAZEM: numer
+   dziurki siedziska, szerokość chwytu, „pas bywa zajęty — weź hantlę".
+   Na maszynie notatka jest osobna dla każdej siłowni, bo ustawienia
+   siedziska w Silver i w Well to dwie różne liczby.
+
+   Leży w `DB.settings`, więc jedzie zwykłą synchronizacją; `mergeDB` scala
+   notatki klucz po kluczu, żeby starsza kopia z serwera nie skasowała
+   świeżo dopisanej. Skasowana notatka zostaje jako pusty napis — inaczej
+   scalanie przywróciłoby ją z drugiej kopii. */
+function kluczNotatki(name){
+  return name + (maszynowe(name) ? '@' + silowniaTeraz() : '');
+}
+function notatkaCw(name){
+  return String(((DB.settings || {}).notatkiCw || {})[kluczNotatki(name)] || '');
+}
+function edytujNotatkeCw(i){
+  const e = SES && SES.exercises[i];
+  if(!e) return;
+  const wpis = prompt('Notatka do „' + e.name + '"' +
+    (maszynowe(e.name) ? ' (' + SILOWNIE[silowniaTeraz()].n + ')' : '') +
+    '\n\nZobaczysz ją przy każdym treningu, np. ustawienie siedziska albo chwyt. ' +
+    'Puste pole kasuje notatkę.', notatkaCw(e.name));
+  if(wpis == null) return;
+  DB.settings.notatkiCw = DB.settings.notatkiCw || {};
+  DB.settings.notatkiCw[kluczNotatki(e.name)] = String(wpis).trim().slice(0, 140);
+  zbierzWpisane();
+  save(); renderSession();
+}
+function notatkaCwHtml(e, i, last){
+  const n = notatkaCw(e.name);
+  /* Notatki z serii z poprzedniego treningu — pisane po to, żeby o czymś
+     pamiętać następnym razem, a do tej pory widoczne tylko w historii. */
+  const zSerii = last ? last.sets.filter(s => s.n).map(s => s.n) : [];
+  return '<div class="cwnota' + (n ? ' jest' : '') + '" onclick="edytujNotatkeCw(' + i + ')">' +
+      (n ? '<b>Notatka:</b> ' + esc(n) : '+ notatka stała (ustawienie maszyny, chwyt…)') + '</div>' +
+    (zSerii.length
+      ? '<div class="snote" style="margin:-3px 0 8px">Ostatnio zanotowałeś: ' +
+        zSerii.map(x => '„' + esc(x) + '"').join(' · ') + '</div>' : '');
 }
 /* wpisuje całą rampę rozgrzewkową jednym tapnięciem */
 function wpiszRozgrzewke(i){
@@ -7668,7 +7980,11 @@ function finishSession(){
       rekordy.push({name:e.name, set:teraz, stary:stary?stary.set:null, poprz:stary?stary.date:null});
   });
   /* poprzedni ten sam dzień — do porównania objętości */
-  const poprz=DB.workouts.filter(w=>w.day===SES.day).slice(-1)[0]||null;
+  /* Objętość porównujemy z poprzednim takim dniem NA TEJ SAMEJ SIŁOWNI.
+     Brama w Well ma inne przełożenie niż w Silver, więc „o 12% mniej niż
+     ostatnio" między siłowniami mówi o maszynach, nie o treningu. */
+  const tuSilownia = SES.silownia || silowniaTeraz();
+  const poprz=DB.workouts.filter(w=>w.day===SES.day && silowniaTreningu(w)===tuSilownia).slice(-1)[0]||null;
 
   const dur = SES.t0 ? Math.max(1, Math.round((Date.now()-SES.t0)/60000)) : null;
   const wpis={id:uid('w'), date:SES.date, day:SES.day, week:SES.week,
@@ -7687,6 +8003,10 @@ function finishSession(){
   }
   if(SES.note && SES.note.trim()) wpis.note=SES.note.trim();
   if(SES.flag) wpis.flag=true;
+  /* Ile przerw zgłoszono serwerowi i ile przyjął. Zapisane przy treningu,
+     żeby „nie przychodziły powiadomienia" dało się sprawdzić w danych,
+     a nie zgadywać. Reszta (co wysłał alarm) jest w dzienniku Workera. */
+  if(SES.prz && SES.prz.zgl) wpis.prz = {zgl: SES.prz.zgl, ok: SES.prz.ok || 0, blad: SES.prz.blad || 0};
 
   wpis.updatedAt = new Date().toISOString();
   DB.workouts.push(wpis);
@@ -7697,7 +8017,9 @@ function finishSession(){
   save();
   OSTATNI={wpis, rekordy, poprz};
   clearSes(); stopTimer(); setSub('sum');
-  if(srvGotowy()) srvPush(true).then(o=>{ if(o) renderSummary(); });
+  /* Po treningu plan na jutro jest już inny niż rano — odświeżamy zdanie
+     do porannego powiadomienia od razu, nie przy następnym otwarciu. */
+  if(srvGotowy()) srvPush(true).then(o=>{ if(o) renderSummary(); pushWyslijTresc(true); });
 }
 
 /* ============================================================
@@ -8011,20 +8333,72 @@ function zmienSilownieTreningu(id){
   toast('Trening: ' + SILOWNIE[nowa].n);
   renderTrening();
 }
+/* WYBÓR Z LISTY ZAMIAST WPISYWANIA Z PAMIĘCI (od 101).
+
+   Do 100 guzik „nazwa" otwierał `prompt()` i trzeba było wpisać nazwę
+   z biblioteki co do litery. Filip dwa razy pytał mnie, „na jaką nazwę mam
+   zmienić, żeby aplikacja wiedziała, o co chodzi" (3 października) — czyli
+   narzędzie było, ale nie dało się go użyć bez ściągi. Teraz pod ćwiczeniem
+   rozwija się lista: najpierw ćwiczenia na te same mięśnie, a wpisanie
+   kilku liter zawęża ją do pasujących nazw. */
+let PRZEM = null;
 function przemianujCwiczenie(idTreningu, ei){
+  PRZEM = (PRZEM && PRZEM.id === idTreningu && PRZEM.ei === ei) ? null : {id: idTreningu, ei, q: ''};
+  renderTrening();
+}
+function przemKandydaci(q, stara){
+  const k = kluczNazwy(q || '');
+  return Object.keys(LIB)
+    .filter(n => n !== stara)
+    .filter(n => !k || kluczNazwy(n).indexOf(k) >= 0)
+    .map(n => ({n, sc: podobienstwoCw(stara, n)}))
+    .sort((a, b) => b.sc - a.sc || a.n.localeCompare(b.n, 'pl'))
+    .slice(0, 8).map(x => x.n);
+}
+function przemListaHtml(){
+  if(!PRZEM) return '';
+  const w = DB.workouts.find(x => x.id === PRZEM.id);
+  const e = w && w.exercises[PRZEM.ei];
+  if(!e) return '';
+  const lista = przemKandydaci(PRZEM.q, e.name);
+  const q = String(PRZEM.q || '').trim();
+  const dokladne = q && Object.keys(LIB).some(n => kluczNazwy(n) === kluczNazwy(q));
+  return lista.map(n =>
+      '<button class="mini" style="display:block;width:100%;text-align:left;margin-top:6px" '+
+      'onclick="przemWybierz(\'' + esc(n).replace(/'/g, "\\'") + '\')">' + esc(n) + '</button>').join('') +
+    (!lista.length ? '<div class="hm" style="margin-top:6px">Nic takiego w bibliotece.</div>' : '') +
+    (q && !dokladne
+      ? '<button class="mini" style="display:block;width:100%;text-align:left;margin-top:6px;'+
+        'color:var(--warn)" onclick="przemWybierz(null)">Zapisz jako „' + esc(q) +
+        '" (spoza biblioteki)</button>' : '');
+}
+function przemSzukaj(q){
+  if(!PRZEM) return;
+  PRZEM.q = q;
+  /* Podmieniamy samą listę, nie cały ekran — przerysowanie zabrałoby
+     klawiaturę spod palców po każdej literze. */
+  const el = document.getElementById('przemLista');
+  if(el) el.innerHTML = przemListaHtml();
+}
+function przemWybierz(nazwa){
+  if(!PRZEM) return;
+  const p = PRZEM;
+  PRZEM = null;
+  zastosujNazwe(p.id, p.ei, nazwa == null ? p.q : nazwa);
+}
+function zastosujNazwe(idTreningu, ei, wpis){
   const w = DB.workouts.find(x => x.id === idTreningu);
   const e = w && w.exercises[ei];
-  if(!e) return;
-  const wpis = prompt('Na co zmienić „' + e.name + '"?\n\n' +
-    'Wpisz nazwę z biblioteki — serie zostają bez zmian.', e.name);
-  if(wpis == null) return;
-  const nowa = String(wpis).trim();
-  if(!nowa || nowa === e.name) return;
+  if(!e){ renderTrening(); return; }
+  const nowa = String(wpis || '').trim();
+  if(!nowa || nowa === e.name){ renderTrening(); return; }
   /* Nazwa spoza biblioteki jest dozwolona, ale mowimy wprost, co to znaczy:
      cwiczenie bez mapowania nie liczy sie do zadnego miesnia. */
   const znane = Object.keys(LIB).find(n => kluczNazwy(n) === kluczNazwy(nowa));
   if(!znane && !confirm('„' + nowa + '" nie ma w bibliotece.\n\n' +
-      'Takie ćwiczenie nie policzy się do żadnej partii w Raporcie. Zapisać mimo to?')) return;
+      'Takie ćwiczenie nie policzy się do żadnej partii w Raporcie. Zapisać mimo to?')){
+    renderTrening(); return;
+  }
   const stara = e.name;
   e.name = znane || nowa;
   /* BEZ TEGO POPRAWKA POTRAFI SIE COFNAC.
@@ -8034,6 +8408,9 @@ function przemianujCwiczenie(idTreningu, ei){
      ktora ma stara nazwe — i zmiana znika przy najblizszej synchronizacji,
      bez sladu. Ten sam blad byl kiedys przy kasowaniu serii. */
   w.updatedAt = new Date().toISOString();
+  /* Zmieniła się historia ćwiczenia, więc plan policzony przed poprawką
+     może stać na złym ciężarze. Planu trenera nie ruszamy. */
+  if(DB.nastepny && !DB.nastepny.sprawdzony) DB.nastepny = planNastepnego();
   save(); zsynchronizuj();
   toast(stara + ' → ' + e.name);
   renderTrening();
@@ -8073,6 +8450,12 @@ function renderTrening(){
       '<button class="pill" onclick="przemianujCwiczenie(\''+w.id+'\','+
         ei+')">nazwa</button>'+
       '<button class="pill" onclick="openHist(\''+esc(e.name).replace(/'/g,"\\'")+'\')">wykres</button></div></div>'+
+      (PRZEM && PRZEM.id === w.id && PRZEM.ei === ei
+        ? '<div class="fld" style="margin:9px 0 6px"><label>Zmień nazwę na… (serie zostają)</label>'+
+          '<input type="text" placeholder="wpisz kilka liter albo wybierz z listy" '+
+          'value="'+esc(PRZEM.q || '')+'" oninput="przemSzukaj(this.value)">'+
+          '<div id="przemLista">'+przemListaHtml()+'</div></div>'
+        : '')+
       (e.target?'<div class="hm">cel: '+esc(e.target)+'</div>':'')+
       '<div style="margin-top:5px">'+ rob.map((x,i)=>
         '<div class="hm">'+(i+1)+'. '+esc(fmtSet(x, e.name))+(x.n?' — '+esc(x.n):'')+'</div>'
@@ -8191,28 +8574,71 @@ function przerwaDla(nazwa){
 function startTimer(sec, cwiczenie){
   T_LEN=sec||DB.settings.rest||90; T_END=Date.now()+T_LEN*1000;
   if(cwiczenie != null) T_CW = cwiczenie;
-  try{ localStorage.setItem(TIMKEY, JSON.stringify({end:T_END, len:T_LEN, cw:T_CW||''})); }catch(e){}
+  zapiszTimer();
   const bar=document.getElementById('tbar'); bar.classList.add('on'); bar.classList.remove('done');
   document.getElementById('tLab').textContent=etykietaPrzerwy();
   clearInterval(TICK); paint(); TICK=setInterval(paint,250); wakeOn();
   przerwaSerwer(T_END);
 }
+function zapiszTimer(){
+  try{ localStorage.setItem(TIMKEY, JSON.stringify({end:T_END, len:T_LEN, cw:T_CW||'',
+    srv: PRZERWA_POTWIERDZONA != null && PRZERWA_POTWIERDZONA === T_END})); }catch(e){}
+}
 /* KONIEC PRZERWY PRZEZ SERWER. Przy zgaszonym ekranie albo innej aplikacji
    na wierzchu iOS zamraża JavaScript — licznik staje, `finishRest` nie
    startuje i powiadomienie nigdy nie wyskakuje. Do 88 tak właśnie było
    (Filip, 30 września). Teraz aplikacja podaje Workerowi godzinę końca,
-   a ten wysyła push z wyzwalacza co minutę, co do sekundy
-   (serwer/worker.js → przerwaPilnuj). `null` odwołuje. Bez D1 po stronie
-   Workera zapytanie dostaje 503 i nic się nie psuje — zostaje dźwięk. */
-let PRZERWA_NA_SERWERZE;
-function przerwaSerwer(koniec){
+   a ten ustawia sobie alarm i wysyła push co do sekundy (serwer/worker.js
+   → klasa `Przerwa`). `null` odwołuje. Bez obiektu po stronie Workera
+   zapytanie dostaje 503 i nic się nie psuje — zostaje dźwięk.
+
+   TRZY POPRAWKI Z WERSJI 101 (Filip, 3 października: „prawie zawsze
+   dostawałem dwa powiadomienia" i „pod koniec treningu nie przychodziły"):
+
+   1. PRZERWA_POTWIERDZONA — pamiętamy, czy serwer przyjął zgłoszenie.
+      Jeśli przyjął, aplikacja NIE pokazuje własnego powiadomienia (patrz
+      `notifyRest`). Wcześniej robiły to oba naraz: push budził aplikację,
+      jej licznik widział, że czas minął, i dokładał drugie powiadomienie.
+   2. Nieudane zgłoszenie (słaby zasięg na siłowni) ponawiamy raz. Do 100
+      błąd był połykany i przerwa po cichu zostawała bez powiadomienia.
+   3. Godzina końca idzie też do IndexedDB, skąd czyta ją service worker.
+      Dzięki temu pokazuje „Przerwa minęła" od razu, bez pytania serwera
+      o treść — a to pytanie potrafiło wisieć i zjadać czas, który iOS daje
+      na pokazanie powiadomienia. */
+let PRZERWA_NA_SERWERZE, PRZERWA_POTWIERDZONA = null;
+function przerwaLicz(co){
+  if(!SES) return;
+  SES.prz = SES.prz || {zgl: 0, ok: 0, blad: 0};
+  SES.prz[co] = (SES.prz[co] || 0) + 1;
+}
+function przerwaSerwer(koniec, ponowienie){
   if(!srvGotowy() || pushStan() !== 'granted') return;
-  if(koniec === PRZERWA_NA_SERWERZE) return;
-  PRZERWA_NA_SERWERZE = koniec;
+  if(!ponowienie){
+    if(koniec === PRZERWA_NA_SERWERZE) return;
+    PRZERWA_NA_SERWERZE = koniec;
+    PRZERWA_POTWIERDZONA = null;
+    pushZapiszDlaSW(koniec == null ? null : {koniec: Math.round(koniec), cw: T_CW || ''}, 'przerwa');
+    if(koniec != null) przerwaLicz('zgl');
+  }
+  const moje = koniec;
+  const nieudane = () => {
+    if(PRZERWA_NA_SERWERZE !== moje) return;      /* w międzyczasie zgłoszono co innego */
+    if(!ponowienie) setTimeout(() => {
+      if(PRZERWA_NA_SERWERZE === moje) przerwaSerwer(moje, true);
+    }, 1500);
+    else if(moje != null) przerwaLicz('blad');
+  };
   try {
     fetch(srvUrl('push/przerwa'), {method:'POST', keepalive:true,
       headers: srvNaglowki({'Content-Type':'application/json'}),
-      body: JSON.stringify({koniec: koniec == null ? null : Math.round(koniec)})}).catch(()=>{});
+      body: JSON.stringify({koniec: koniec == null ? null : Math.round(koniec)})})
+    .then(r => {
+      if(!r || !r.ok) return nieudane();
+      if(PRZERWA_NA_SERWERZE !== moje) return;
+      PRZERWA_POTWIERDZONA = moje;
+      if(moje != null){ przerwaLicz('ok'); if(moje === T_END) zapiszTimer(); }
+    })
+    .catch(nieudane);
   } catch(e){}
 }
 /* Nazwa cwiczenia w pasku. Miedzy seriami ekran bywa przewiniety gdzie indziej,
@@ -8228,6 +8654,9 @@ function resumeTimer(){
     const zostalo=(r.end-Date.now())/1000;
     if(zostalo<=0){ localStorage.removeItem(TIMKEY); return; }
     T_LEN=r.len||90; T_END=r.end; if(r.cw) T_CW=r.cw;
+    /* Aplikacja ubita i otwarta na nowo w trakcie przerwy: serwer dalej ma
+       swój alarm, więc własnego powiadomienia nie dokładamy. */
+    if(r.srv){ PRZERWA_NA_SERWERZE = r.end; PRZERWA_POTWIERDZONA = r.end; }
     const bar=document.getElementById('tbar'); bar.classList.add('on'); bar.classList.remove('done');
     document.getElementById('tLab').textContent=etykietaPrzerwy();
     clearInterval(TICK); paint(); TICK=setInterval(paint,250); wakeOn();
@@ -8237,6 +8666,11 @@ function paint(){
   const left=(T_END-Date.now())/1000;
   document.getElementById('tVal').textContent=fmtTime(left);
   document.getElementById('tProg').style.width=Math.max(0,Math.min(100,left/T_LEN*100))+'%';
+  /* Ekran świeci i licznik dobiega końca — odwołujemy push PRZED czasem.
+     Odwołanie wysłane dopiero w `finishRest` ścigało się z alarmem serwera
+     i zwykle przegrywało: sygnał dźwiękowy i baner naraz, przy aplikacji
+     przed oczami. */
+  if(left > 0 && left <= 2 && document.visibilityState === 'visible') przerwaSerwer(null);
   if(left<=0) finishRest();
 }
 function finishRest(){
@@ -8275,11 +8709,20 @@ function beep(){
 /* `new Notification()` w aplikacji z ekranu głównego na iPhonie po prostu
    rzuca wyjątkiem — iOS pozwala pokazywać powiadomienia wyłącznie przez
    service workera. Dlatego do 88 nie wyskakiwało nic, nawet gdy JavaScript
-   jeszcze żył. Pokazujemy tylko wtedy, gdy aplikacji nie widać; ten sam tag
-   co push z serwera, więc dwa sygnały nie zrobią dwóch powiadomień. */
+   jeszcze żył. Pokazujemy tylko wtedy, gdy aplikacji nie widać.
+
+   I TYLKO WTEDY, GDY SERWER NIE PRZYJĄŁ TEJ PRZERWY. Wspólny tag miał
+   sprawić, że dwa sygnały nie zrobią dwóch powiadomień — na iPhonie robiły:
+   push budził aplikację, jej licznik widział koniec przerwy i dokładał
+   własne. Skoro serwer potwierdził, że wyśle, aplikacja milczy. Własne
+   powiadomienie zostaje wyłącznie jako zapas na wypadek braku sieci. */
+function serwerPowiadomi(){
+  return PRZERWA_POTWIERDZONA != null && PRZERWA_POTWIERDZONA === PRZERWA_NA_SERWERZE;
+}
 function notifyRest(){
   try{
     if(document.visibilityState === 'visible') return;
+    if(serwerPowiadomi()) return;
     if(!('Notification' in window) || Notification.permission!=='granted') return;
     if(navigator.serviceWorker && navigator.serviceWorker.ready)
       navigator.serviceWorker.ready.then(r => r.showNotification('Przerwa minęła',
@@ -10350,12 +10793,23 @@ function saveDaily(){
      wpisu, żeby zapisanie danych z Garmina rano nie kasowało wieczornej dawki. */
   const stary = DB.daily.find(d=>d.date===date) || {};
   DB.daily=DB.daily.filter(d=>d.date!==date);
-  DB.daily.push({date, sleep:num('dSleep'), rhr:num('dRhr'), hrv:num('dHrv'),
+  /* BŁĄD, KTÓRY SIEDZIAŁ TU DO WERSJI 100: nowy wpis składał się wyłącznie
+     z pól formularza i suplementów. Wszystko inne, co stary wpis miał —
+     samopoczucie i zakwasy wpisane rano na ekranie głównym, upał, makro
+     dnia — znikało przy „Zapisz dzień". Wystarczyło wieczorem dopisać wagę,
+     żeby gotowość z rana wróciła do „nieznana". Widać to w danych: wpis
+     z 3 października ma wagę i notatkę, a nie ma samopoczucia ani zakwasów.
+     Nikt tego nie zgłosił, bo brak pola wygląda jak „jeszcze nie wpisałem".
+
+     Teraz zaczynamy od starego wpisu i nadpisujemy tylko to, co jest
+     w formularzu. Znalezione przy sprawdzaniu, których funkcji testy nigdy
+     nie wywołują — `saveDaily` była jedną z nich. */
+  DB.daily.push(Object.assign({}, stary, {date, sleep:num('dSleep'), rhr:num('dRhr'), hrv:num('dHrv'),
     kreatyna:stary.kreatyna ?? null, magnez:stary.magnez ?? null,
     witd:stary.witd ?? null, inne:stary.inne ?? null,
     drzemka:stary.drzemka ?? null, sen_noca:stary.sen_noca ?? null,
     steps:num('dSteps'), bb:num('dBb'), weight:num('dWeight'),
-    note:document.getElementById('dNote').value.trim()||null});
+    note:document.getElementById('dNote').value.trim()||null}));
   DB.daily.sort((a,b)=>a.date.localeCompare(b.date));
   save(); zsynchronizuj(); renderDaily(); toast('Zapisano '+plDate(date));
 }
@@ -10418,7 +10872,7 @@ function renderHistTreningow(){
         (x.flag?' <span class="prtag" style="background:var(--warn);color:#2a1a05">!</span>':'')+'</div>'+
       '<div class="hm">'+plDate(x.date)+' · '+setCount(x)+' serii'+
         (wuN?' (+'+wuN+' rozgrz.)':'')+' · '+Math.round(vol(x)).toLocaleString('pl')+' kg'+
-        (x.dur?' · '+x.dur+' min':'')+'</div></div>'+
+        (x.dur?' · '+x.dur+' min':'')+' · '+silowniaKrotko(x)+'</div></div>'+
       '<div class="pill">T'+weekNo(x.date)+'</div>'+
       '<button class="sx" onclick="delWorkout(\''+x.id+'\')">×</button></div>';
   }).join('') : '<div class="empty">Brak zapisanych treningów.</div>';
@@ -11299,6 +11753,16 @@ function renderReport(){
     return v.length ? (v.reduce((a,b)=>a+b,0)/v.length) : null;
   })();
   const zmiana = pv ? Math.round((cv/pv - 1) * 100) : null;
+  /* Tydzień na dwóch siłowniach: jedna liczba objętości miesza dwa różne
+     stosy. Pokazujemy rozbicie — tylko wtedy, gdy naprawdę były obie. */
+  const poSilowniach = Object.keys(SILOWNIE)
+    .map(k => [SILOWNIE[k].n, cur.filter(x => silowniaTreningu(x) === k).reduce((a, x) => a + vol(x), 0)])
+    .filter(x => x[1] > 0);
+  const rozbicieSilowni = poSilowniach.length > 1
+    ? '<div class="hm" style="margin:-4px 0 10px">Objętość: ' + poSilowniach.map(([n, v]) =>
+        esc(n) + ' ' + (v >= 1000 ? (Math.round(v / 100) / 10).toString().replace('.', ',') + ' t' : Math.round(v) + ' kg')).join(' · ') +
+      ' — maszyny mają tam inne przełożenie, więc tych liczb nie porównuj wprost.</div>'
+    : '';
 
   if(sek === 'tydzien') h+='<h2>Ten tydzień</h2>'+
     '<div class="stat4">'+
@@ -11312,7 +11776,7 @@ function renderReport(){
     (zmiana != null
       ? '<div class="hm" style="margin:-6px 0 12px">Objętość '+(zmiana>=0?'+':'')+zmiana+
         '% wobec poprzedniego tygodnia'+(rCur.length?' · biegi '+rCur.length+'/2':'')+'</div>'
-      : '');
+      : '') + rozbicieSilowni;
 
   /* Boje z planu, nie z listy wpisanej na sztywno — po zmianie boju nóg na
      hack squat (92) ta lista dalej pytała o przysiad ze sztangą. */
@@ -11476,7 +11940,10 @@ function renderReport(){
   const wiekRaportu = DB.coach && DB.coach.date
     ? Math.round((new Date(today()) - new Date(DB.coach.date)) / 864e5) : null;
   const raportStary = wiekRaportu != null && wiekRaportu >= 10;
-  if(sek === 'teraz' && DB.raport && raportStary){
+  /* Po miesiącu to już nie „stary raport", tylko okienko, które nic nie
+     robi (Filip, 3 października: „zbędne okienka, które zajmują miejsce").
+     Tekst zostaje w danych — znika tylko z ekranu. */
+  if(sek === 'teraz' && DB.raport && raportStary && wiekRaportu < 30){
     h += zwijka('starRap', 'Raport od trenera sprzed '+wiekRaportu+' dni',
       'Dotyczy treningów z '+plDate(DB.coach.date)+' i poprzedniego planu',
       null, () => '<div class="mdbox">'+md(DB.raport)+'</div>');
@@ -11720,8 +12187,8 @@ function importData(ev){
         if(!confirm('Na pewno ZASTĄPIĆ? Obecne '+DB.workouts.length+
                     ' treningów zostanie usuniętych bezpowrotnie.')) return;
         DB=d;
-        if(!DB.settings) DB.settings={start:today(),rest:90};
-        if(DB.coach===undefined) DB.coach=null;
+        uzupelnijDB();      /* kosz, posiłki, przerwy… — patrz komentarz przy funkcji */
+        zastosujPlan();
       }
       clearSes();   /* sesja w toku nie pasuje do podmienionej bazy */
       save(); renderData(); renderSub(); toast('Wczytano');

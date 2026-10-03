@@ -75,7 +75,7 @@ self.addEventListener('fetch', e => {
    po kilku „cichych" system odbiera zgodę. Dlatego pokazujemy coś zawsze,
    nawet gdy nie uda się pobrać tekstu.
    ============================================================ */
-function pushUstawienia() {
+function pushUstawienia(klucz) {
   return new Promise(zwroc => {
     let gotowe = false;
     const koniec = v => { if (!gotowe) { gotowe = true; zwroc(v); } };
@@ -86,7 +86,7 @@ function pushUstawienia() {
       zad.onsuccess = () => {
         try {
           const db = zad.result;
-          const o = db.transaction('ust', 'readonly').objectStore('ust').get('serwer');
+          const o = db.transaction('ust', 'readonly').objectStore('ust').get(klucz || 'serwer');
           o.onsuccess = () => koniec(o.result || null);
           o.onerror = () => koniec(null);
         } catch (e) { koniec(null); }
@@ -96,14 +96,43 @@ function pushUstawienia() {
   });
 }
 
+/* KONIEC PRZERWY BEZ PYTANIA SERWERA (od wersji 101).
+
+   Do 100 każdy sygnał kończył się zapytaniem `/push/tresc`. Na siłowni,
+   przy słabym zasięgu, takie zapytanie potrafi wisieć — a iOS daje service
+   workerowi mało czasu. Gdy nie zdąży pokazać powiadomienia, system liczy
+   to jako „cichy" sygnał, a po kilku takich odbiera zgodę do następnego
+   otwarcia aplikacji. Tak mogły ginąć powiadomienia pod koniec treningu
+   (Filip, 3 października).
+
+   Aplikacja przy starcie przerwy zapisuje godzinę jej końca w IndexedDB.
+   Sygnał, który przychodzi w okolicy tej godziny, JEST końcem przerwy —
+   tekst mamy na miejscu i nie potrzebujemy sieci. */
+function toKoniecPrzerwy(p, teraz) {
+  return !!(p && p.koniec && teraz > p.koniec - 5000 && teraz < p.koniec + 150000);
+}
+
+/* Zapytanie z limitem czasu. Bez limitu wiszące połączenie zjadało cały
+   czas, jaki system daje na pokazanie powiadomienia. */
+function pobierzZLimitem(adres, opcje, ms) {
+  return Promise.race([fetch(adres, opcje),
+    new Promise((_, nie) => setTimeout(() => nie(new Error('za wolno')), ms))]);
+}
+
 self.addEventListener('push', e => {
   e.waitUntil((async () => {
     let tytul = 'Trening', tekst = 'Zajrzyj do aplikacji.', tag = 'trening-dzien';
     try {
+      const p = await pushUstawienia('przerwa');
+      if (toKoniecPrzerwy(p, Date.now())) {
+        tytul = 'Przerwa minęła';
+        tekst = p.cw ? 'Czas na kolejną serię: ' + p.cw + '.' : 'Czas na kolejną serię.';
+        tag = 'przerwa';
+      } else {
       const u = await pushUstawienia();
       if (u && u.adres && u.token) {
-        const r = await fetch(u.adres.replace(/\/+$/, '') + '/push/tresc',
-          { headers: { Authorization: 'Bearer ' + u.token } });
+        const r = await pobierzZLimitem(u.adres.replace(/\/+$/, '') + '/push/tresc',
+          { headers: { Authorization: 'Bearer ' + u.token } }, 6000);
         if (r.ok) {
           const d = await r.json();
           if (d && d.tekst) { tekst = d.tekst; tytul = d.tytul || tytul; }
@@ -111,6 +140,7 @@ self.addEventListener('push', e => {
              a kolejna przerwa zastępuje poprzednią zamiast robić stos. */
           if (d && d.tag === 'przerwa') tag = 'przerwa';
         }
+      }
       }
     } catch (err) { /* pokażemy tekst zapasowy — byle coś pokazać */ }
 
