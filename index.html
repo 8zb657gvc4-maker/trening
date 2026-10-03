@@ -794,6 +794,70 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 
 /* --- kafelki z pierscieniem: etykieta w wersalikach pod spodem --- */
 .kafel2 .etyk{font-size:10px;letter-spacing:.09em;margin-top:6px}
+/* ============================================================
+   WERSJA 102 — ekran główny i raport po uwagach Filipa (3 października)
+   ============================================================ */
+/* --- pasek tygodnia: kolor partii, krótka nazwa, da się dotknąć --- */
+.wd{border-radius:14px;padding:8px 2px 7px;min-height:62px}
+.wd.t{background:var(--wdt,rgba(204,255,0,.12));border-color:var(--wd,var(--acc));cursor:pointer}
+.wd.t .wdc{color:var(--wd,var(--acc))}
+.wd.r{cursor:pointer}
+.wd.now{box-shadow:0 0 0 1.5px var(--txt) inset}
+.wdc{font-size:15px;margin-top:2px;min-height:18px}
+.wdk{display:block;font-size:8.5px;font-weight:600;color:var(--dim);
+  margin-top:1px;min-height:11px;letter-spacing:.02em}
+
+/* --- „co dalej": trzy kafelki z sylwetką zamiast ramek z tekstem --- */
+.dalej{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:13px}
+.dk{background:var(--card);border:1px solid var(--line);border-radius:20px;
+  padding:11px 6px 12px;text-align:center;cursor:pointer;
+  transition:transform .12s,filter .12s}
+.dk:active{transform:scale(.96);filter:brightness(1.35)}
+.dk.pierwszy{border-color:var(--dzien-a);
+  background:linear-gradient(180deg,var(--dzien-t),transparent 75%),var(--card)}
+.dk.wolne{cursor:default}
+.dk .de{font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--dim)}
+.dk.pierwszy .de{color:var(--dzien-a)}
+.dk svg{height:84px;width:auto;display:block;margin:7px auto 6px}
+.dk .dn{font-size:15px;font-weight:800;letter-spacing:-.02em;color:var(--dzien-a)}
+.dk .dl{font-size:10px;color:var(--dim);margin-top:1px;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;padding:0 3px}
+
+/* --- regeneracja mięśni na ekranie głównym --- */
+.regen{padding:14px 14px 12px}
+.regen-uk{display:flex;gap:6px;align-items:center}
+.regen-mapa{flex:0 0 58%;min-width:0}
+.regen-mapa .lb{display:none}
+.regen-opis{flex:1;min-width:0}
+.regen-k{font-size:9.5px;font-weight:800;letter-spacing:.09em;color:var(--dim);text-transform:uppercase}
+.regen-w{font-size:20px;font-weight:800;letter-spacing:-.03em;line-height:1.12;margin-top:3px}
+.regen-d{font-size:11.5px;color:var(--dim);line-height:1.4;margin-top:5px}
+.regen .lgnd{flex-direction:column;align-items:flex-start;justify-content:flex-start;
+  gap:4px;padding:11px 0 0;font-size:10.5px}
+
+/* --- panel wybranego mięśnia (pod sylwetką) --- */
+.mpanel{border-top:1px solid var(--line);margin-top:10px;padding:10px 4px 2px}
+.mpanel .mrow{margin:0 0 11px}
+.mpanel .mrow:last-child{margin-bottom:4px}
+.mwsk{text-align:center;font-size:11px;color:var(--dim);padding:2px 0 8px}
+.mchip{display:inline-block;font-size:11.5px;padding:6px 11px;margin:5px 5px 0 0;
+  border-radius:999px;border:1px solid var(--line);background:var(--card2);
+  color:var(--txt);cursor:pointer}
+.mchip b{font-weight:700}
+
+/* --- zakładka Siła --- */
+.silapod{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 9px}
+.silapod>div{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:13px 6px 11px;text-align:center}
+.silapod b{display:block;font-size:26px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.silapod span{display:block;font-size:9px;font-weight:800;letter-spacing:.09em;
+  color:var(--dim);margin-top:6px}
+.boj{display:inline-block;font-size:8.5px;font-weight:800;letter-spacing:.09em;
+  padding:3px 7px;border-radius:999px;background:var(--card2);
+  border:1px solid var(--line);color:var(--dim);vertical-align:2px;margin-left:7px}
+.chdr .cn{min-width:0;font-size:inherit;font-weight:inherit}
+.topy{display:flex;flex-direction:column;gap:0}
+.topy .kv{padding:7px 0}
 </style>
 </head>
 <body>
@@ -2180,7 +2244,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '101';
+const WERSJA = '102';
 const WERSJA_DATA = '2026-10-03';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -4685,31 +4749,67 @@ function renderPlanPelny(){
   box.innerHTML = h;
 }
 
-function renderKolejne(){
-  const litery = kolejneDni(2);
-  if(!litery.length) return '';
-  /* Pelne dni skladamy TYLKO po rozwinieciu — patrz komentarz przy kolejneDni. */
-  const l = KOLEJNE_ROZW ? kolejneSesje(2) : litery.map(d => ({dzien: d}));
-  /* Samo „Dalej w kolejce: D → A" czytało się jak plan na jutro i kłóciło się
-     z kafelkiem „Plan na dzień C" tuż obok. Kolejka zaczyna się PO zaplanowanej
-     sesji i musi to mówić wprost. */
-  const po = DB.nastepny && DB.nastepny.dzien;
-  return '<div class="tip" onclick="przelaczKolejne()" style="cursor:pointer;'+
-    '-webkit-tap-highlight-color:transparent"><b>'+
-    (po ? 'Potem, po dniu '+po : 'Dalej w kolejce')+'</b> · '+
-    l.map(x => x.dzien).join(' → ')+
-    '<span style="float:right;opacity:.6">'+(KOLEJNE_ROZW?'▴':'▾')+'</span>'+
-    (KOLEJNE_ROZW
-      ? '<div style="margin-top:8px">'+ l.map(x =>
-          '<div style="margin:9px 0;padding-left:9px;border-left:2px solid var(--line)">'+
-          '<div class="hd">'+x.dzien+' — '+esc(x.nazwa)+'</div>'+
-          '<div class="hm">'+ x.cwiczenia.map(c => esc(c.name)+' '+c.serie+'×'+c.powt+
-            (c.ciezar ? ' @'+fmtKg(c.ciezar)+' kg' : '')).join(' · ') +'</div></div>').join('')+
-        '<div class="note" style="margin-top:8px">Bez dat — to Ty decydujesz, kiedy '+
-        'pójdziesz. Ciężary orientacyjne: przeliczą się po każdej wykonanej sesji, '+
-        'a warianty ćwiczeń mogą się obrócić.</div></div>'
-      : '<div class="note" style="margin-top:4px">Dotknij, żeby zobaczyć ćwiczenia</div>')+
-    '</div>';
+function renderKolejne(s){
+  /* GRAFIKA ZAMIAST TEKSTU (od 102).
+
+     Stały tu dwie ramki z tekstem: „Plan na dzień W — … Wyciskanie
+     żołnierskie 3×6 @27,5 kg · …" i „Potem, po dniu W · M → P". Filip,
+     3 października: „wolę to wywalić, bo to jest w formie tekstu — może
+     jakaś mała, skromna grafika, żebym wiedział, co będzie jutro".
+
+     Teraz to rząd trzech kafelków: mała sylwetka z zaznaczonymi mięśniami,
+     kolor dnia i krótka nazwa. Pierwszy kafelek to najbliższy trening
+     („JUTRO" albo „NASTĘPNY"), dalsze idą po kolei w rotacji. Dotknięcie
+     otwiera ten dzień w planie — tam są ćwiczenia i ciężary, których na
+     ekranie głównym już nie wypisujemy. */
+  const dni = dniDalej(s);
+  if(!dni.length) return '';
+  return '<div class="dalej">' + dni.map((x, i) => {
+    if(!x.dzien)
+      return '<div class="dk wolne" style="--dzien-a:#4a9eff;--dzien-t:rgba(74,158,255,.13)">'+
+        '<div class="de">'+x.etyk+'</div>'+ sylwetkaMini(null) +
+        '<div class="dn">Wolne</div><div class="dl">regeneracja</div></div>';
+    const b = barwaDnia(x.dzien);
+    return '<div class="dk'+(i === 0 && x.etyk !== 'POTEM' ? ' pierwszy' : '')+'" '+
+      'style="--dzien-a:'+b.a+';--dzien-t:'+b.t+'" onclick="otworzDzienWPlanie(\''+x.dzien+'\')">'+
+      '<div class="de">'+x.etyk+'</div>'+
+      sylwetkaMini(x.dzien, x.cwiczenia) +
+      '<div class="dn">'+esc(krotkaNazwaDnia(x.dzien))+'</div>'+
+      /* „Push" jest w rotacji dwa razy (P i W) — odróżnia je dopiero to,
+         co stoi po myślniku: „klata, barki…" kontra „barki, klata…". */
+      '<div class="dl">'+esc(String(PLAN[x.dzien].name || '').split(' — ').slice(1).join(' — ') || ('dzień '+x.dzien))+'</div></div>';
+  }).join('') + '</div>';
+}
+/* Co będzie dalej: najwyżej trzy pozycje, każda z etykietą.
+   - dziś jeszcze przed treningiem: dzisiejszy dzień pokazuje karta dnia,
+     więc tu idą dni PO nim („POTEM"),
+   - dziś zrobione albo wolne: pierwszy jest najbliższy trening („JUTRO",
+     gdy plan ma jutrzejszą datę, inaczej „NASTĘPNY"), a gdy silnik na jutro
+     proponuje odpoczynek — kafelek „Wolne".
+   `s` to wynik `suggestNext()` policzony już przez ekran główny; bierzemy
+   go z zewnątrz, żeby nie liczyć drugi raz (patrz uwaga o czasie w renderHub). */
+function dniDalej(s){
+  const out = [];
+  const gp = planDoPokazania();
+  const zrobioneDzis = DB.workouts.some(w => w.date === today());
+  const jutro = przesun(today(), 1);
+  let od = null;
+  if(gp && gp.dzien && PLAN[gp.dzien] && (zrobioneDzis || gp.data > today())){
+    out.push({dzien: gp.dzien, etyk: gp.data === jutro ? 'JUTRO' : 'NASTĘPNY',
+              cwiczenia: gp.cwiczenia.map(c => c.name)});
+    od = gp.dzien;
+  } else if(zrobioneDzis){
+    /* Plan na jutro nie powstał, czyli silnik proponuje na jutro wolne. */
+    out.push({dzien: null, etyk: 'JUTRO'});
+  } else {
+    od = (gp && gp.dzien) || (s && s.day) || null;
+  }
+  kolejneDni(3 - out.length, od || undefined).forEach(d => out.push({dzien: d, etyk: 'POTEM'}));
+  return out.slice(0, 3);
+}
+function otworzDzienWPlanie(d){
+  PLAN_DZIEN_OTWARTY = d;
+  setSub('plan');
 }
 
 function planNastepnego(){
@@ -5074,11 +5174,33 @@ function renderDzis(){
   const dz = DB.daily.find(x => x.date === today()) || {};
   const maOdp = dz.samopoczucie != null;
 
-  if(zrobiony)
-    return '<div class="tip ok"><b>Dziś zrobione: '+zrobiony.day+' — '+esc(dayName2(zrobiony.day))+'</b>'+
-      '<div class="hm" style="margin-top:3px">'+setCount(zrobiony)+' serii · '+
-      Math.round(vol(zrobiony)).toLocaleString('pl')+' kg objętości</div>'+
-      '<button class="btn ghost sm" style="margin-top:9px" onclick="openTrening(\''+zrobiony.id+'\')">Zobacz raport</button></div>';
+  /* Dzień zrobiony dostaje TAKĄ SAMĄ kartę jak dzień do zrobienia: ta sama
+     sylwetka (tym razem z mięśniami, które naprawdę pracowały), ten sam
+     kolor i trzy liczby. Do 101 był to wąski pasek z jednym zdaniem —
+     ekran przed treningiem i po treningu wyglądał jak dwie różne aplikacje. */
+  if(zrobiony){
+    const bz = barwaDnia(zrobiony.day);
+    const v = vol(zrobiony);
+    return '<div class="dzien" style="--dzien-a:'+bz.a+';--dzien-t:'+bz.t+'">'+
+      '<div class="gora">'+
+        sylwetkaMini(zrobiony.day, zrobiony.exercises.map(e => e.name)) +
+        '<div class="tresc">'+
+          '<div class="hm" style="letter-spacing:1.4px;font-size:9.5px;text-transform:uppercase">'+
+            'Dziś zrobione · dzień '+zrobiony.day+'</div>'+
+          '<div class="nazwa" style="color:'+bz.a+'">'+esc(dayName2(zrobiony.day))+'</div>'+
+          '<div class="liczby">'+
+            '<div><b>'+setCount(zrobiony)+'</b><span>SERII</span></div>'+
+            '<div><b>'+(v >= 1000 ? (Math.round(v/100)/10).toString().replace('.', ',') : Math.round(v))+
+              '</b><span>'+(v >= 1000 ? 'TON' : 'KG')+'</span></div>'+
+            (zrobiony.dur ? '<div><b>'+zrobiony.dur+'</b><span>MINUT</span></div>' : '')+
+          '</div>'+
+          pasekTygodnia()+
+        '</div>'+
+      '</div>'+
+      '<div class="dol">'+
+        '<button class="btn ghost sm" style="width:100%" onclick="openTrening(\''+zrobiony.id+'\')">Zobacz raport</button>'+
+      '</div></div>';
+  }
 
   /* Przerwa jest odpowiedzią na dziś — ale jeśli trening jednak był, karta
      „zrobione" ma pierwszeństwo, dlatego to sprawdzenie jest po niej. */
@@ -6436,6 +6558,13 @@ function openRun(){ setSub('run'); }
    ============================================================ */
 /* pasek siedmiu dni bieżącego tygodnia */
 function renderWeekStrip(){
+  /* PASEK TYGODNIA DA SIĘ DOTKNĄĆ (od 102).
+
+     Filip, 3 października, o tym pasku: „fajnie by było, że ja to klikam
+     i widzę, co robiłem ostatnio, bo tak to są po prostu jakieś literki".
+     Sama litera dnia (M, P, N…) mówi coś tylko komuś, kto zna rotację na
+     pamięć. Teraz dzień z treningiem ma kolor swojej partii, pod literą
+     stoi krótka nazwa („Pull", „Nogi"), a dotknięcie otwiera ten trening. */
   const w=weekNo(), [ws]=weekRange(w);
   const D=['Pn','Wt','Śr','Cz','Pt','So','Nd'];
   let h='<div class="wstrip">';
@@ -6450,11 +6579,24 @@ function renderWeekStrip(){
     if(dat===today()) cls+=' now';
     if(dat>today()) cls+=' fut';
     const znak = tren.length ? tren.map(x=>x.day).join('') : (bieg.length?'✦':'');
-    h+='<div class="'+cls+'"><span class="wdn">'+D[i]+'</span>'+
-       '<span class="wdc">'+znak+'</span></div>';
+    /* Dwa treningi jednego dnia zdarzają się rzadko; otwieramy ostatni. */
+    const ost = tren[tren.length-1];
+    const b = ost ? barwaDnia(ost.day) : null;
+    const krotko = ost ? krotkaNazwaDnia(ost.day) : (bieg.length ? 'bieg' : '');
+    const klik = ost ? ' onclick="openTrening(\''+ost.id+'\')"'
+               : (bieg.length ? ' onclick="openRun()"' : '');
+    h+='<div class="'+cls+'"'+(b ? ' style="--wd:'+b.a+';--wdt:'+b.t+'"' : '')+klik+'>'+
+       '<span class="wdn">'+D[i]+'</span>'+
+       '<span class="wdc">'+znak+'</span>'+
+       '<span class="wdk">'+esc(krotko)+'</span></div>';
   }
   h+='</div>';
   document.getElementById('weekStrip').innerHTML=h;
+}
+/* „Push", „Pull", „Nogi" — pierwszy człon nazwy dnia, do miejsc, gdzie
+   pełna nazwa („Push — klata, barki, triceps") się nie mieści. */
+function krotkaNazwaDnia(d){
+  return String((PLAN[d] || {}).name || d || '').split(' — ')[0];
 }
 
 
@@ -6574,18 +6716,13 @@ function renderHub(){
      kalendarzem a planem. To jedyny moment, w którym aplikacja robi coś,
      czego użytkownik nie zobaczy w liczbach — i cicha korekta jest gorsza
      od błędu. Więc pokazujemy ją tylko wtedy, gdy naprawdę zachodzi. */
-  const tp = tydzienPlanu(), stracone = przepadleTygodnie();
   /* To byla karta na pol ekranu opisujaca stan, ktory nie zmienia sie
-     tygodniami — czyli dokladnie definicja tapety. Rozjazd miedzy kalendarzem
-     a planem dalej MUSI byc widoczny (cicha korekta jest gorsza od bledu),
-     ale wystarczy jedna szara linijka pod paskiem tygodnia. Pelne wyjasnienie
-     stoi w naglowku Raportu, gdzie i tak sie po nie siega. */
-  const fazaBox = stracone > 0
-    ? '<div class="hm" style="margin:-2px 0 10px;opacity:.75">Tydzień '+w+
-      ' kalendarza · plan liczy '+tp+' — '+
-      (stracone===1?'tydzień':stracone+' tygodnie')+
-      ' bez siłowni nie przesuwa fazy.</div>'
-    : '';
+     tygodniami — czyli dokladnie definicja tapety. Potem jedna szara linijka
+     pod paskiem tygodnia („Tydzień 9 kalendarza · plan liczy 7…"), ktora
+     po miesiacu stala sie tapeta tak samo. Od 102 rozjazd miedzy kalendarzem
+     a planem jest pokazany TAM, GDZIE STOI NUMER TYGODNIA: w naglowku
+     Raportu (`renderReport`). Na ekranie glownym tydzien planu widac
+     w plakietce „T7" u gory — to ten numer, z ktorego licza sie ciezary. */
   const s=suggestNext();
   /* BŁĄD, przez który cały ekran główny był pusty: usunąłem z HTML dwa
      kafelki (zastąpił je kafelek „Dziś"), ale kod nadal do nich pisał.
@@ -6598,12 +6735,13 @@ function renderHub(){
   /* NIE wolamy tu `nastepnyDzienRotacji()`: ono robi wlasne `suggestNext()`,
      a renderHub policzyl je juz linijke wyzej. Przy dwuletniej historii ten
      jeden duplikat podnosil czas przeliczenia ekranu glownego z ~3 do ~6
-     sekund — fuzzer chaosu zlapal to od razu. */
+     sekund — fuzzer chaosu zlapal to od razu. Z tego samego powodu `s`
+     idzie nizej jako argument do `renderKolejne` i `kafelRegeneracja`. */
   const pSub = document.getElementById('hubPlanSub');
   if(pSub){
-    const nd = (s && s.day) || nastepnyDzienRotacji();
-    pSub.textContent = ORDER.join(' → ') +
-      (nd ? '  ·  następny: ' + nd + ' — ' + ((PLAN[nd]||{}).name || '') : '');
+    /* „następny: W — Push — barki, klata, triceps" stało tu drugi raz —
+       od 102 mówi to rząd kafelków wyżej. Zostaje sama rotacja. */
+    pSub.textContent = 'Rotacja ' + ORDER.join(' → ') + ' · ćwiczenia i ciężary na każdy dzień';
   }
 
   const resume = (SES && setCount(SES)>0)
@@ -6654,9 +6792,14 @@ function renderHub(){
      i napis „+3 więcej", który nic nie robił — obietnica bez pokrycia.
      Po rozwinięciu widać komplet razem z uzasadnieniem każdej pozycji;
      to jedyne miejsce, gdzie widać, dlaczego trener zmienił to, co zmienił. */
+  /* Od 102 kafelek z wypisanym planem pokazuje się TYLKO dla planu, który
+     przeszedł przez trenera albo niesie propozycję zmiany czekającą na
+     zgodę — bo tylko wtedy jest w nim coś, czego nie ma nigdzie indziej
+     (uzasadnienia, „dlaczego ten ciężar", guzik zgody). Zwykły plan
+     aplikacji pokazuje rząd kafelków `renderKolejne`. */
   const gp = planDoPokazania();
   let planBox = '';
-  if(gp){
+  if(gp && (gp.sprawdzony || gp.propozycja)){
     const naDzis = gp.data === today();
     planBox = '<div class="tip '+(gp.sprawdzony?'ok':'')+'" onclick="przelaczPlan()" '+
       'style="cursor:pointer;-webkit-tap-highlight-color:transparent">'+
@@ -6721,11 +6864,11 @@ function renderHub(){
        jedno spojrzenie zamiast dwóch akapitów. Potem plan, potem obraz tygodnia.
        Proza (poranne pytania, braki danych, uwagi) siedzi pod dotknięciem
        kafelków albo niżej, gdzie nie zasłania rzeczy pilnych. */
-    fazaBox +
     renderZapis() + renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume +
     renderDzis() +
     '<div class="krata">' + kafelGotowosc() + kafelKalorii() + '</div>' +
     bezpieczneHtml('kafelMakro', kafelMakro) +
+    bezpieczneHtml('kafelRegeneracja', () => kafelRegeneracja(s)) +
     /* Rozwinięcie musi wyjść ZARAZ POD kafelkiem, który dotknąłeś. Wersja 40
        doklejała je na końcu ekranu — dotykało się pierścienia, a panel
        otwierał się kilka ekranów niżej i wyglądało to na brak reakcji. */
@@ -6738,7 +6881,7 @@ function renderHub(){
        razem z resztą trendów; na głównej pokazywał losowy bój i częściej
        stał na „+0%" niż mówił cokolwiek. */
     planBox +
-    renderKolejne() +
+    bezpieczneHtml('renderKolejne', () => renderKolejne(s)) +
     renderBraki() + coach + odpBox + czekaBox + renderDeload() + renderPrzeloz() + syncBox;
 }
 
@@ -7201,7 +7344,7 @@ function renderSession(){
              przy boju — czyli dokładnie tam, gdzie stanowisko bywa zajęte
              najczęściej. „Zajęte" działa wszędzie: najpierw wariant z planu,
              potem najbliższe ćwiczenie z biblioteki na te same mięśnie. */
-          '<button class="mini" onclick="zajeteCw('+i+')">Zajęte — daj zamiennik</button>'+
+          '<button class="mini" onclick="zajeteCw('+i+')">Zajęte — zamień</button>'+
         '</div>'+
         notatkaCwHtml(e, i, last)+
         wuTxt+
@@ -7281,7 +7424,7 @@ function renderSession(){
            i w kolorze ostrzegawczym — zeby nie dalo sie w nie trafic kciukiem
            siegajacym po „Dodaj serie". */
         '<div class="btn2" style="margin-top:9px">'+
-          '<button class="mini" onclick="zamienCwiczenie('+i+')">Zamień na inne</button>'+
+          '<button class="mini" onclick="zamienCwiczenie('+i+')">Wybierz inne sam</button>'+
           '<button class="mini" style="color:var(--bad)" '+
             'onclick="usunCwiczenie('+i+')">Usuń z treningu</button>'+
         '</div>'+
@@ -7595,7 +7738,7 @@ function zajeteCw(i){
   const e = SES && SES.exercises[i];
   if(!e) return;
   if(e.sets.some(s => !s.wu)){
-    toast('Masz tu już serie — użyj „Zamień na inne" na dole karty'); return;
+    toast('Masz tu już serie — użyj „Wybierz inne sam" na dole karty'); return;
   }
   zbierzWpisane();
   /* Po zamianie ćwiczenia wpisany ciężar dotyczy już czegoś innego —
@@ -10516,6 +10659,11 @@ function dodajPorcje(i){
 
 let BIALKO_ROZW = false;
 function przelaczBialko(){ BIALKO_ROZW = !BIALKO_ROZW; odswiezWidok(); }
+/* Z pustej zakładki Jedzenie prosto do panelu dopisywania na ekranie głównym. */
+function dodajJedzenieZRaportu(){
+  BIALKO_ROZW = true;
+  go('train'); setSub('hub');
+}
 
 function renderBialko(){
   const c = celBialka();
@@ -11133,7 +11281,14 @@ function bodyMap(cov, tryb){
     return keys.map(k => stopienSwiezosci(sw[k]))
       .sort((a,b) => kolejnosc.indexOf(a) - kolejnosc.indexOf(b))[0];
   };
-  const F=k=>'class="m '+(Array.isArray(k)?stanGrupy(k):stanRegionu(k))+'"';
+  /* Dotknięcie kształtu wybiera mięsień (`wybierzMiesien`), a wybrany
+     dostaje białą obwódkę. Kluczem jest lista regionów, które ten kształt
+     obejmuje — biceps to trzy regiony (dwie głowy i ramienny), więc panel
+     pod sylwetką pokaże wszystkie trzy osobno. */
+  const klucz = k => (Array.isArray(k) ? k : [k]).join(',');
+  const F=k=>'class="m '+(Array.isArray(k)?stanGrupy(k):stanRegionu(k))+
+    (MIESIEN_WYBRANY === klucz(k) ? ' wybr' : '')+'" '+
+    'onclick="wybierzMiesien(\''+klucz(k)+'\')"';
   const T=k=>{
     const keys=Array.isArray(k)?k:[k];
     const n=keys.map(x=>REG[x].n).join(' + ');
@@ -11151,6 +11306,8 @@ function bodyMap(cov, tryb){
   return '<svg viewBox="0 0 220 246" class="bmap" xmlns="http://www.w3.org/2000/svg">'+
   '<style>'+
   '.m polygon,.hd polygon{stroke:#070b12;stroke-width:.7;stroke-linejoin:round}'+
+  '.m{cursor:pointer}'+
+  '.m.wybr polygon{stroke:#fff;stroke-width:1.5}'+
   /* skala objętości */
   '.none polygon{fill:#1c2836}'+
   '.low polygon{fill:#e5484d}'+
@@ -11188,7 +11345,6 @@ function bodyMap(cov, tryb){
    Na mapie kształt ciała pokazuje stan CAŁEJ grupy — najgorszej z jej
    głów. Rozwinięcie pokazuje każdą osobno, razem z tym, czym się ją trenuje.
    ============================================================ */
-let GRUPA_ROZW = null;
 /* BŁĄD, przez który rozwijanie nie działało: mapa mięśni pojawia się i w
    zakładce Raport, i w podsumowaniu treningu, a przełącznik odświeżał tylko
    ten drugi widok. W Raporcie dotknięcie ustawiało stan i nic się nie działo —
@@ -11203,11 +11359,6 @@ function odswiezWidok(){
   else if(akt === 'daily') renderDaily();
   else if(akt === 'data') renderData();
   else renderSub();
-}
-
-function przelaczGrupe(g){
-  GRUPA_ROZW = (GRUPA_ROZW === g) ? null : g;
-  odswiezWidok();
 }
 
 /* Rozpiska „z czego się to wzięło" pod każdym mięśniem. */
@@ -11246,44 +11397,154 @@ function skladPokrycia(region, dni){
     .sort((a, b) => b.wklad - a.wklad);
 }
 
-function rozbicieGrup(cov){
-  const grupy = {};
-  Object.entries(REG).forEach(([k, R]) => {
-    (grupy[R.grp] = grupy[R.grp] || []).push([k, R]);
-  });
+/* JEDEN MIĘSIEŃ Z BLISKA: liczba serii wobec normy, pasek, opis i rozpiska
+   ćwiczeń, z których się to wzięło. */
+function regionSzczegoly(k, cov){
+  const R = REG[k];
+  const ile = Math.round((cov[k]||0)*10)/10;
+  const st = regStatus(k, cov);
+  const kolor = st === 'none' ? 'var(--bad)' : st === 'low' ? 'var(--warn)'
+              : st === 'over' ? '#b98cff' : 'var(--ok)';
+  const proc = Math.max(4, Math.min(100, Math.round(ile / R.max * 100)));
+  return '<div class="mrow">'+
+    '<div class="kv" style="padding:2px 0;border:none">'+
+      '<span class="k" style="color:var(--txt)">'+esc(R.n)+'</span>'+
+      '<span class="v" style="color:'+kolor+'">'+fmtKg(ile)+' / '+R.min+'-'+R.max+'</span></div>'+
+    '<div style="height:5px;border-radius:3px;background:var(--line);overflow:hidden">'+
+      '<div style="height:100%;width:'+proc+'%;background:'+kolor+'"></div></div>'+
+    (R.o ? '<div class="note" style="margin-top:4px">'+esc(R.o)+'</div>' : '')+
+    skladHtml(k)+
+  '</div>';
+}
 
-  return '<h2>Mięsień po mięśniu</h2>' + Object.entries(grupy).map(([g, lista]) => {
-    const stany = lista.map(([k]) => regStatus(k, cov));
-    const stan = stany.includes('none') ? 'bad' : stany.includes('low') ? 'warn'
-               : stany.every(x => x === 'over') ? '' : 'ok';
-    const otw = GRUPA_ROZW === g;
-    const podsum = lista.filter(([k]) => {
-      const st = regStatus(k, cov); return st === 'none' || st === 'low';
-    }).map(([,R]) => R.n).join(', ');
+/* Kiedy i czym region dostał ostatni bodziec. Ten sam próg co
+   `swiezoscRegionow` (co najmniej pół serii), więc obie funkcje zawsze
+   mówią o tym samym treningu. */
+function ostatniBodziec(region){
+  for(let i = (DB.workouts || []).length - 1; i >= 0; i--){
+    const w = DB.workouts[i];
+    if(w.date > today()) continue;
+    const cw = (w.exercises || []).filter(e => {
+      const u = ((LIB[e.name] || {}).mus || {})[region];
+      return u && (e.sets || []).filter(x => !x.wu).length * u >= 0.5;
+    }).map(e => e.name);
+    if(cw.length) return {data: w.date, cw,
+      dni: Math.round((new Date(today()+'T00:00:00') - new Date(w.date+'T00:00:00')) / 864e5)};
+  }
+  return null;
+}
 
-    return '<div class="tip '+stan+'" onclick="przelaczGrupe(\''+g+'\')" '+
-      'style="cursor:pointer;-webkit-tap-highlight-color:transparent">'+
-      '<b>'+esc(g)+'</b> · '+lista.length+' '+(lista.length===1?'mięsień':lista.length<5?'mięśnie':'mięśni')+
-      (podsum ? ' · <span class="bad">'+esc(podsum)+'</span>' : ' · wszystkie w normie')+
-      '<span style="float:right;opacity:.6">'+(otw?'▴':'▾')+'</span>'+
-      (otw ? '<div style="margin-top:9px">' + lista.map(([k, R]) => {
-        const ile = Math.round((cov[k]||0)*10)/10;
-        const st = regStatus(k, cov);
-        const kolor = st === 'none' ? 'var(--bad)' : st === 'low' ? 'var(--warn)'
-                    : st === 'over' ? '#b98cff' : 'var(--ok)';
-        const proc = Math.max(4, Math.min(100, Math.round(ile / R.max * 100)));
-        return '<div style="margin:9px 0">'+
-          '<div class="kv" style="padding:2px 0;border:none">'+
-            '<span class="k" style="color:var(--txt)">'+esc(R.n)+'</span>'+
-            '<span class="v" style="color:'+kolor+'">'+fmtKg(ile)+' / '+R.min+'-'+R.max+'</span></div>'+
-          '<div style="height:5px;border-radius:3px;background:var(--line);overflow:hidden">'+
-            '<div style="height:100%;width:'+proc+'%;background:'+kolor+'"></div></div>'+
-          (R.o ? '<div class="note" style="margin-top:4px">'+esc(R.o)+'</div>' : '')+
-          skladHtml(k)+
-        '</div>';
-      }).join('') + '</div>' : '')+
-      '</div>';
-  }).join('');
+/* PANEL POD SYLWETKĄ — zamiast listy „Mięsień po mięśniu".
+
+   Filip, 3 października: „jakieś losowe zakładki bez sensu; lepiej, żeby
+   się pojawiało, jak kliknę na szkielecie np. w biceps — wtedy to mi się
+   rozdziela i widzę dokładnie, jakie głowy były przetrenowane".
+
+   Sześć zwijanych ramek (Klatka · 3 mięśnie · wszystkie w normie…) kazało
+   najpierw zgadnąć, do której grupy należy mięsień, a dopiero potem pokazać
+   liczby. Sylwetka ma tę samą informację w naturalnym układzie: dotykasz
+   bicepsa, dostajesz głowę długą, krótką i mięsień ramienny — każdy osobno.
+   W trybie objętości z seriami wobec normy i rozpiską ćwiczeń, w trybie
+   świeżości z tym, kiedy i czym był ostatnio ruszony. */
+let MIESIEN_WYBRANY = null;
+function wybierzMiesien(k){
+  MIESIEN_WYBRANY = (MIESIEN_WYBRANY === k) ? null : k;
+  odswiezWidok();
+}
+function miesienPanel(tryb, cov){
+  const klucze = String(MIESIEN_WYBRANY || '').split(',').filter(k => REG[k]);
+  if(!klucze.length)
+    return '<div class="mwsk">Dotknij mięśnia, żeby zobaczyć szczegóły</div>';
+  if(tryb !== 'swiezosc')
+    return '<div class="mpanel">' + klucze.map(k => regionSzczegoly(k, cov)).join('') + '</div>';
+  const kiedy = d => d === 0 ? 'dzisiaj' : d === 1 ? 'wczoraj' : d + ' dni temu';
+  const BARWA = {swieze:'#e5484d', schodzi:'#ff8a3d', prawie:'#ffc53d', gotowe:'var(--ok)', nigdy:'var(--dim)'};
+  return '<div class="mpanel">' + klucze.map(k => {
+    const o = ostatniBodziec(k);
+    return '<div class="mrow">'+
+      '<div class="kv" style="padding:2px 0;border:none">'+
+        '<span class="k" style="color:var(--txt)">'+esc(REG[k].n)+'</span>'+
+        '<span class="v" style="color:'+BARWA[stopienSwiezosci(o ? o.dni : 999)]+'">'+
+          (o ? kiedy(o.dni) : 'nietknięte')+'</span></div>'+
+      (o ? '<div class="hm">'+esc(o.cw.slice(0, 3).join(', '))+
+        (o.cw.length > 3 ? ' i '+(o.cw.length - 3)+' więcej' : '')+'</div>' : '')+
+    '</div>';
+  }).join('') + '</div>';
+}
+
+/* REGENERACJA NA EKRANIE GŁÓWNYM.
+
+   Filip, 3 października: „pod makro chciałbym tego szkieleta, ale tam mam
+   zaznaczone, jak zmęczone są moje mięśnie — wtedy od razu widzę, czy
+   pójście na siłownię ma sens".
+
+   To jest ta sama sylwetka co w Raporcie → Mięśnie → Świeżość, plus jedno
+   zdanie, którego tam nie ma: ocena dla NAJBLIŻSZEGO treningu. Bierzemy
+   mięśnie główne tego dnia (waga ≥ 0,7) i sprawdzamy, ile dni minie od ich
+   ostatniego bodźca. Dla treningu jutrzejszego doliczamy dobę — to, co dziś
+   jest „wczorajsze", jutro będzie miało dwa dni.
+
+   Mapa pokrycia wyszła kiedyś z ekranu głównego, bo była dwudziestoma ośmioma
+   słupkami bez podpisów. To co innego: jedna sylwetka, jedno zdanie, i mięsień
+   da się dotknąć, żeby zobaczyć, co go ostatnio ruszyło. */
+function kafelRegeneracja(s){
+  if(!(DB.workouts || []).length) return '';
+  const sw = swiezoscRegionow();
+  const zrobioneDzis = DB.workouts.some(w => w.date === today());
+  const gp = planDoPokazania();
+  let dzien = null, kiedy = '', cwiczenia = null;
+  if(!zrobioneDzis && gp && gp.data === today() && PLAN[gp.dzien]){
+    dzien = gp.dzien; kiedy = 'dziś'; cwiczenia = gp.cwiczenia.map(c => c.name);
+  } else if(!zrobioneDzis && s && s.day && PLAN[s.day]){
+    dzien = s.day; kiedy = 'dziś';
+  } else {
+    const d = dniDalej(s).find(x => x.dzien);
+    if(d){ dzien = d.dzien; kiedy = d.etyk === 'JUTRO' ? 'jutro' : 'następny'; cwiczenia = d.cwiczenia || null; }
+  }
+  let werdykt = '';
+  if(dzien){
+    const plus = kiedy === 'dziś' ? 0 : 1;
+    const plan = planowaneRegiony(dzien, cwiczenia);
+    const glowne = Object.keys(plan).filter(k => plan[k] >= 0.7 && REG[k]);
+    const dniOd = k => sw[k] >= 999 ? 999 : sw[k] + plus;
+    /* Mięsień z kilkoma głowami (triceps, biceps) oceniamy po tej głowie,
+       która odpoczywała NAJKRÓCEJ — to ona będzie bolała. */
+    const poMiesniu = {};
+    glowne.forEach(k => {
+      const n = REG[k].n.split(' — ')[0];
+      poMiesniu[n] = Math.min(poMiesniu[n] == null ? 999 : poMiesniu[n], dniOd(k));
+    });
+    const lista = Object.entries(poMiesniu).sort((a, b) => a[1] - b[1]);
+    const najmniej = lista.length ? lista[0][1] : 999;
+    const opis = lista.filter(x => x[1] < 999).slice(0, 4)
+      .map(([n, d]) => n.toLowerCase() + ' ' + d + ' ' + (d === 1 ? 'dzień' : 'dni')).join(' · ');
+    /* Progi jak w legendzie: do doby po bodźcu mięsień jeszcze boli, po
+       dwóch dniach schodzi, od trzech da się go trenować. „Można iść" to
+       nie to samo co zielone „gotowe" na sylwetce — przy rotacji co pięć
+       dni do pełnej zieleni dochodzi się rzadko i nie trzeba na nią czekać. */
+    werdykt =
+      '<div class="regen-k">'+esc(krotkaNazwaDnia(dzien))+' · '+kiedy+'</div>'+
+      (najmniej <= 1 ? '<div class="regen-w" style="color:#e5484d">Za wcześnie</div>'
+       : najmniej === 2 ? '<div class="regen-w" style="color:#ff8a3d">Jeszcze schodzi</div>'
+       : '<div class="regen-w" style="color:var(--ok)">Można iść</div>')+
+      (opis ? '<div class="regen-d">Przerwa: '+esc(opis)+'.</div>'
+            : '<div class="regen-d">Te mięśnie nie były jeszcze trenowane.</div>');
+  }
+  return '<div class="card regen">'+
+    '<div class="etyk" style="margin:0 0 6px;font-size:12.5px">REGENERACJA MIĘŚNI</div>'+
+    '<div class="regen-uk">'+
+      '<div class="regen-mapa">'+bodyMap({}, 'swiezosc')+'</div>'+
+      '<div class="regen-opis">'+ werdykt +
+        '<div class="lgnd">'+
+          '<span><i class="swieze"></i>dziś / wczoraj</span>'+
+          '<span><i class="schodzi"></i>2 dni</span>'+
+          '<span><i class="prawie"></i>3–4 dni</span>'+
+          '<span><i class="gotowe"></i>gotowe</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    miesienPanel('swiezosc', {})+
+  '</div>';
 }
 
 /* Którą skalę pokazuje sylwetka. Domyślnie świeżość — bo do niej sięga się
@@ -11313,7 +11574,7 @@ function renderCoverage(){
       '<button class="'+(swiezo?'':'on')+'" onclick="przelaczMape(\'objetosc\')">Objętość</button>'+
       '<button class="'+(swiezo?'on':'')+'" onclick="przelaczMape(\'swiezosc\')">Świeżość</button>'+
     '</div>';
-  out+='<div class="card" style="padding:10px 8px 4px">'+bodyMap(cov, MAPA_TRYB)+
+  out+='<div class="card" style="padding:10px 8px 8px">'+bodyMap(cov, MAPA_TRYB)+
     '<div class="lgnd">'+
       (swiezo
         ? '<span><i class="swieze"></i>dziś / wczoraj</span>'+
@@ -11325,7 +11586,7 @@ function renderCoverage(){
           '<span><i class="low"></i>za mało</span>'+
           '<span><i class="over"></i>za dużo</span>'+
           '<span><i class="none"></i>nietknięte</span>')+
-    '</div></div>';
+    '</div>'+ miesienPanel(MAPA_TRYB, cov) +'</div>';
 
   if(swiezo){
     /* W trybie świeżości zamiast listy braków — co jest gotowe do pracy.
@@ -11341,18 +11602,25 @@ function renderCoverage(){
     return out;
   }
 
-  if(none.length) out+='<div class="tip bad"><b>Zero serii w 14 dni:</b> '+esc(none.join(', '))+'</div>';
-  if(low.length)  out+='<div class="tip warn"><b>Poniżej minimum:</b> '+esc(low.join(', '))+
-    '. Silnik sam to nadrobi przy najbliższej rotacji akcesoriów.</div>';
-  if(over.length) out+='<div class="tip"><b>Powyżej górnej granicy:</b> '+esc(over.join(', '))+
-    '. Więcej serii nie da więcej masy, a zabiera regenerację.</div>';
+  /* ODSTĘPSTWA OD NORMY JAKO PLAKIETKI, NIE AKAPITY. „Powyżej górnej
+     granicy: Bark — przód (9/8), Triceps — głowa długa (11,6/10), …" było
+     ośmioma pozycjami w jednym zdaniu. Każda plakietka to jeden mięsień
+     z liczbą, a dotknięcie zaznacza go na sylwetce i otwiera szczegóły. */
+  const chipy = st => Object.keys(REG).filter(k => regStatus(k, cov) === st).map(k => {
+    const ksztalt = Object.values(SYL_MAPA).find(r => r && r.indexOf(k) >= 0);
+    return '<span class="mchip" onclick="wybierzMiesien(\''+(ksztalt || [k]).join(',')+'\')">'+
+      esc(REG[k].n)+' <b>'+fmtKg(Math.round((cov[k]||0)*10)/10)+'</b></span>';
+  }).join('');
+  if(none.length) out+='<div class="tip bad"><b>Zero serii w 14 dni</b><div>'+chipy('none')+'</div></div>';
+  if(low.length)  out+='<div class="tip warn"><b>Poniżej minimum</b><div>'+chipy('low')+'</div>'+
+    '<div class="hm" style="margin-top:8px">Silnik sam to nadrobi przy najbliższej rotacji akcesoriów.</div></div>';
+  if(over.length) out+='<div class="tip"><b>Powyżej górnej granicy</b><div>'+chipy('over')+'</div>'+
+    '<div class="hm" style="margin-top:8px">Więcej serii nie da więcej masy, a zabiera regenerację.</div></div>';
   if(!none.length&&!low.length&&!over.length&&Object.values(cov).some(x=>x>0))
     out+='<div class="tip ok">Wszystkie partie w zakresie. Nic nie wymaga korekty.</div>';
 
-  out += rozbicieGrup(cov);
-
-  out+='<div class="tip">Serie liczone ułamkowo: seria wyciskania leżąc to 1,0 na środek klatki i 0,4 na triceps — '+
-    'ćwiczenie złożone nie daje pełnej serii każdemu mięśniowi.</div>';
+  out+='<div class="hm" style="margin:0 4px 13px">Serie liczone ułamkowo: seria wyciskania leżąc to 1,0 na środek klatki '+
+    'i 0,4 na triceps — ćwiczenie złożone nie daje pełnej serii każdemu mięśniowi.</div>';
   return out;
 }
 /* ============================================================
@@ -11408,19 +11676,62 @@ function raportSily(){
   const pierwsza = DB.workouts[0].date;
   const tyg = Math.max(1, Math.round((new Date(today()+'T00:00:00') - new Date(pierwsza+'T00:00:00')) / (7*864e5)));
   const PROG = 3;   /* poniżej 3% to szum pomiaru, nie zmiana */
-  const up = r.filter(x => x.zmiana >= PROG).length, dol = r.filter(x => x.zmiana <= -PROG).length;
+  const gora = r.filter(x => x.zmiana >= PROG), dol = r.filter(x => x.zmiana <= -PROG);
   const zm = x => '<span class="' + (x.zmiana >= PROG ? 'up' : x.zmiana <= -PROG ? 'down' : 'hm') + '">' +
     (x.zmiana >= 0 ? '+' : '') + x.zmiana + '%</span>';
-  let h = '<div class="tip"><b>Od ' + plDate(pierwsza) + '</b> · ' + DB.workouts.length + ' treningów · ' + tyg + ' tyg.' +
-    '<br>W górę: <b>' + up + '</b> · bez zmian: <b>' + (r.length - up - dol) + '</b> · w dół: <b>' + dol + '</b></div>';
-  const dlugie = r.filter(x => x.sesje >= 3), krotkie = r.filter(x => x.sesje < 3);
-  h += dlugie.map(x =>
-    '<div class="card"><div class="chdr">' + esc(x.name) + (x.boj ? ' <span class="hm">· bój</span>' : '') + zm(x) + '</div>' +
+
+  /* PODSUMOWANIE, KTÓRE DA SIĘ PRZECZYTAĆ JEDNYM SPOJRZENIEM (od 102).
+     Do 101 było to jedno zdanie drobnym drukiem („W górę: 14 · bez zmian:
+     7 · w dół: 9"), a pod nim trzydzieści wykresów jednym ciągiem. Filip:
+     „może bym w tej sile jakoś fajniej to podsumował". Teraz: trzy duże
+     liczby, potem po trzy największe zmiany w obie strony — czyli odpowiedź
+     na „co rośnie, a co stoi" bez przewijania. */
+  let h = '<div class="silapod">'+
+      '<div><b class="up">'+gora.length+'</b><span>W GÓRĘ</span></div>'+
+      '<div><b>'+(r.length - gora.length - dol.length)+'</b><span>BEZ ZMIAN</span></div>'+
+      '<div><b class="down">'+dol.length+'</b><span>W DÓŁ</span></div>'+
+    '</div>'+
+    '<div class="hm" style="margin:0 4px 14px">Od '+plDate(pierwsza)+' · '+DB.workouts.length+
+      ' treningów · '+tyg+' tyg. · maszyny: '+SILOWNIE[silowniaTeraz()].n+'</div>';
+
+  const wiersz = x => '<div class="kv"><span class="k" style="color:var(--txt);min-width:0">'+esc(x.name)+
+      '<div class="hm" style="margin-top:1px">'+fmtSet(x.pierwszy, x.name)+' → '+fmtSet(x.ostatni, x.name)+'</div></span>'+
+    '<span class="v" style="font-size:15px">'+zm(x)+'</span></div>';
+  /* ZMIANA O POŁOWĘ TO ZWYKLE NIE SIŁA. Na prawdziwych danych pierwsze
+     miejsca w obu rankingach zajęły: uginanie nóg +100% (40 → 80 kg),
+     wspięcia +76%, unoszenie bokiem −59% (20 kg×2 → 7,5 kg×2). To inna
+     maszyna, hantle wpisane raz jako para, raz jako sztuka, albo pomyłka
+     przy wpisie — nie dwukrotny przyrost siły w dwa miesiące. Takie pozycje
+     dostają własną ramkę „do sprawdzenia", a rankingi liczą się z reszty.
+     Próg 50%: wypychanie nogami +48% po roku przerwy jest prawdziwe. */
+  const DZIWNE = 50;
+  const dziwne = r.filter(x => Math.abs(x.zmiana) >= DZIWNE);
+  const top = gora.filter(x => x.zmiana < DZIWNE).sort((a, b) => b.zmiana - a.zmiana).slice(0, 3);
+  const dno = dol.filter(x => x.zmiana > -DZIWNE).sort((a, b) => a.zmiana - b.zmiana).slice(0, 3);
+  if(top.length) h += '<h2>Największy postęp</h2><div class="card topy">'+top.map(wiersz).join('')+'</div>';
+  if(dno.length) h += '<h2>Największy spadek</h2><div class="card topy">'+dno.map(wiersz).join('')+'</div>';
+  if(dziwne.length) h += '<h2>Do sprawdzenia</h2><div class="card topy">'+dziwne.map(wiersz).join('')+
+    '<div class="hm" style="margin-top:9px">Zmiana o połowę albo więcej to zwykle inna maszyna, hantle '+
+    'wpisane raz jako para, a raz jako sztuka, albo pomyłka we wpisie. Jeśli tak było — popraw nazwę '+
+    'albo siłownię w Dzienniku → trening.</div></div>';
+
+  /* Boje mają własną sekcję zamiast dopisku „· bój" przy nazwie — dopisek
+     lądował na środku nagłówka karty, między nazwą a procentem, i wyglądał
+     jak błąd składu (Filip: „taki trochę brzydki napis bój, w dziwnym
+     miejscu"). */
+  const karta = x =>
+    '<div class="card"><div class="chdr"><span class="cn">' + esc(x.name) + '</span>' + zm(x) + '</div>' +
     sparkline(x.pkt, x.zmiana <= -PROG ? 'var(--warn)' : 'var(--info)') +
     '<div class="cfoot"><span>' + plDate(x.od) + ': ' + fmtSet(x.pierwszy, x.name) + '</span>' +
     '<span>' + plDate(x.do) + ': ' + fmtSet(x.ostatni, x.name) + '</span></div>' +
-    (x.szczyt > x.zmiana + PROG ? '<div class="hm" style="margin-top:4px">Najlepszy wynik po drodze: +' + x.szczyt + '%.</div>' : '') +
-    '</div>').join('');
+    /* „Najlepszy wynik po drodze: +0%" przy spadku nic nie mówiło — szczyt
+       pokazujemy tylko wtedy, gdy sam był realnym postępem. */
+    (x.szczyt >= PROG && x.szczyt > x.zmiana + PROG ? '<div class="hm" style="margin-top:4px">Najlepszy wynik po drodze: +' + x.szczyt + '%.</div>' : '') +
+    '</div>';
+  const dlugie = r.filter(x => x.sesje >= 3), krotkie = r.filter(x => x.sesje < 3);
+  const boje = dlugie.filter(x => x.boj), reszta = dlugie.filter(x => !x.boj);
+  if(boje.length) h += '<h2>Główne boje</h2>' + boje.map(karta).join('');
+  if(reszta.length) h += '<h2>Pozostałe ćwiczenia</h2>' + reszta.map(karta).join('');
   if(krotkie.length)
     h += '<h2>Dopiero dwie sesje</h2><div class="card">' + krotkie.map(x =>
       kv(x.name, fmtSet(x.pierwszy, x.name) + ' → ' + fmtSet(x.ostatni, x.name) + ' ' + zm(x))).join('') + '</div>';
@@ -11430,35 +11741,20 @@ function raportSily(){
 }
 
 function renderTrendy(){
-  const BOJE=bojePlanu();
-  let bloki='';
-
-  BOJE.forEach(name=>{
-    const h0=historia(name);
-    if(h0.length<2) return;
-    const pkt=h0.slice().reverse().map(x=>({v:e1rm(bestSet(x.sets,name),name), d:x.date}));
-    const zm = pkt[0].v > 0 ? Math.round((pkt[pkt.length-1].v/pkt[0].v-1)*100) : null;
-    bloki+='<div class="card"><div class="chdr">'+esc(name)+
-      (zm==null ? '<span class="hm">masa własna</span>'
-                : '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+zm+'%</span>')+'</div>'+
-      sparkline(pkt,'var(--info)')+
-      '<div class="cfoot"><span>'+fmtKg(pkt[0].v)+' kg</span>'+
-      '<span>'+fmtKg(pkt[pkt.length-1].v)+' kg · szacowany 1RM</span></div></div>';
-  });
-
+  /* TYLKO WAGA. Do 101 stały tu też wykresy szacowanego maksa dla pięciu
+     bojów — te same, które od wersji 97 są w zakładce „Siła", tylko bez
+     dat i bez serii. Filip, 3 października: „w zakładce mięśnie mam kolejne
+     wykresy, nie wiem, czy to się nie powtarza z tym, co jest w zakładce
+     siła". Powtarzało się. Siła mieszka w „Sile", a tu zostaje jedyny
+     trend, którego tam nie ma. */
   const wagi=DB.daily.filter(d=>d.weight!=null).map(d=>({v:d.weight, d:d.date}));
-  if(wagi.length>1){
-    const zm=Math.round((wagi[wagi.length-1].v-wagi[0].v)*10)/10;
-    bloki+='<div class="card"><div class="chdr">Waga'+
-      '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+fmtKg(zm)+' kg</span></div>'+
-      sparkline(wagi,'#3ecf8e')+
-      '<div class="cfoot"><span>'+fmtKg(wagi[0].v)+' kg</span>'+
-      '<span>'+fmtKg(wagi[wagi.length-1].v)+' kg</span></div></div>';
-  }
-
-  if(!bloki) return '<h2>Trendy</h2><div class="empty">Za mało danych na wykresy.<br>'+
-    'Potrzeba co najmniej dwóch sesji z tym samym bojem.</div>';
-  return '<h2>Trendy</h2>'+bloki;
+  if(wagi.length < 2) return '';
+  const zm=Math.round((wagi[wagi.length-1].v-wagi[0].v)*10)/10;
+  return '<h2>Waga</h2><div class="card"><div class="chdr">Masa ciała'+
+    '<span class="'+(zm>=0?'up':'down')+'">'+(zm>=0?'+':'')+fmtKg(zm)+' kg</span></div>'+
+    sparkline(wagi,'#3ecf8e')+
+    '<div class="cfoot"><span>'+plDate(wagi[0].d)+': '+fmtKg(wagi[0].v)+' kg</span>'+
+    '<span>'+plDate(wagi[wagi.length-1].d)+': '+fmtKg(wagi[wagi.length-1].v)+' kg</span></div></div>';
 }
 
 /* ============================================================
@@ -11715,8 +12011,14 @@ function renderReport(){
   if(!SEKCJE.some(x => x[0] === RAPORT_SEKCJA)) RAPORT_SEKCJA = 'teraz';
   const sek = RAPORT_SEKCJA;
 
+  /* Rozjazd między kalendarzem a planem stoi tu, przy numerze tygodnia —
+     do 101 wisiał szarą linijką na ekranie głównym, codziennie. */
+  const stracone = w - wPlanu;
   let h='<div class="tip"><b>Tydzień '+wPlanu+' planu</b> · '+PHASES[p].n+
-    ' · dane z '+plDate(ws)+' – '+plDate(we)+'</div>'+
+    ' · dane z '+plDate(ws)+' – '+plDate(we)+
+    (stracone > 0 ? '<div class="hm" style="margin-top:4px">W kalendarzu to tydzień '+w+'. '+
+      (stracone === 1 ? 'Tydzień' : stracone+' tygodnie')+
+      ' bez siłowni nie przesuwa fazy, więc plan liczy '+wPlanu+'.</div>' : '')+'</div>'+
     '<div class="segm">'+ SEKCJE.map(([k,n]) =>
       '<button class="'+(k===sek?'on':'')+'" onclick="raportSekcja(\''+k+'\')">'+n+'</button>').join('') +
     '</div>';
@@ -11913,6 +12215,20 @@ function renderReport(){
         })+
         '<div class="hm" style="margin-top:8px">Kalorie dowiezione w '+ileK+' z 7 dni, '+
         'białko w '+ileB+'. Szary słupek to dzień bez wpisu, nie dzień bez jedzenia.</div></div>';
+    } else {
+      /* TYDZIEŃ BEZ WPISÓW NIE MOŻE BYĆ PUSTĄ STRONĄ. Zakładka pokazywała
+         wtedy sam przełącznik sekcji i wyglądała jak awaria (Filip:
+         „pusta zakładka jedzenia… po prostu zapominam dodawać, jeszcze nie
+         mam takiego nawyku"). Zamiast pustki: co jest celem i jeden guzik,
+         który prowadzi prosto do dopisania posiłku. */
+      const ost = (DB.daily || []).filter(d => d.bialko || d.kcal).slice(-1)[0];
+      h += '<div class="card" style="text-align:center;padding:24px 16px 20px">'+
+        '<div style="font-size:17px;font-weight:800;letter-spacing:-.02em">Ostatnie 7 dni bez wpisów</div>'+
+        '<div class="hm" style="margin-top:7px;line-height:1.5">'+
+          (ost ? 'Ostatni zapisany dzień: '+plDate(ost.date)+'.<br>' : '')+
+          'Cel na dziś: <b style="color:var(--txt)">'+cm2.kcal+' kcal</b> · białko <b style="color:var(--txt)">'+cB.min+' g</b></div>'+
+        '<button class="btn" style="margin-top:15px" onclick="dodajJedzenieZRaportu()">Dodaj posiłek</button>'+
+        '<div class="hm" style="margin-top:11px">Na początek wystarczy samo białko.</div></div>';
     }
     h += listaPosilkow();
   }
@@ -11924,7 +12240,7 @@ function renderReport(){
     teraz:    !cur.length && !dCur.length && !DB.workouts.length,
     tydzien:  !cur.length && !dCur.length && !rCur.length,
     cialo:    !DB.workouts.length,
-    jedzenie: !DB.daily.some(d => d.bialko)
+    jedzenie: false      /* ma własną kartę z guzikiem — patrz wyżej */
   }[sek];
   if(pustaSekcja) h+='<div class="empty">'+
     {teraz:    'Nic jeszcze nie ma.<br>Zacznij trening albo wpisz dane z rana.',
@@ -11974,7 +12290,9 @@ function renderReport(){
     if(srvGotowy()) h+='<button class="btn ghost sm" style="margin-bottom:14px" onclick="srvPull()">Sprawdź, czy jest nowszy</button>';
   }
 
-  h+='<div class="tip" style="margin-top:16px">Głębsza analiza: <b>Dane → Wyślij do iCloud</b>, a potem w Cowork „przeanalizuj mój tydzień".</div>';
+  /* Stała ramka „Głębsza analiza: Dane → Wyślij do iCloud…" wisiała na dole
+     każdej z pięciu sekcji. Odkąd dane idą same na serwer, opisywała krok,
+     którego nikt nie robi — a w pustej sekcji była jedyną rzeczą na ekranie. */
   document.getElementById('reportBody').innerHTML=h;
 }
 
