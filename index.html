@@ -2165,7 +2165,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '95';
+const WERSJA = '96';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3324,6 +3324,10 @@ const SILOWNIE = {
   well:   {n:'Well Fitness', stosy:{}}
 };
 function silowniaTeraz(){
+  /* W trakcie treningu obowiązuje siłownia TEJ SESJI — inaczej zmiana
+     ustawienia w połowie treningu liczyłaby rekordy i podpowiedzi z historii
+     drugiej siłowni, a trening i tak zapisałby się pod pierwszą. */
+  if(typeof SES !== 'undefined' && SES && SILOWNIE[SES.silownia]) return SES.silownia;
   const k = DB && DB.settings && DB.settings.silownia;
   return SILOWNIE[k] ? k : 'silver';
 }
@@ -3399,6 +3403,10 @@ function pr(name, doDaty){
   let best=null;
   DB.workouts.forEach(w=>{
     if(doDaty && w.date>=doDaty) return;
+    /* Rekord na maszynie liczy się w obrębie siłowni: 40 kg na bramie Well
+       i 40 kg na bramie Silver to nie ten sam wynik. Bez tego pierwszy
+       trening na drugiej siłowni dawał fałszywy rekord albo żadnego. */
+    if(!tuSieLiczy(w, name)) return;
     const e=w.exercises.find(x=>x.name===name);
     if(!e) return;
     const b=bestSet(e.sets,name);
