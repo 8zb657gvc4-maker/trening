@@ -2165,7 +2165,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '97';
+const WERSJA = '98';
 const WERSJA_DATA = '2026-09-15';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3988,7 +3988,9 @@ function zakresCwiczenia(name, slot, phase){
 function stosDla(name){
   const L = LIB[name] || {};
   const kg = L.stos && ((SILOWNIE[silowniaTeraz()] || {}).stosy || {})[L.stos];
-  return kg ? {nazwa: L.stos, kg} : null;
+  /* `gdzie` to gotowy miejscownik. Do 97 tekst sklejał nazwę stosu z „ie"
+     i wychodziło „Na bramaie nie ma 27,5 kg". */
+  return kg ? {nazwa: L.stos, gdzie: ({brama: 'bramie'})[L.stos] || 'tej maszynie', kg} : null;
 }
 /* Wyrównanie do stosu. kier: 'gora' — najmniejszy stopień ≥ w,
    'dol' — największy ≤ w, inaczej najbliższy (remis w dół). */
@@ -4014,7 +4016,7 @@ function suggestLoad(name, slot, phase, tydzien){
   const kier = wPop == null ? null : (s.w > wPop ? 'gora' : 'dol');
   const w = naStos(name, s.w, kier);
   let why = String(s.why || '').split(fmtKg(s.w) + ' kg').join(fmtKg(w) + ' kg');
-  why += ' Na ' + st.nazwa + 'ie nie ma ' + fmtKg(s.w) + ' kg — najbliższy stopień to ' + fmtKg(w) + ' kg.';
+  why += ' Na ' + st.gdzie + ' nie ma ' + fmtKg(s.w) + ' kg — najbliższy stopień to ' + fmtKg(w) + ' kg.';
   if(kier === 'gora' && wPop > 0 && (w - wPop) / wPop > 0.2)
     why += ' To duży skok (+' + Math.round((w - wPop) / wPop * 100) + '%). Jeśli nie wejdzie ' + s.r +
       ' powt., wróć do ' + fmtKg(wPop) + ' kg i dokładaj powtórzenia ponad zakres.';
