@@ -2244,7 +2244,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '102';
+const WERSJA = '104';
 const WERSJA_DATA = '2026-10-03';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -4197,7 +4197,71 @@ function suggestLoad(name, slot, phase, tydzien){
   return {...s, w, why};
 }
 
+/* ZAMIENNIK NA TE SAME MIĘŚNIE NIE JEST PRZERWĄ (od 103).
+
+   30 września ławki były zajęte i Filip zrobił „ISO lateral bench press"
+   zamiast wyciskania leżąc. Na 5 października silnik dał wyciskanie
+   57,5 kg × 6 zamiast 60 kg — „przerwa 18 dni od ostatniego razu". Tyle
+   że klatka pracowała pięć dni wcześniej, na maszynie o identycznym
+   rozkładzie mięśni. Odkąd jest guzik „Zajęte", taka zamiana to normalny
+   tydzień, a nie wyjątek — i każda kończyłaby się obniżką przy powrocie.
+
+   Zasada sprzed 103 zostaje: przerwę liczymy dla ĆWICZENIA, nie dla dnia.
+   Pompki z wyjazdu dalej nie podtrzymują wyciskania (komentarz niżej:
+   „pompki robiłeś przedwczoraj — i tylko wyciskanie ma zejść niżej").
+   Wyjątek dotyczy wyłącznie zamiennika, czyli ćwiczenia, które:
+     - ma ten sam główny mięsień (≥ 0,6) i prawie ten sam rozkład
+       (`podobienstwoCw` ≥ 0,9 — to samo kryterium, którym „Zajęte" dobiera
+       zamiennik, tylko ostrzejsze),
+     - jest mierzone tak samo (powtórzenia albo czas),
+     - nie jest ćwiczeniem z trybu wyjazdowego (masa własna bez dociążenia),
+       chyba że samo ćwiczenie takie jest,
+     - miało co najmniej dwie serie robocze.
+   Ciężar dalej bierze się z WŁASNEJ historii ćwiczenia — zamiennik mówi
+   tylko „mięśnie nie stały", niczego nie przelicza między maszynami.
+
+   `ZAMIENNIK_W_PRZERWIE` to notatka przekazywana z wnętrza `suggestLoadRdzen`
+   do tej funkcji, żeby dopisać wyjaśnienie do `why` niezależnie od tego,
+   którą z kilkunastu dróg wyjścia rdzeń pójdzie. */
+let ZAMIENNIK_W_PRZERWIE = null;
+function zamiennikPo(name, poDacie){
+  const W = LIB[name];
+  if(!W || !W.mus) return null;
+  const glowny = Object.entries(W.mus).sort((a, b) => b[1] - a[1])[0];
+  if(!glowny) return null;
+  /* Od najnowszego wstecz, tylko do własnej ostatniej sesji — starszy
+     zamiennik niczego nie zmienia. `DB.workouts` jest posortowane po dacie. */
+  for(let i = (DB.workouts || []).length - 1; i >= 0; i--){
+    const w = DB.workouts[i];
+    if(w.date > today() || w.obwod) continue;
+    if(w.date <= poDacie) break;
+    for(const e of (w.exercises || [])){
+      const L = LIB[e.name];
+      if(e.name === name || !L || !L.mus) continue;
+      if(!!L.time !== !!W.time) continue;
+      if(L.bw && !L.inc && !W.bw) continue;
+      if((e.sets || []).filter(s => !s.wu).length < 2) continue;
+      if((L.mus[glowny[0]] || 0) < 0.6) continue;
+      if(podobienstwoCw(name, e.name) < 0.9) continue;
+      return {name: e.name, date: w.date};
+    }
+  }
+  return null;
+}
 function suggestLoadSurowe(name, slot, phase, tydzien){
+  ZAMIENNIK_W_PRZERWIE = null;
+  const s = suggestLoadRdzen(name, slot, phase, tydzien);
+  const z = ZAMIENNIK_W_PRZERWIE;
+  ZAMIENNIK_W_PRZERWIE = null;
+  if(!s || !z || s.tag === 'coach') return s;
+  return Object.assign({}, s, {zamiennik: z.name,
+    why: String(s.why || '') + (z.zostaje
+      ? ' Przerwę liczę od „' + z.name + '" z ' + plDate(z.date) +
+        ' (te same mięśnie), a nie od ostatniego razu sprzed ' + z.wlasna + ' dni.'
+      : ' Od ostatniego razu minęło ' + z.wlasna + ' dni, ale ' + plDate(z.date) +
+        ' robiłeś „' + z.name + '" — te same mięśnie, więc nie liczę tego jako przerwy.')});
+}
+function suggestLoadRdzen(name, slot, phase, tydzien){
   const sets = serieSlotu(slot, phase, tydzien);
   /* Slot ma jeden zakres powtórzeń dla całej puli, co przestaje działać, gdy
      w puli siedzą ćwiczenia mierzone inaczej. Slot tułowia był ustawiony pod
@@ -4296,9 +4360,22 @@ function suggestLoadSurowe(name, slot, phase, tydzien){
      wystąpienia — inaczej deload wyglądał jak dwutygodniowa przerwa i silnik
      ścinał ciężary w środku dobrze idącego bloku. */
   const naprawde = lastFor(name, false) || last;
-  const przerwa = Math.round((new Date(today()+'T00:00:00') -
-                              new Date(naprawde.date+'T00:00:00')) / 864e5);
-  const pr = przerwaSkala(przerwaWzgledna(przerwa), chorobaPoDacie(naprawde.date));
+  let przerwa = Math.round((new Date(today()+'T00:00:00') -
+                            new Date(naprawde.date+'T00:00:00')) / 864e5);
+  let pr = przerwaSkala(przerwaWzgledna(przerwa), chorobaPoDacie(naprawde.date));
+  /* Zamiennik robiony w międzyczasie skraca przerwę do swojej daty — patrz
+     komentarz przy `zamiennikPo`. Szukamy go tylko wtedy, gdy przerwa w ogóle
+     coś by obniżyła; przy zwykłym odstępie nie ma po co przeglądać historii. */
+  if(pr){
+    const zam = zamiennikPo(name, naprawde.date);
+    if(zam){
+      const wlasna = przerwa;
+      przerwa = Math.round((new Date(today()+'T00:00:00') -
+                            new Date(zam.date+'T00:00:00')) / 864e5);
+      pr = przerwaSkala(przerwaWzgledna(przerwa), chorobaPoDacie(zam.date));
+      ZAMIENNIK_W_PRZERWIE = {name: zam.name, date: zam.date, wlasna, zostaje: !!pr};
+    }
+  }
   if(pr){
     /* Ciężar bazowy bierzemy z TEJ SAMEJ sesji, od której liczymy przerwę.
        Wcześniej przerwa liczyła się od ostatniego treningu, a kilogramy
@@ -12581,6 +12658,39 @@ function wipe(){
    ============================================================ */
 srvLoad();
 load();
+
+/* NAWIGACJA WISIAŁA NAD PUSTYM PASEM (zrzut Filipa z iPhone'a, 3 października).
+
+   Aplikacja dodana do ekranu głównego, z paskiem stanu `black-translucent`
+   i `viewport-fit=cover`, rysuje się od samej góry ekranu — pod zegarem.
+   Ale iOS liczy wtedy wysokość widoku (`100dvh`) tak, jakby pasek stanu
+   dalej zabierał miejsce: `body` wychodzi niższe od ekranu o wysokość
+   paska (ok. 47–59 px), a ta różnica zostaje na dole jako pusty pas pod
+   nawigacją. Na zrzucie było to 58 px — dokładnie tyle.
+
+   Naprawa mierzy objaw, a nie zgaduje wersję systemu: jeśli w trybie
+   samodzielnym i w pionie `body` jest niższe od ekranu o 16–80 px, dostaje
+   wysokość ekranu wprost. Poza tym zakresem (Safari w karcie, komputer,
+   iOS bez tego błędu, poziom) nie robimy nic i zostaje `100dvh` z arkusza.
+   Odstęp na pasek gestów (`--safe-b` w nawigacji) zostaje — to on trzyma
+   guziki nad kreską na dole ekranu. */
+function dopasujWysokosc(){
+  try {
+    const b = document.body;
+    if(!b || !b.style) return;
+    b.style.height = '';                      /* najpierw stan z arkusza, potem pomiar */
+    if(!pwaNaEkranie()) return;
+    if(window.innerWidth > window.innerHeight) return;
+    const ekran = Math.max(screen.height, screen.width);
+    const brak = ekran - b.offsetHeight;
+    if(brak >= 16 && brak <= 80) b.style.height = ekran + 'px';
+  } catch(e){}
+}
+dopasujWysokosc();
+window.addEventListener('resize', dopasujWysokosc);
+window.addEventListener('pageshow', dopasujWysokosc);
+/* po obrocie iOS podaje nowe wymiary z opóźnieniem */
+window.addEventListener('orientationchange', () => setTimeout(dopasujWysokosc, 350));
 /* dosyłamy zaległość, zanim cokolwiek pokażemy — cicho, bo to nie jest
    zdarzenie, którym trzeba zawracać głowę, gdy się uda */
 if(zalegaWysylka()) srvPush(true).then(o=>{ if(o) renderSub(); });
