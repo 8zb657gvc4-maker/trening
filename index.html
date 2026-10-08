@@ -1412,7 +1412,86 @@ const DOMYSLNA_LIB = {
                                   cue:'Biodro wysoko, ciało w jednej linii. Na każdą stronę osobno.'},
   'Skłon boczny z hantlem':      {hantle:true, inc:2.5, rr:[12,20], strona:'stronę', mus:{skosne:1, glebokie:.4},
                                   cue:'Hantel w jednej ręce, schylasz się w JEGO stronę i prostujesz. Druga ręka za głową. Bez rotacji.'},
-  'Allahy na wyciągu':           {inc:2.5, rr:[12,20], mus:{brzuch:1}}
+  'Allahy na wyciągu':           {inc:2.5, rr:[12,20], mus:{brzuch:1}},
+
+  /* ============================================================
+     MASZYNY DOŁOŻONE W WERSJI 105.
+
+     Filip, 8 października: „wczoraj nie robiłem martwego ciągu i chciałem
+     sobie zmienić ćwiczenia, ale nie ma w aplikacji połowy maszyn". Biblioteka
+     znała głównie sztangę, hantle i wyciąg — a na siłowni pół sali to maszyny.
+     Ćwiczenie spoza biblioteki da się wpisać pod własną nazwą, tylko że wtedy
+     nie liczy się do żadnego mięśnia, nie ma progresji ani zamiennika.
+
+     Rozkłady mięśni w tej samej skali co reszta biblioteki: 1 — główny
+     mięsień, 0,3–0,5 — pomocnicze. Każda maszyna jest „maszynowa" w sensie
+     `maszynowe()` (historia osobno dla Silver i Well), bo opór zależy od
+     konkretnego sprzętu. Wszystkie od razu biorą udział w „Zajęte — zamień".
+
+     Świadomie BEZ dwóch maszyn:
+     - podciąganie/dipy z asystą — tam większy ciężar znaczy LŻEJ, a silnik
+       progresji dokładałby kilogramy jako postęp,
+     - przywodzenie nóg — przywodziciele nie mają regionu na mapie, więc
+       ćwiczenie nie policzyłoby się nigdzie i tylko udawało pracę.
+     ============================================================ */
+
+  /* --- klatka --- */
+  'Wyciskanie na maszynie':      {inc:5, mus:{klatka_srodek:1, klatka_dol:.2, triceps_bocz:.4, triceps_przysr:.3, bark_przod:.3},
+                                  cue:'Siedzisko tak, żeby uchwyty były na wysokości środka klatki. Łopatki przy oparciu, łokcie lekko w dół, nie na boki.'},
+  'Wyciskanie skos na maszynie': {inc:5, mus:{klatka_gora:1, klatka_srodek:.4, bark_przod:.5, triceps_bocz:.35, triceps_przysr:.2},
+                                  cue:'Uchwyty na wysokości górnej części klatki. Pchasz w górę i lekko do środka, łopatki przy oparciu.'},
+  'Wyciskanie leżąc na suwnicy Smitha': {inc:2.5, mus:{klatka_srodek:1, klatka_dol:.3, triceps_bocz:.4, triceps_przysr:.3, bark_przod:.3},
+                                  cue:'Ustaw ławkę tak, żeby sztanga schodziła na dolną część klatki. Blokady zawsze na bezpiecznej wysokości.'},
+  /* Nazwa dokładnie taka, jak Filip wpisał 5 października (Well) — żeby ta
+     sesja od razu policzyła się do klatki i dostała historię. */
+  'Smith skośny':                {inc:2.5, mus:{klatka_gora:1, klatka_srodek:.4, bark_przod:.45, triceps_bocz:.35, triceps_przysr:.2},
+                                  cue:'Wyciskanie na suwnicy Smitha na skosie 30–40°. Sztanga schodzi tuż pod obojczyki.'},
+
+  /* --- plecy --- */
+  'Wiosłowanie T-bar':           {inc:5, mus:{plecy_poziom:1, plecy_gora:.5, bark_tyl:.3, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3, prostowniki:.3},
+                                  cue:'Klatka nad sztangą, plecy proste. Ciągniesz łokciami do bioder, nie barkami do uszu.'},
+  'Wiosłowanie z podparciem klatki': {inc:5, mus:{plecy_poziom:1, plecy_gora:.45, bark_tyl:.35, biceps_dluga:.25, biceps_krotka:.25, ramienny:.3},
+                                  cue:'Mostek oparty przez całą serię — bez odrywania i bujania. Łopatki ściągasz na końcu ruchu.'},
+  'Ściąganie na maszynie':       {inc:5, mus:{plecy_pion:1, plecy_poziom:.2, biceps_dluga:.3, biceps_krotka:.3, ramienny:.3},
+                                  cue:'Uda zablokowane pod wałkami. Ciągniesz łokciami w dół do żeber, bez odchylania tułowia.'},
+  'Pullover na wyciągu':         {inc:2.5, stos:'brama', mus:{plecy_pion:1, triceps_dluga:.3, klatka_dol:.2},
+                                  cue:'Ręce prawie proste, ruch z barków: drążek idzie łukiem do ud. Plecy bez bicepsa.'},
+  'Wyprosty na ławce rzymskiej': {inc:2.5, bw:true, rr:[10,15], mus:{prostowniki:1, posladki:.5, dwuglowe:.4},
+                                  cue:'Ruch z bioder, kręgosłup neutralny. Na górze kończysz w linii ciała, bez przeprostu. Talerz trzymasz przy klatce.'},
+
+  /* --- barki --- */
+  'Wyciskanie nad głowę na maszynie': {inc:5, mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.45, triceps_przysr:.3},
+                                  cue:'Uchwyty startują na wysokości barków. Plecy przy oparciu, lędźwia się nie wyginają.'},
+  'Odwrotne rozpiętki na maszynie': {inc:2.5, mus:{bark_tyl:1, plecy_gora:.4},
+                                  cue:'Klatka do oparcia, ręce prawie proste, łokcie prowadzisz do tyłu. Lekko — tył barku nie lubi szarpania.'},
+
+  /* --- ramiona --- */
+  'Uginanie ramion na maszynie': {inc:2.5, mus:{biceps_krotka:1, biceps_dluga:.7, ramienny:.3},
+                                  cue:'Łokcie na poduszce w osi maszyny. Na dole pełny wyprost, na górze łokcie się nie odrywają.'},
+  'Dipy na maszynie':            {inc:5, mus:{triceps_bocz:1, triceps_przysr:.7, triceps_dluga:.5, klatka_dol:.4},
+                                  cue:'Tułów pionowo, łokcie przy ciele — wtedy pracuje triceps, a nie klatka.'},
+
+  /* --- nogi --- */
+  'Przysiad na suwnicy Smitha':  {inc:2.5, mus:{czworoglowe:1, posladki:.5, udo_proste:.3},
+                                  cue:'Stopy kawałek przed sztangą — wtedy kolana i biodra pracują jak w przysiadzie, a nie w pochyleniu.'},
+  'Pendulum squat':              {inc:5, mus:{czworoglowe:1, udo_proste:.3, posladki:.35},
+                                  cue:'Plecy przyklejone do oparcia, schodzisz głęboko, kolana mogą wyjść za palce. Pięty na platformie.'},
+  'Wypychanie nogami siedząc':   {inc:5, mus:{czworoglowe:1, posladki:.4, udo_proste:.2},
+                                  cue:'Lędźwia przy oparciu przez cały ruch — schodzisz tylko tak nisko, jak długo miednica się nie podwija.'},
+  'Odwodzenie nóg na maszynie':  {inc:5, rr:[12,20], mus:{posladki_sr:1, posladki:.3},
+                                  cue:'Tułów lekko w przód, ruch spokojny w obie strony, sekunda zatrzymania na końcu.'},
+  'Odrzut nogi na maszynie':     {inc:2.5, rr:[10,15], strona:'nogę', mus:{posladki:1, dwuglowe:.4},
+                                  cue:'Ruch z biodra, nie z lędźwi — brzuch napięty, plecy się nie wyginają.'},
+  'Wspięcia na suwnicy':         {inc:5, rr:[12,20], mus:{lydki_stoj:1, lydki_sied:.3},
+                                  cue:'Na suwnicy do wypychania: na platformie tylko przednia część stopy, kolana prawie proste, pełne rozciągnięcie na dole.'},
+
+  /* --- brzuch --- */
+  'Brzuszki na maszynie':        {inc:2.5, rr:[10,15], mus:{brzuch:1, skosne:.3},
+                                  cue:'Zwijasz tułów, mostek do miednicy. Rękami nie ciągniesz.'},
+  'Skręty tułowia na maszynie':  {inc:2.5, rr:[12,15], strona:'stronę', mus:{skosne:1, glebokie:.4},
+                                  cue:'Biodra stoją, obraca się tułów. Wolno, bez rozpędu.'},
+  'Unoszenie nóg na poręczach':  {inc:0, bw:true, rr:[8,15], mus:{brzuch:1, udo_proste:.3},
+                                  cue:'Plecy przy oparciu, kolana do klatki, miednica się zwija. Bez bujania.'}
 };
 /* ============================================================
    PLAN — sloty zamiast sztywnych ćwiczeń
@@ -2244,8 +2323,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '104';
-const WERSJA_DATA = '2026-10-03';
+const WERSJA = '105';
+const WERSJA_DATA = '2026-10-08';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 let DB = null, SES = null, SUB = 'hub';
@@ -7521,7 +7600,9 @@ function renderSession(){
 /* Czy to w ogole sztanga. Maszyny i wyciagi maja wlasne stosy, hantle sa
    parami — w obu przypadkach rozklad na talerze jest bez znaczenia. */
 function sztangowe(name){
-  if(/hantl|maszyn|wyciąg|Brama|Ściąganie|Face pull|Dipy|Podciąganie|masa własna|Plank|Ab wheel/i.test(name)) return false;
+  /* Suwnica Smitha: talerze są, ale gryf prowadzony i odciążony różnie na każdej
+     maszynie — liczy się jak maszyna (historia per siłownia, bez kalkulatora talerzy). */
+  if(/hantl|maszyn|wyciąg|Brama|Ściąganie|Face pull|Dipy|Podciąganie|masa własna|Plank|Ab wheel|Smith|suwnic/i.test(name)) return false;
   return /sztang|Wyciskanie leżąc|Przysiad ze sztangą|Martwy ciąg|Good morning|Hip thrust|Wyciskanie żołnierskie|Francuskie|Uginanie ramion|Wykroki|Wypychanie|Hack/i.test(name);
 }
 
@@ -7778,7 +7859,7 @@ function podobienstwoCw(a, b){
 }
 /* Czego nie podsuwamy w danym dniu, nawet jako zamiennika. Dipy w dniu P
    Filip odrzucił wprost — mają zostać tylko w dniu W. */
-const ZAMIENNIK_NIE_W_DNIU = {P: ['Dipy']};
+const ZAMIENNIK_NIE_W_DNIU = {P: ['Dipy', 'Dipy na maszynie']};
 function zamiennikDla(e, pominiete){
   const sl = (e.slot && typeof e.slot === 'object') ? e.slot : slotById(e.slot);
   const wSesji = SES.exercises.map(x => x.name);
