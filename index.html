@@ -1456,8 +1456,13 @@ const DOMYSLNA_LIB = {
                                   cue:'Uda zablokowane pod wałkami. Ciągniesz łokciami w dół do żeber, bez odchylania tułowia.'},
   'Pullover na wyciągu':         {inc:2.5, stos:'brama', mus:{plecy_pion:1, triceps_dluga:.3, klatka_dol:.2},
                                   cue:'Ręce prawie proste, ruch z barków: drążek idzie łukiem do ud. Plecy bez bicepsa.'},
-  'Wyprosty na ławce rzymskiej': {inc:2.5, bw:true, rr:[10,15], mus:{prostowniki:1, posladki:.5, dwuglowe:.4},
-                                  cue:'Ruch z bioder, kręgosłup neutralny. Na górze kończysz w linii ciała, bez przeprostu. Talerz trzymasz przy klatce.'},
+  /* Dwie nazwy dokładnie tak, jak Filip wpisał je 7 października w Well
+     (zamiast martwego ciągu i ściągania drążka). Z taką nazwą tamta sesja od
+     razu liczy się do mięśni i ma historię — nie trzeba niczego poprawiać. */
+  'ISO lateral lat pulldown':    {inc:5, mus:{plecy_pion:1, plecy_poziom:.2, biceps_dluga:.3, biceps_krotka:.3, ramienny:.3},
+                                  cue:'Maszyna na talerze, każda ręka osobno. Uda pod wałkami, ciągniesz łokciami w dół i lekko do tyłu.'},
+  'Ławka rzymska':               {inc:2.5, bw:true, rr:[10,15], mus:{prostowniki:1, posladki:.5, dwuglowe:.4},
+                                  cue:'Wyprosty tułowia. Ruch z bioder, kręgosłup neutralny, na górze kończysz w linii ciała — bez przeprostu. Talerz trzymasz przy klatce.'},
 
   /* --- barki --- */
   'Wyciskanie nad głowę na maszynie': {inc:5, mus:{bark_przod:1, bark_bok:.4, triceps_bocz:.45, triceps_przysr:.3},
@@ -2323,7 +2328,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '105';
+const WERSJA = '107';
 const WERSJA_DATA = '2026-10-08';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2417,7 +2422,15 @@ const POPRAWKI_NAZW = [
      nie hantle po 20 kg na rękę) oraz „40 kg na biceps to niemożliwe — to był
      triceps" (25 września, ten sam ciężar co prostowanie ramion 13 września). */
   {id:'n6', trening:'wmuskbgf0y1mx', z:'Uginanie hantlami na skosie', na:'Uginanie na wyciągu'},
-  {id:'n7', trening:'wmugyxtymj5ct', z:'Uginanie na wyciągu', na:'Prostowanie ramion wyciąg'}
+  {id:'n7', trening:'wmugyxtymj5ct', z:'Uginanie na wyciągu', na:'Prostowanie ramion wyciąg'},
+  /* DOPISANIE, NIE POPRAWKA (od 107). Filip, 8 października: „dodaj mi do
+     wczorajszego treningu unoszenie nóg na poręczy — zrobiłem jeszcze 3 serie
+     po 6 powtórzeń". Trening z 7 października (dzień M, Well) był już
+     zamknięty, a zapisanej sesji nie da się w aplikacji rozszerzyć o nowe
+     ćwiczenie. RPE nie podał, więc go nie zgadujemy. Ćwiczenie dochodzi
+     tylko wtedy, gdy go jeszcze w tym treningu nie ma. */
+  {id:'d1', trening:'wmuycis3xqtnp', dodaj:{name:'Unoszenie nóg na poręczach',
+    sets:[{w:0, r:6, rpe:null}, {w:0, r:6, rpe:null}, {w:0, r:6, rpe:null}]}}
 ];
 function poprawNazwy(){
   if(!DB || !DB.settings || !Array.isArray(DB.workouts)) return false;
@@ -2427,6 +2440,17 @@ function poprawNazwy(){
     if(zrobione.indexOf(p.id) >= 0) return;
     const w = DB.workouts.find(x => x.id === p.trening);
     if(!w) return;
+    if(p.dodaj){
+      w.exercises = w.exercises || [];
+      if(!w.exercises.some(e => e.name === p.dodaj.name)){
+        w.exercises.push({name: p.dodaj.name, slot: null, lab: 'poza planem', target: 'poza planem',
+          sets: p.dodaj.sets.map(s => Object.assign({}, s))});
+        w.updatedAt = new Date().toISOString();
+      }
+      zrobione.push(p.id);
+      zmiana = true;
+      return;
+    }
     (w.exercises || []).forEach(e => {
       const maks = Math.max(0, ...(e.sets || []).map(x => x.w || 0));
       if(e.name === p.z && (p.doKg == null || maks <= p.doKg)){
