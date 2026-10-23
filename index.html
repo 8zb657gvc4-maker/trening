@@ -858,6 +858,198 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 .chdr .cn{min-width:0;font-size:inherit;font-weight:inherit}
 .topy{display:flex;flex-direction:column;gap:0}
 .topy .kv{padding:7px 0}
+
+/* =========================================================
+   TRYB SKUPIENIA (109) — wygląd z makiety (makieta/makieta-ui.html).
+   Wszystko pod #s-ses.skup albo z przedrostkiem sk-/pp-, żeby nie
+   ruszyć listy, która dalej działa po „Widok listy".
+   ========================================================= */
+#s-ses.skup .tylkoLista{display:none}
+#skupBox:empty{display:none}
+.sk-gora{display:flex;align-items:center;gap:12px;margin:2px 0 14px}
+.sk-postep{flex:1;min-width:0}
+.sk-segi{display:flex;gap:4px}
+.sk-seg{flex:1;height:22px;padding:8px 0;background:none}
+.sk-seg i{display:block;height:6px;border-radius:99px;background:var(--acc)}
+.sk-seg{position:relative}
+.sk-seg::before{content:'';position:absolute;left:0;right:0;top:8px;height:6px;border-radius:99px;background:var(--card2);z-index:-1}
+.sk-seg.teraz::before{background:rgba(204,255,0,.28)}
+.sk-segi{position:relative;z-index:0}
+.sk-postep small{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);font-weight:600;margin-top:2px}
+.sk-ik{width:46px;height:46px;border-radius:15px;background:var(--card);display:flex;align-items:center;justify-content:center;flex:none;color:var(--txt)}
+.sk-ik svg{width:22px;height:22px}
+.sk-pokaz{width:100%;height:44px;border-radius:14px;background:rgba(0,229,255,.12);color:var(--cyan);font-weight:700;margin-bottom:12px}
+
+.sk-cw{animation:skWejdz .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes skWejdz{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.sk-slot{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--acc);text-transform:uppercase}
+.sk-cw h2{font-size:30px;font-weight:900;letter-spacing:-.035em;line-height:1.05;margin:6px 0 6px;text-transform:none;color:var(--txt)}
+.sk-cel{font-size:15px;color:var(--dim);font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.sk-cel b{color:var(--txt)}
+.sk-tag{font-size:11px;font-weight:800;padding:4px 8px;border-radius:8px;background:var(--card2);color:var(--dim)}
+.sk-tag.acc{background:rgba(204,255,0,.14);color:var(--acc)}
+.sk-why{font-size:13px;color:var(--dim);margin-top:8px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.sk-why.on{-webkit-line-clamp:unset;display:block}
+.sk-kropki{display:flex;gap:8px;margin:14px 0 4px;flex-wrap:wrap}
+.sk-kropki span{width:34px;height:34px;border-radius:50%;border:2px solid var(--card2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--dim2)}
+.sk-kropki span.zrob{background:var(--acc);border-color:var(--acc);color:var(--on-acc)}
+.sk-kropki span.teraz{border-color:var(--acc);color:var(--acc)}
+.sk-chipy{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.sk-chip{font-size:13px;font-weight:700;padding:7px 10px;border-radius:10px;background:rgba(204,255,0,.10);color:var(--txt);border:1px solid rgba(204,255,0,.25)}
+.sk-chip.wu{background:var(--card2);border-color:transparent;color:var(--dim)}
+
+.sk-duze{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.sk-licz{background:var(--card);border-radius:24px;padding:12px 10px 10px;text-align:center;border:1px solid var(--line)}
+.sk-licz small{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--dim)}
+.sk-licz input{display:block;width:100%;background:none;border:none;text-align:center;color:var(--txt);
+  font-size:52px;font-weight:900;line-height:1.1;padding:0;margin:0 0 4px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.sk-licz input:focus{outline:none;color:var(--acc);box-shadow:none}
+.sk-pm{display:flex;gap:8px}
+.sk-pm button{flex:1;height:46px;border-radius:14px;background:var(--card2);font-size:26px;font-weight:600;color:var(--acc)}
+.sk-pm button:active{transform:scale(.96);background:#262c35}
+
+.sk-tal{margin-top:10px;display:flex;align-items:center;gap:12px;background:var(--card);border-radius:18px;padding:10px 14px;border:1px solid var(--line);font-size:13px;color:var(--dim)}
+.sk-tal svg{height:40px;flex:none}
+.sk-tal b{color:var(--txt)}
+.sk-ost{display:flex;gap:6px;margin-top:12px;align-items:center;flex-wrap:wrap}
+.sk-ost small{font-size:11px;color:var(--dim);font-weight:800;letter-spacing:.08em;margin-right:2px}
+.sk-ost span{font-size:13px;font-weight:700;padding:6px 10px;border-radius:10px;background:var(--card2)}
+
+.sk-rpe{margin-top:16px}
+.sk-rpe small{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--dim)}
+.sk-rpe .r{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.sk-rpe button{height:50px;border-radius:14px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--txt)}
+.sk-rpe button b{font-size:19px;font-weight:900}
+.sk-rpe button span{font-size:10px;color:var(--dim);font-weight:600}
+.sk-rpe button.on{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
+.sk-rpe button.on span{color:var(--on-acc)}
+
+/* Przyklejony do dołu przewijanego ekranu: guzik, po który sięga się
+   co dwie minuty, nie może uciekać pod nawigację. */
+.sk-cw .sk-wielki{position:sticky;bottom:10px;z-index:5}
+.sk-wielki{width:100%;height:68px;margin-top:16px;border-radius:24px;background:var(--acc);color:var(--on-acc);
+  font-size:19px;font-weight:900;letter-spacing:.03em;display:flex;align-items:center;justify-content:center;gap:12px;
+  box-shadow:0 12px 34px -6px rgba(204,255,0,.4)}
+.sk-wielki:active{transform:scale(.98)}
+.sk-wielki svg{width:26px;height:26px}
+.sk-nawi{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 6px;font-size:12.5px;color:var(--dim2);font-weight:600}
+.sk-nawi span{flex:1;text-align:center;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sk-nawi button{background:var(--card);color:var(--dim);border-radius:12px;padding:10px 12px;font-weight:700;font-size:13px;flex:none}
+.sk-nawi button[disabled]{opacity:.3}
+.sk-cichy{display:block;width:100%;margin-top:10px;padding:12px;border-radius:14px;background:var(--card);color:var(--dim);font-weight:700}
+
+.sk-koniec{text-align:center;padding:26px 4px 6px}
+.sk-medal{width:88px;height:88px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 35% 30%,#efff9e,var(--acc) 55%,#8fb300);color:var(--on-acc);font-size:40px;font-weight:900;
+  box-shadow:0 0 0 10px rgba(204,255,0,.12),0 0 60px rgba(204,255,0,.35)}
+.sk-koniec h2{font-size:26px;font-weight:900;letter-spacing:-.03em;text-transform:none;color:var(--txt)}
+/* Rozgrzewka ogólna ma sens przed pierwszą serią; potem w trybie skupienia
+   tylko spycha kartę w dół. W liście zostaje jak była. */
+#s-ses.skup.poSerii #rozgrzewkaBox{display:none}
+.sk-koniec p{color:var(--dim);margin-top:4px}
+
+.sk-cien{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:90;animation:skCien .2s}
+@keyframes skCien{from{opacity:0}}
+.sk-arkusz{position:fixed;left:8px;right:8px;bottom:calc(8px + var(--safe-b));z-index:91;background:#1b1f25;border-radius:28px;
+  padding:10px 10px 12px;max-height:78vh;overflow-y:auto;animation:skArk .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes skArk{from{transform:translateY(105%)}}
+.sk-arkusz .uch{width:40px;height:5px;border-radius:9px;background:var(--dim2);margin:2px auto 8px}
+.sk-arkusz button,.sk-arkusz a{display:flex;align-items:center;gap:14px;width:100%;padding:12px;border-radius:16px;font-size:15.5px;font-weight:600;text-align:left;color:var(--txt);text-decoration:none;background:none}
+.sk-arkusz button:active,.sk-arkusz a:active{background:var(--card2)}
+.sk-arkusz i{width:36px;height:36px;border-radius:11px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:16px;flex:none}
+.sk-arkusz small{display:block;font-size:12.5px;color:var(--dim);font-weight:500}
+.sk-arkusz .czer{color:var(--bad)}
+
+/* przerwa na cały ekran */
+.pprz{display:none;position:fixed;inset:0;z-index:80;flex-direction:column;align-items:center;overflow-y:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 26px) 16px calc(var(--safe-b) + 20px);
+  background:radial-gradient(90% 60% at 50% 34%,rgba(0,229,255,.10),rgba(13,15,18,0) 70%),var(--bg)}
+.pprz.on{display:flex;animation:skCien .25s}
+.pp-nag{font-size:12px;font-weight:800;letter-spacing:.16em;color:var(--dim)}
+.pp-zapis{font-size:14px;color:var(--dim);margin-top:6px}
+.pp-zapis b{color:var(--acc)}
+.pp-ring{position:relative;width:min(290px,76vw);aspect-ratio:1;margin:22px 0 10px}
+.pp-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.pp-ring circle#ppLuk{transition:stroke-dashoffset .25s linear;filter:drop-shadow(0 0 10px rgba(0,229,255,.45))}
+.pp-czas{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pp-czas b{font-size:72px;font-weight:900;letter-spacing:-.04em}
+.pp-czas span{color:var(--dim);font-size:14px;font-weight:600}
+.pp-ctrl{display:flex;gap:10px}
+.pp-ctrl button{height:52px;padding:0 20px;border-radius:16px;background:var(--card);font-weight:800;font-size:16px;border:1px solid var(--line);color:var(--txt)}
+.pp-ctrl button.acc{background:var(--acc);color:var(--on-acc);padding:0 44px;border:none}
+.pp-nast{align-self:stretch;margin-top:26px;background:var(--card);border-radius:22px;padding:14px 18px;border:1px solid var(--line)}
+.pp-nast small{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--dim)}
+.pp-nast .t{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:6px}
+.pp-nast .t div{font-size:17px;font-weight:800;min-width:0}
+.pp-nast .t b{font-size:24px;font-weight:900;color:var(--acc);white-space:nowrap}
+.pp-reszta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-self:stretch;margin-top:10px}
+.pp-reszta div{background:var(--card);border-radius:18px;padding:11px 6px;text-align:center;border:1px solid var(--line)}
+.pp-reszta b{display:block;font-size:21px;font-weight:900}
+.pp-reszta span{font-size:11.5px;color:var(--dim);font-weight:600}
+.pp-schowaj{margin-top:16px;color:var(--dim2);font-weight:700;font-size:13.5px;background:none;padding:10px}
+
+/* =========================================================
+   EKRAN GŁÓWNY ODCHUDZONY (110)
+   ========================================================= */
+.hsek{display:flex;justify-content:space-between;align-items:baseline;margin:20px 4px 9px;
+  font-size:11.5px;font-weight:800;letter-spacing:.14em;color:var(--dim)}
+.hsek span:last-child{color:var(--dim2);letter-spacing:.06em}
+#s-hub .wstrip{margin-bottom:6px}
+.nowaw{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:12px;
+  padding:10px 14px;border-radius:14px;background:rgba(204,255,0,.08);border:1px solid rgba(204,255,0,.22);
+  color:var(--dim);font-size:13px;text-align:left}
+.nowaw b{color:var(--acc)}
+.nowaw > b{font-weight:800;letter-spacing:.06em}
+#s-hub .zwij{margin-top:12px}
+.kratki .siatka{display:grid;grid-template-columns:repeat(12,1fr);gap:4px}
+.kratki .kol{display:grid;grid-template-rows:repeat(7,1fr);gap:4px}
+.kratki i{aspect-ratio:1;border-radius:4px;background:var(--card2);display:block}
+.kratki i.dzis{box-shadow:0 0 0 2px var(--txt) inset}
+.kratki i.fut{opacity:.35}
+.kratki .leg{display:flex;justify-content:space-between;gap:6px;margin-top:12px;font-size:12px;color:var(--dim)}
+.kratki .leg b{color:var(--txt)}
+.hubmini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.hubmini .hub{flex-direction:column;align-items:flex-start;gap:10px;margin:0;padding:14px;min-height:0}
+.hubmini .hub .tt{font-size:15px}
+.hubmini .hub .ss{font-size:12px}
+
+/* =========================================================
+   EKRAN KOŃCA TRENINGU (111)
+   ========================================================= */
+#s-sum{position:relative}
+.konfetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:60}
+.konfetti i{position:absolute;top:-20px;width:8px;height:14px;border-radius:2px;opacity:0;
+  animation-name:kmSpad;animation-timing-function:cubic-bezier(.3,.6,.5,1);animation-fill-mode:forwards}
+@keyframes kmSpad{0%{opacity:1;transform:translateY(0) rotate(0)}85%{opacity:1}100%{opacity:0;transform:translateY(105vh) rotate(600deg)}}
+@media (prefers-reduced-motion: reduce){.konfetti{display:none}}
+.km-gw{text-align:center;margin:18px 0 4px}
+.km-medal{width:92px;height:92px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 35% 30%,#efff9e,var(--acc) 55%,#8fb300);color:var(--on-acc);font-size:42px;font-weight:900;
+  box-shadow:0 0 0 10px rgba(204,255,0,.12),0 0 60px rgba(204,255,0,.35);animation:kmPuls 2.4s ease-in-out 3}
+.km-medal.rek{font-size:44px}
+@keyframes kmPuls{50%{box-shadow:0 0 0 18px rgba(204,255,0,.05),0 0 80px rgba(204,255,0,.45)}}
+.km-t{font-size:30px;font-weight:900;letter-spacing:-.03em}
+.km-s{color:var(--dim);margin-top:4px;font-size:14px}
+.km-staty{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.km-staty div{background:var(--card);border-radius:20px;padding:13px 16px;border:1px solid var(--line)}
+.km-staty b{display:block;font-size:28px;font-weight:900;letter-spacing:-.02em}
+.km-staty span{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--dim)}
+.km-staty .acc b{color:var(--acc)}
+.km-por{margin-top:10px;font-size:13.5px;color:var(--dim);padding:10px 14px;border-radius:14px;background:var(--card)}
+.km-por.ok b{color:var(--acc)}
+.km-por.warn b{color:var(--warn)}
+.km-rek{display:flex;align-items:center;gap:12px;margin-bottom:8px;padding:13px 15px;border-radius:20px;font-weight:700;
+  background:linear-gradient(90deg,rgba(204,255,0,.16),rgba(204,255,0,.03));border:1px solid rgba(204,255,0,.35)}
+.km-rek i{font-style:normal;font-size:22px}
+.km-rek div{flex:1;min-width:0}
+.km-rek small{display:block;color:var(--dim);font-weight:500;font-size:12.5px;margin-top:2px}
+.km-rek b{color:var(--acc);font-weight:900;white-space:nowrap}
+.km-nast{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer}
+.km-nast .t{font-weight:800;font-size:18px}
+.km-nast .s{color:var(--dim);font-size:13px;margin-top:2px}
+.km-chip{font-size:12px;font-weight:800;padding:6px 10px;border-radius:99px;background:var(--acc);color:var(--on-acc);white-space:nowrap}
+.km-gotowe{width:100%;height:64px;margin-top:16px;border-radius:20px;background:var(--acc);color:var(--on-acc);
+  font-size:18px;font-weight:900;letter-spacing:.04em;box-shadow:0 10px 30px -6px rgba(204,255,0,.4)}
 </style>
 </head>
 <body>
@@ -886,11 +1078,14 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
     <!-- Kardio wyżej: od września to dwa kilometry KAŻDEGO ranka, czyli
          częściej niż siłownia. Element, w który wchodzi się codziennie,
          nie może stać pod listą, którą trzeba przewinąć. -->
+    <!-- Od 110 bieganie i plan to dwa małe kafelki obok siebie, na dole
+         ekranu — wejście zostaje zawsze (plan „dostępny zawsze" od 74),
+         ale nie zajmuje dwóch pełnych wierszy. -->
+    <div class="hubmini">
     <button class="hub run" onclick="openRun()">
       <div class="ic"><svg viewBox="0 0 24 24"><circle cx="15" cy="4.5" r="2"/><path d="M12 21l1.5-5.5-3.5-3 1-5.5 3 2.5 3 1M8.5 13L7 15.5 4 16M13.5 15.5L16 19l1 2.5"/></svg></div>
-      <div><div class="tt">Bieganie, pływanie, SUP</div>
+      <div><div class="tt">Bieganie</div>
         <div class="ss" id="hubRunSub">Plan biegowy na ten tydzień</div></div>
-      <div class="ar">›</div>
     </button>
 
     <!-- WEJSCIE DO CALEGO PLANU. Stoi tu na stale i nie zalezy od tego,
@@ -901,8 +1096,8 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
       <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/><circle cx="19" cy="19" r="2"/></svg></div>
       <div><div class="tt">Plan treningowy</div>
         <div class="ss" id="hubPlanSub">Cała rotacja i ćwiczenia na każdy dzień</div></div>
-      <div class="ar">›</div>
     </button>
+    </div>
 
     <!-- Historia zwinięta. Sześć wpisów zajmowało pół ekranu, a realnie
          potrzebny jest jeden: ten ostatni. Reszta jest na dotknięcie. -->
@@ -940,6 +1135,12 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 
   <!-- SESJA -->
   <div class="sub" id="s-ses">
+    <!-- TRYB SKUPIENIA (109): jedna karta, jedno ćwiczenie, jedna seria.
+         Lista niżej zostaje w DOM-ie także w trybie skupienia — jej pola
+         (iw/ir/irpe) przyjmują wartości z karty, a zapis idzie przez to samo
+         addSet. Bloki .tylkoLista chowa CSS, gdy #s-ses ma klasę .skup. -->
+    <div id="skupBox"></div>
+    <div class="tylkoLista">
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
       <div style="min-width:0">
         <div style="font-weight:750;font-size:15px" id="sesName">—</div>
@@ -949,9 +1150,11 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
     </div>
     <button class="btn ghost sm" onclick="openTimer()" style="margin-bottom:11px">
       Timer przerwy — ustaw czas</button>
+    </div>
     <div id="rozgrzewkaBox"></div>
     <div id="skrotBox"></div>
     <div id="korektaBox"></div>
+    <div class="tylkoLista">
     <div id="exList"></div>
     <button class="btn ghost sm" onclick="addCustom()" style="margin-bottom:11px">+ Dodaj ćwiczenie</button>
     <div id="dodajBox"></div>
@@ -963,6 +1166,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
     <button class="flagbtn" id="flagBtn" onclick="toggleFlag()">
       Oznacz: coś było nie tak</button>
     <button class="btn ok" onclick="finishSession()">Zakończ trening</button>
+    </div>
   </div>
 </div>
 
@@ -1114,6 +1318,8 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 </main>
 
 <!-- pasek timera -->
+<!-- przerwa na cały ekran w trybie skupienia (109) — rysuje ją malujPrzerwePelna() -->
+<div class="pprz" id="przerwaPelna"></div>
 <div class="tbar" id="tbar">
   <div style="flex:1;min-width:0">
     <div class="tlab" id="tLab">PRZERWA</div>
@@ -2328,7 +2534,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '108';
+const WERSJA = '111';
 const WERSJA_DATA = '2026-10-23';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -5538,9 +5744,10 @@ function renderNowaWersja(){
   let ost = null;
   try { ost = localStorage.getItem(WERSJAKEY); } catch(e){ return ''; }
   if(ost === WERSJA) return '';
-  return '<div class="tip ok"><b>Wersja '+WERSJA+' wgrana</b>'+
-    (ost ? ' — poprzednio '+ost : ' — pierwsze uruchomienie')+
-    '<div style="margin-top:8px"><button class="btn ghost sm" onclick="potwierdzWersje()">Rozumiem</button></div></div>';
+  /* Od 110 jedna linijka zamiast karty z guzikiem: wiadomość „jest nowa
+     wersja" przydaje się raz, a karta zajmowała pół ekranu nad treningiem. */
+  return '<button class="nowaw" onclick="potwierdzWersje()"><span>Wersja <b>'+WERSJA+'</b> wgrana'+
+    (ost ? ' · poprzednio '+esc(ost) : '')+'</span><b>OK</b></button>';
 }
 function potwierdzWersje(){
   try { localStorage.setItem(WERSJAKEY, WERSJA); } catch(e){}
@@ -6775,6 +6982,50 @@ function renderWeekStrip(){
   }
   h+='</div>';
   document.getElementById('weekStrip').innerHTML=h;
+  return h;
+}
+
+/* OSTATNIE 12 TYGODNI W KRATKACH (110). Z makiety, którą Filip zatwierdził
+   23 października: kolumna = tydzień, kratka = dzień, kolor = partia dnia.
+   Jedno spojrzenie mówi, czy rytm się trzyma, czego nie powie lista
+   ostatnich treningów. Pod spodem trzy liczby: ile treningów, średnio na
+   tydzień i ile tygodni z rzędu był choć jeden. */
+function kratkiTygodni(ile){
+  ile = ile || 12;
+  const [ws] = weekRange(weekNo());
+  const pn = new Date(ws + 'T00:00:00'); pn.setDate(pn.getDate() - (ile - 1) * 7);
+  const odDaty = iso(pn), dzis = today();
+  const poDniu = {};
+  DB.workouts.forEach(w => { if(w.date >= odDaty) poDniu[w.date] = w.day; });
+  let kol = '', tygZ = [];
+  for(let t = 0; t < ile; t++){
+    let k = '', ma = false;
+    for(let d = 0; d < 7; d++){
+      const dt = new Date(pn); dt.setDate(pn.getDate() + t * 7 + d);
+      const dat = iso(dt), dz = poDniu[dat];
+      if(dz) ma = true;
+      const kolor = dz ? ((PLAN[dz] && !PLAN[dz].wycofany) ? barwaDnia(dz).a : 'var(--dim2)') : '';
+      k += '<i' + (kolor ? ' style="background:' + kolor + '"' : '') +
+           (dat === dzis ? ' class="dzis"' : (dat > dzis ? ' class="fut"' : '')) + '></i>';
+    }
+    tygZ.push(ma);
+    kol += '<div class="kol">' + k + '</div>';
+  }
+  const n = Object.keys(poDniu).length;
+  /* seria liczy się wstecz od bieżącego tygodnia; pusty bieżący tydzień
+     jeszcze jej nie przerywa — dopiero się zaczął */
+  let seria = 0;
+  for(let t = ile - 1; t >= 0; t--){
+    if(tygZ[t]) seria++;
+    else if(t === ile - 1) continue;
+    else break;
+  }
+  const sr = Math.round(n / ile * 10) / 10;
+  return '<div class="hsek"><span>OSTATNIE ' + ile + ' TYGODNI</span></div>' +
+    '<div class="card kratki"><div class="siatka">' + kol + '</div>' +
+    '<div class="leg"><span><b>' + n + '</b> treningów</span>' +
+    '<span>śr. <b>' + fmtKg(sr) + '</b> / tydz.</span>' +
+    '<span>seria <b>' + seria + '</b> tyg.</span></div></div>';
 }
 /* „Push", „Pull", „Nogi" — pierwszy człon nazwy dnia, do miejsc, gdzie
    pełna nazwa („Push — klata, barki, triceps") się nie mieści. */
@@ -6914,7 +7165,7 @@ function renderHub(){
      nigdy się nie rysowało. Atrapa DOM-u w testach tworzy brakujące
      elementy w locie, więc testy tego nie zobaczyły. */
   document.getElementById('hubRunSub').textContent =
-    'Plan na tydzień '+w+' · '+DB.runs.filter(x=>inWeek(x.date,w)).length+' z 2 przebiegnięte';
+    DB.runs.filter(x=>inWeek(x.date,w)).length+' z 2 w tym tygodniu';
   /* NIE wolamy tu `nastepnyDzienRotacji()`: ono robi wlasne `suggestNext()`,
      a renderHub policzyl je juz linijke wyzej. Przy dwuletniej historii ten
      jeden duplikat podnosil czas przeliczenia ekranu glownego z ~3 do ~6
@@ -6924,7 +7175,7 @@ function renderHub(){
   if(pSub){
     /* „następny: W — Push — barki, klata, triceps" stało tu drugi raz —
        od 102 mówi to rząd kafelków wyżej. Zostaje sama rotacja. */
-    pSub.textContent = 'Rotacja ' + ORDER.join(' → ') + ' · ćwiczenia i ciężary na każdy dzień';
+    pSub.textContent = ORDER.join(' → ');
   }
 
   const resume = (SES && setCount(SES)>0)
@@ -7049,8 +7300,20 @@ function renderHub(){
        kafelków albo niżej, gdzie nie zasłania rzeczy pilnych. */
     renderZapis() + renderNowaWersja() + (KOLKO ? renderObwod() : '') + resume +
     renderDzis() +
+    /* EKRAN GŁÓWNY ODCHUDZONY (110) — makieta zatwierdzona przez Filipa
+       23 października („przenieś teraz odchudzony ekran główny").
+       Pod kartą dnia: tydzień, potem gotowość i kalorie. Słupki makro
+       weszły POD pierścień kalorii (dotknięcie pokazuje je razem z dodawaniem
+       posiłku) — na głównej trzy słupki zer od rana były tapetą.
+       Deload i ostrzeżenie o synchronizacji są w jednym zwiniętym pasku
+       „Komunikaty": tytuł widać zawsze, treść po dotknięciu. */
+    '<div class="hsek"><span>TEN TYDZIEŃ</span><span>'+
+      DB.workouts.filter(x => inWeek(x.date, weekNo())).length+' z '+ORDER.length+'</span></div>' +
+    bezpieczneHtml('renderWeekStrip', () => { const t = renderWeekStrip();
+      document.getElementById('weekStrip').innerHTML = ''; return t; }) +
+    komunikatyHub(syncBox) +
     '<div class="krata">' + kafelGotowosc() + kafelKalorii() + '</div>' +
-    bezpieczneHtml('kafelMakro', kafelMakro) +
+    (BIALKO_ROZW ? bezpieczneHtml('kafelMakro', kafelMakro) : '') +
     bezpieczneHtml('kafelRegeneracja', () => kafelRegeneracja(s)) +
     /* Rozwinięcie musi wyjść ZARAZ POD kafelkiem, który dotknąłeś. Wersja 40
        doklejała je na końcu ekranu — dotykało się pierścienia, a panel
@@ -7065,7 +7328,21 @@ function renderHub(){
        stał na „+0%" niż mówił cokolwiek. */
     planBox +
     bezpieczneHtml('renderKolejne', () => renderKolejne(s)) +
-    renderBraki() + coach + odpBox + czekaBox + renderDeload() + renderPrzeloz() + syncBox;
+    renderBraki() + coach + odpBox + czekaBox + renderPrzeloz() +
+    bezpieczneHtml('kratkiTygodni', () => kratkiTygodni(12));
+}
+
+/* Deload i synchronizacja w jednym pasku. Oba są ważne, ale żaden nie jest
+   pilny co do minuty — więc zamiast dwóch kart na pół ekranu: tytuły
+   widoczne od razu, a treść i guziki („Pomijam deload") po dotknięciu. */
+function komunikatyHub(syncBox){
+  const dl = renderDeload();
+  const kom = [];
+  if(dl){ const m = dl.match(/<b>([^<]+)<[/]b>/); kom.push({t: m ? m[1] : 'Deload', h: dl}); }
+  if(syncBox){ const m = syncBox.match(/<b>([^<]+)<[/]b>/); kom.push({t: m ? m[1] : 'Synchronizacja', h: syncBox}); }
+  if(!kom.length) return '';
+  return zwijka('komunikaty', 'Komunikaty', esc(kom.map(k => k.t).join(' · ')), kom.length,
+    () => kom.map(k => k.h).join(''));
 }
 
 /* usuwanie pojedynczego treningu — bez tego pomyłka przy wpisie
@@ -7202,6 +7479,8 @@ function startSession(day, withSug){
               target:celCwiczenia(it.name, it.slot, p, sug), sets:[], sug:sug, pool: it.slot.pool||null};
     })};
   if(gotowy) toast(gotowy.sprawdzony ? 'Plan sprawdzony przez trenera' : 'Plan z wczoraj');
+  /* nowy trening zaczyna kartę skupienia od pierwszego ćwiczenia (109) */
+  SKUP_I = null; SKUP_POLA = null; SKUP_PRZEGLAD = false; SKUP_ARKUSZ = false;
   saveSes();
   document.getElementById('sesName').textContent=day+' — '+dayName2(day)+' · '+SILOWNIE[SES.silownia].n;
   setSub('ses');
@@ -7213,6 +7492,7 @@ function resumeSes(){
   if(!s) return false;
   if(!s.exercises.some(e=>e.sets && e.sets.length)){ clearSes(); return false; }
   SES = s;
+  SKUP_I = null; SKUP_POLA = null; SKUP_PRZEGLAD = false; SKUP_ARKUSZ = false;
   document.getElementById('sesName').textContent = s.day+' — '+dayName2(s.day);
   setSub('ses');
   toast('Wznowiono trening '+s.day+(s.date!==today()?' z '+plDate(s.date):''));
@@ -7622,7 +7902,362 @@ function renderSession(){
     OSTATNIA_SERIA = null;
   }
   SES.exercises.forEach((e,i)=>{ if(e._open) odswiezTalerze(i); });
+  bezpiecznie('renderSkupienie', renderSkupienie);
 }
+
+/* ============================================================
+   TRYB SKUPIENIA — wersja 109 (23 października)
+
+   Filip: „chciałbym żeby było jakieś mega fajne UI… teraz jest takie
+   zwykłe", a po makiecie: „przenoś ten wygląd do aplikacji, zacznij od
+   trybu skupienia w sesji". Karta ćwiczenia w liście miała czternaście
+   przycisków — przy tętnie 130 i jednej wolnej ręce to za dużo. Tu na
+   ekranie jest JEDNO ćwiczenie i JEDNA seria: wielki ciężar, wielkie
+   powtórzenia, RPE i jeden guzik. Reszta (historia, zamiana, notatka,
+   rozgrzewka, usuwanie) siedzi w arkuszu „⋯".
+
+   ZAPIS IDZIE TĄ SAMĄ DROGĄ CO W LIŚCIE. Karta ma własne pola (fw/fr/frpe),
+   ale „Seria zrobiona" przepisuje je do pól listy (iw/ir/irpe) i woła
+   `addSet`. Dzięki temu walidacja RPE, pytanie o odstający ciężar, rekordy,
+   timer i powiadomienie z serwera działają dokładnie tak jak dotąd — nie ma
+   drugiej, równoległej ścieżki zapisu, która mogłaby się rozjechać.
+
+   Lista zostaje: arkusz ma „Widok listy", wybór pamięta DB.settings.widokSesji.
+   ============================================================ */
+/* `var`, nie `let`: startSession i resumeTimer stoją w pliku WYŻEJ i przy
+   starcie aplikacji mogłyby sięgnąć po zmienną przed jej deklaracją. */
+var SKUP_I = null, SKUP_POLA = null, SKUP_ARKUSZ = false, SKUP_WHY = false;
+var PRZERWA_SCHOWANA = false, PPRZ_KLUCZ = null;
+/* Przy komplecie serii karta ustępuje ekranowi „Zakończ trening" — chyba że
+   Filip sam wrócił do któregoś ćwiczenia (dorzucić serię, poprawić wpis). */
+var SKUP_PRZEGLAD = false;
+
+function widokSkupienia(){
+  return !(DB && DB.settings && DB.settings.widokSesji === 'lista');
+}
+function przelaczWidokSesji(){
+  zbierzWpisane();
+  DB.settings.widokSesji = widokSkupienia() ? 'lista' : 'skupienie';
+  SKUP_ARKUSZ = false;
+  save(); renderSession(); malujPrzerwePelna(); scrollTop();
+}
+function planowaneSerie(e){ return (e && e.sug && e.sug.sets) || 3; }
+function cwZrobione(e){ return robocze(e.sets).length >= planowaneSerie(e); }
+/* Pierwsze ćwiczenie od `od` w przód, które nie ma jeszcze kompletu serii. */
+function nastepneNiezrobione(od){
+  const n = SES.exercises.length;
+  for(let k = 1; k <= n; k++){
+    const j = (od + k) % n;
+    if(!cwZrobione(SES.exercises[j])) return j;
+  }
+  return -1;
+}
+/* Bieżące ćwiczenie NIE jedzie w SES — to stan ekranu, nie treningu, a SES
+   ląduje w historii. Po ubiciu aplikacji wracamy do pierwszego niedokończonego. */
+function biezaceSkup(){
+  const n = SES.exercises.length;
+  if(SKUP_I == null || SKUP_I >= n){
+    const j = SES.exercises.findIndex(e => !cwZrobione(e));
+    SKUP_I = j >= 0 ? j : Math.max(0, n - 1);
+  }
+  return SKUP_I;
+}
+function idzDoCw(i){
+  if(!SES || i < 0 || i >= SES.exercises.length) return;
+  SKUP_I = i; SKUP_POLA = null; SKUP_ARKUSZ = false; SKUP_WHY = false; SKUP_PRZEGLAD = true;
+  renderSession(); scrollTop();
+}
+function arkuszSkup(on){ SKUP_ARKUSZ = !!on; renderSession(); }
+
+/* Talerze jako obrazek: gryf i krążki na jednej stronie, kolory jak na
+   siłowni (25 czerwony, 20 niebieski, 15 żółty, 10 zielony, 5 biały). */
+function talerzeSvg(w){
+  const p = plates(w);
+  if(!p || !p.length) return '';
+  const kol = {25:'#e5484d', 20:'#2f6bff', 15:'#f5c518', 10:'#27c46b', 5:'#e8e8e8', 2.5:'#e5484d', 1.25:'#9ba3af'};
+  const wys = {25:40, 20:40, 15:36, 10:32, 5:26, 2.5:20, 1.25:16};
+  let x = 24, out = '';
+  p.slice().sort((a, b) => b - a).forEach(t => {
+    const h = wys[t] || 18, sz = t >= 10 ? 9 : 6;
+    out += '<rect x="'+x+'" y="'+(22 - h/2)+'" width="'+sz+'" height="'+h+'" rx="2" fill="'+(kol[t]||'#9ba3af')+'"/>';
+    x += sz + 2;
+  });
+  return '<svg viewBox="0 0 '+Math.max(110, x + 14)+' 44" aria-hidden="true">'+
+    '<rect x="0" y="19" width="'+Math.max(110, x + 14)+'" height="6" rx="3" fill="#6b7280"/>'+
+    '<rect x="14" y="13" width="8" height="18" rx="2" fill="#9ba3af"/>'+out+'</svg>';
+}
+function skupTalerze(){
+  const box = document.getElementById('skTal'), inp = document.getElementById('fw');
+  if(!box || !inp || !SES) return;
+  const e = SES.exercises[biezaceSkup()], L = LIB[e.name] || {};
+  const w = parseFloat(String(inp.value).replace(',', '.')) || 0;
+  if(L.bw || L.time || L.hantle || !sztangowe(e.name) || w < 20){ box.innerHTML = ''; box.style.display = 'none'; return; }
+  const t = platesTxt(w);
+  box.style.display = '';
+  box.innerHTML = t === null
+    ? '<div class="warn">'+fmtKg(w)+' kg nie złożysz ze standardowych talerzy</div>'
+    : talerzeSvg(w) + '<div>Na stronę: <b>'+esc(t)+'</b></div>';
+}
+function skupBump(f, d){
+  const el = document.getElementById(f === 'w' ? 'fw' : 'fr');
+  if(!el) return;
+  let v = parseFloat(String(el.value).replace(',', '.')) || 0;
+  v = Math.max(0, Math.round((v + d) * 10) / 10);
+  el.value = v;
+  if(f === 'w') skupTalerze();
+  sygnal(10);
+}
+function skupRpe(v){
+  const pole = document.getElementById('frpe');
+  if(!pole) return;
+  pole.value = (String(pole.value) === String(v)) ? '' : v;
+  document.querySelectorAll('#skupBox .sk-rpe button').forEach(b =>
+    b.classList.toggle('on', pole.value !== '' && b.dataset && b.dataset.v === String(pole.value)));
+  sygnal(12);
+}
+/* „Seria zrobiona": przepisz z karty do pól listy i oddaj `addSet`. */
+function seriaSkup(i, rozgrzewka){
+  const e = SES && SES.exercises[i];
+  if(!e) return;
+  const przepisz = (z, na) => {
+    const a = document.getElementById(z), b = document.getElementById(na);
+    if(a && b) b.value = String(a.value == null ? '' : a.value).replace(',', '.');
+  };
+  przepisz('fw', 'iw' + i); przepisz('fr', 'ir' + i); przepisz('frpe', 'irpe' + i);
+  const przed = e.sets.length;
+  SKUP_ARKUSZ = false;
+  addSet(i, rozgrzewka);
+  if(e.sets.length === przed) return;           /* walidacja zatrzymała zapis */
+  SKUP_POLA = null;
+  if(!rozgrzewka && cwZrobione(e)){
+    const nast = nastepneNiezrobione(i);
+    if(nast >= 0) SKUP_I = nast;
+    else SKUP_PRZEGLAD = false;        /* ostatnia seria planu — pokaż koniec */
+  }
+  PRZERWA_SCHOWANA = false;
+  renderSession();
+  malujPrzerwePelna();
+}
+
+/* Seria na chipie: „60×8 @6" zamiast „60 kg × 8 @6" — trzy chipy muszą
+   zmieścić się w jednym wierszu na 390 px. */
+function krotkaSeria(s, nazwa){
+  const L = LIB[nazwa] || {};
+  return (s.w ? fmtKg(s.w) + '×' : '') + (s.r == null ? '?' : s.r) + (L.time ? ' s' : '') +
+    (s.rpe ? ' @' + fmtKg(s.rpe) : '');
+}
+
+function renderSkupienie(){
+  const box = document.getElementById('skupBox');
+  const sesEl = document.getElementById('s-ses');
+  const on = widokSkupienia() && SES && SES.exercises && SES.exercises.length > 0;
+  if(sesEl && sesEl.classList && sesEl.classList.toggle){
+    sesEl.classList.toggle('skup', !!on);
+    sesEl.classList.toggle('poSerii', !!(SES && SES.exercises && SES.exercises.some(e => e.sets && e.sets.length)));
+  }
+  if(!box) return;
+  if(!on){ box.innerHTML = ''; return; }
+
+  const i = biezaceSkup(), e = SES.exercises[i], L = LIB[e.name] || {};
+  /* Wpisane, ale jeszcze nie zapisane wartości nie mogą znikać przy
+     przerysowaniu — ta sama lekcja co SES_WPISANE w liście. Trzymamy je,
+     dopóki to samo ćwiczenie ma tyle samo serii. */
+  const fw = document.getElementById('fw'), fr = document.getElementById('fr'), frpe = document.getElementById('frpe');
+  if(SKUP_POLA && (SKUP_POLA.i !== i || SKUP_POLA.n !== e.sets.length)) SKUP_POLA = null;
+  if(!SKUP_POLA && fw && fw.dataset && fw.dataset.i === String(i) && fw.dataset.n === String(e.sets.length))
+    SKUP_POLA = {i, n: e.sets.length, w: fw.value, r: fr && fr.value, rpe: frpe && frpe.value};
+  const pole = f => SKUP_POLA ? SKUP_POLA[f] : prefill(e, f);
+  const wVal = pole('w'), rVal = pole('r'), rpeVal = pole('rpe');
+
+  const plan = planowaneSerie(e), rob = robocze(e.sets).length;
+  const last = lastFor(e.name);
+  const sl = (e.slot && typeof e.slot === 'object') ? e.slot : slotById(e.slot);
+  const tag = sl && sl.upadek ? '<span class="sk-tag acc">Ostatnia do upadku</span>'
+            : (sl && sl.fixed ? '<span class="sk-tag">Bój — zostaw zapas</span>' : '');
+  const wszystko = SES.exercises.every(cwZrobione) && !SKUP_PRZEGLAD;
+  const min = SES.t0 ? Math.max(0, Math.round((Date.now() - SES.t0) / 60000)) : 0;
+
+  const segmenty = SES.exercises.map((x, j) => {
+    const r = robocze(x.sets).length, p = planowaneSerie(x);
+    const proc = Math.min(100, Math.round(r / p * 100));
+    return '<button class="sk-seg'+(j === i ? ' teraz' : '')+'" onclick="idzDoCw('+j+')" aria-label="'+esc(x.name)+'">'+
+      '<i style="width:'+proc+'%"></i></button>';
+  }).join('');
+
+  const kropki = [];
+  for(let k = 0; k < Math.max(plan, rob + (wszystko ? 0 : 1)); k++){
+    kropki.push(k < rob ? '<span class="zrob">✓</span>'
+      : (k === rob ? '<span class="teraz">'+(k + 1)+'</span>' : '<span>'+(k + 1)+'</span>'));
+  }
+  /* serie z tej sesji — dotknięcie kasuje (z potwierdzeniem, jak w liście) */
+  let nr = 0;
+  const zrobione = e.sets.map((s, j) => {
+    if(!s.wu) nr++;
+    return '<button class="sk-chip'+(s.wu ? ' wu' : '')+'" onclick="delSet('+i+','+j+')">'+
+      (s.wu ? 'R ' : nr + '. ') + esc(krotkaSeria(s, e.name)) + '</button>';
+  }).join('');
+  const ostatnio = last
+    ? '<div class="sk-ost"><small>'+esc(plDate(last.date).toUpperCase())+'</small>'+
+        robocze(last.sets).map(s => '<span>'+esc(krotkaSeria(s, e.name))+'</span>').join('')+'</div>'
+    : '<div class="sk-ost"><small style="color:var(--warn)">PIERWSZY RAZ</small></div>';
+  const cel = e.sug
+    ? 'Cel: <b>'+planowaneSerie(e)+' × '+(e.sug.r || '?')+'</b>'+
+      (e.sug.w != null ? (e.sug.w ? ' · <b>'+fmtKg(e.sug.w)+' kg</b>' : ' · masa własna') : ' · <b style="color:var(--warn)">dobierz</b>')
+    : 'Cel: <b>'+esc(e.target || '')+'</b>';
+  const nast = SES.exercises[i + 1];
+  const wLab = L.bw ? 'DODATK. KG' : (L.hantle ? 'KG / HANTLA' : 'KG');
+
+  const karta = wszystko
+    ? '<div class="sk-koniec"><div class="sk-medal">✓</div>'+
+        '<h2>Wszystko z planu zrobione</h2>'+
+        '<p>'+setCount(SES)+' serii · '+Math.round(vol(SES)).toLocaleString('pl')+' kg · '+min+' min</p>'+
+        '<button class="sk-wielki" onclick="finishSession()">ZAKOŃCZ TRENING</button>'+
+        '<button class="sk-cichy" onclick="addCustom()">+ Dodaj jeszcze ćwiczenie</button>'+
+        '<button class="sk-cichy" onclick="idzDoCw('+i+')">Wróć do ćwiczeń</button></div>'
+    : '<div class="sk-cw" id="skCw">'+
+        '<div class="sk-slot">'+esc(e.lab || 'ĆWICZENIE')+'</div>'+
+        '<h2>'+esc(e.name)+'</h2>'+
+        '<div class="sk-cel">'+cel+' '+tag+'</div>'+
+        (e.sug && e.sug.why ? '<div class="sk-why'+(SKUP_WHY ? ' on' : '')+'" onclick="SKUP_WHY=!SKUP_WHY;this.classList.toggle(\'on\')">'+esc(e.sug.why)+'</div>' : '')+
+        '<div class="sk-kropki">'+kropki.join('')+'</div>'+
+        (zrobione ? '<div class="sk-chipy">'+zrobione+'</div>' : '')+
+        '<div class="sk-duze">'+
+          '<div class="sk-licz"><small>'+wLab+'</small>'+
+            '<input class="num" id="fw" type="text" inputmode="decimal" data-i="'+i+'" data-n="'+e.sets.length+'" '+
+              'value="'+esc(String(wVal).replace('.', ','))+'" oninput="skupTalerze()">'+
+            '<div class="sk-pm"><button onclick="skupBump(\'w\',-2.5)">−</button><button onclick="skupBump(\'w\',2.5)">+</button></div></div>'+
+          '<div class="sk-licz"><small>'+(L.time ? 'SEKUND' : 'POWT.')+'</small>'+
+            '<input class="num" id="fr" type="text" inputmode="numeric" value="'+esc(rVal)+'">'+
+            '<div class="sk-pm"><button onclick="skupBump(\'r\','+(L.time ? -5 : -1)+')">−</button><button onclick="skupBump(\'r\','+(L.time ? 5 : 1)+')">+</button></div></div>'+
+        '</div>'+
+        '<div class="sk-tal" id="skTal"></div>'+
+        ostatnio+
+        '<div class="sk-rpe"><small>ILE ZOSTAŁO W ZAPASIE (RPE)</small><div class="r">'+
+          [6,7,8,9,10].map(v => '<button data-v="'+v+'" class="'+(String(rpeVal) === String(v) ? 'on' : '')+'" onclick="skupRpe('+v+')">'+
+            '<b>'+v+'</b><span>'+({6:'4 powt.',7:'3',8:'2',9:'1',10:'upadek'}[v])+'</span></button>').join('')+
+        '</div><input type="hidden" id="frpe" value="'+esc(rpeVal)+'"></div>'+
+        '<button class="sk-wielki" onclick="seriaSkup('+i+')">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>'+
+          'SERIA ZROBIONA</button>'+
+        '<div class="sk-nawi">'+
+          '<button onclick="idzDoCw('+(i - 1)+')"'+(i > 0 ? '' : ' disabled')+'>‹ Poprzednie</button>'+
+          '<span>'+(nast ? 'Potem: '+esc(nast.name) : 'Ostatnie ćwiczenie')+'</span>'+
+          '<button onclick="idzDoCw('+(i + 1)+')"'+(nast ? '' : ' disabled')+'>Następne ›</button>'+
+        '</div>'+
+      '</div>';
+
+  const schowana = (TICK && PRZERWA_SCHOWANA)
+    ? '<button class="sk-pokaz" onclick="PRZERWA_SCHOWANA=false;malujPrzerwePelna()">Przerwa trwa — pokaż licznik</button>' : '';
+
+  const arkusz = !SKUP_ARKUSZ ? '' :
+    '<div class="sk-cien" onclick="arkuszSkup(false)"></div>'+
+    '<div class="sk-arkusz"><div class="uch"></div>'+
+      (wszystko ? '' :
+      '<button onclick="openHist(\''+esc(e.name).replace(/'/g, "\\'")+'\')"><i>⏱</i><div>Historia<small>Wszystkie serie: '+esc(e.name)+'</small></div></button>'+
+      '<button onclick="SKUP_ARKUSZ=false;zajeteCw('+i+')"><i>⇄</i><div>Zajęte — zamień<small>Najpierw wariant z planu, potem to samo na te mięśnie</small></div></button>'+
+      '<button onclick="SKUP_ARKUSZ=false;zamienCwiczenie('+i+')"><i>☰</i><div>Wybierz inne sam</div></button>'+
+      '<a href="'+linkTechniki(e.name)+'" target="_blank" rel="noopener"><i>▶</i><div>Technika na YouTube</div></a>'+
+      '<button onclick="SKUP_ARKUSZ=false;edytujNotatkeCw('+i+')"><i>✎</i><div>Notatka stała<small>'+esc(notatkaCw(e.name) || 'Ustawienie maszyny, chwyt…')+'</small></div></button>'+
+      ((!L.bw && !L.time && warmup((e.sug && e.sug.w) || 0).length && !e.sets.some(s => s.wu))
+        ? '<button onclick="SKUP_ARKUSZ=false;wpiszRozgrzewke('+i+')"><i>🔥</i><div>Wpisz rampę rozgrzewkową<small>'+
+            warmup(e.sug.w).map(x => fmtKg(x.w)+'×'+x.r).join(' → ')+'</small></div></button>' : '')+
+      '<button onclick="seriaSkup('+i+',true)"><i>R</i><div>Zapisz jako serię rozgrzewkową<small>Bez RPE, krótsza przerwa</small></div></button>')+
+      '<button onclick="SKUP_ARKUSZ=false;addCustom()"><i>＋</i><div>Dodaj ćwiczenie</div></button>'+
+      '<button onclick="SKUP_ARKUSZ=false;openTimer()"><i>⏲</i><div>Timer przerwy — ustaw czas</div></button>'+
+      '<button onclick="SKUP_ARKUSZ=false;toggleFlag()"><i>⚑</i><div>'+(SES.flag ? 'Oznaczone: coś było nie tak ✓' : 'Oznacz: coś było nie tak')+'</div></button>'+
+      '<button onclick="przelaczWidokSesji()"><i>≡</i><div>Widok listy<small>Wszystkie ćwiczenia naraz, jak dotąd</small></div></button>'+
+      '<button onclick="SKUP_ARKUSZ=false;finishSession()"><i>✓</i><div>Zakończ trening</div></button>'+
+      (wszystko ? '' : '<button class="czer" onclick="SKUP_ARKUSZ=false;usunCwiczenie('+i+')"><i>✕</i><div>Usuń to ćwiczenie z treningu</div></button>')+
+      '<button class="czer" onclick="SKUP_ARKUSZ=false;cancelSession()"><i>⌫</i><div>Anuluj cały trening</div></button>'+
+    '</div>';
+
+  box.innerHTML =
+    '<div class="sk-gora">'+
+      '<div class="sk-postep"><div class="sk-segi">'+segmenty+'</div>'+
+        '<small><span>'+(wszystko ? 'Komplet' : 'Ćwiczenie '+(i + 1)+' z '+SES.exercises.length)+'</span>'+
+        '<span>'+setCount(SES)+' serii · '+min+' min</span></small></div>'+
+      '<button class="sk-ik" onclick="arkuszSkup(true)" aria-label="Więcej">'+
+        '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg></button>'+
+    '</div>'+ schowana + karta + arkusz;
+  skupTalerze();
+
+  /* Przesunięcie palcem w bok = następne / poprzednie ćwiczenie. Tylko gdy
+     ruch jest wyraźnie poziomy — inaczej przewijanie w pionie skakałoby
+     między ćwiczeniami. */
+  const cw = document.getElementById('skCw');
+  if(cw){
+    let x0 = null, y0 = null;
+    cw.ontouchstart = ev => { const t = ev.touches && ev.touches[0]; if(t){ x0 = t.clientX; y0 = t.clientY; } };
+    cw.ontouchend = ev => {
+      const t = ev.changedTouches && ev.changedTouches[0];
+      if(!t || x0 == null) return;
+      const dx = t.clientX - x0, dy = t.clientY - y0;
+      x0 = null;
+      if(Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.8 &&
+         !(ev.target && /INPUT|BUTTON/.test(ev.target.tagName || '')))
+        idzDoCw(i + (dx < 0 ? 1 : -1));
+    };
+  }
+  malujPrzerwePelna();
+}
+
+/* PRZERWA NA CAŁY EKRAN. Ten sam licznik co pasek (T_END, T_LEN, TICK) —
+   to tylko drugi sposób narysowania go, więc koniec przerwy przez serwer,
+   +30 s i Stop działają bez zmian. Struktura rysuje się raz na przerwę,
+   co ćwierć sekundy zmienia się tylko tekst i łuk. */
+function malujPrzerwePelna(){
+  const el = document.getElementById('przerwaPelna');
+  if(!el) return;
+  const bar = document.getElementById('tbar');
+  const koniec = !TICK && !!bar && !!bar.classList && typeof bar.classList.contains === 'function' && bar.classList.contains('done');
+  const widac = SUB === 'ses' && SES && widokSkupienia() && (TICK || koniec) && !PRZERWA_SCHOWANA;
+  if(el.classList && el.classList.toggle) el.classList.toggle('on', !!widac);
+  if(!widac){ PPRZ_KLUCZ = null; return; }
+
+  const left = Math.max(0, (T_END - Date.now()) / 1000);
+  const klucz = T_LEN + ':' + (koniec ? 'k' : 'b');
+  if(PPRZ_KLUCZ !== klucz){
+    PPRZ_KLUCZ = klucz;
+    const i = biezaceSkup(), e = SES.exercises[i];
+    const cwT = SES.exercises.find(x => x.name === T_CW) || e;
+    const ost = cwT && cwT.sets[cwT.sets.length - 1];
+    const plan = SES.exercises.reduce((a, x) => a + planowaneSerie(x), 0);
+    const zostalo = Math.max(0, plan - setCount(SES));
+    const cwDalej = SES.exercises.filter(x => !cwZrobione(x)).length;
+    const nastW = prefill(e, 'w'), nastR = prefill(e, 'r');
+    const wszystko = SES.exercises.every(cwZrobione);
+    el.innerHTML =
+      '<div class="pp-nag">'+(koniec ? 'KONIEC PRZERWY' : 'PRZERWA')+'</div>'+
+      (ost ? '<div class="pp-zapis">Zapisane: <b>'+esc(fmtSet(ost, cwT.name))+'</b> ✓</div>' : '')+
+      '<div class="pp-ring"><svg viewBox="0 0 300 300">'+
+        '<circle cx="150" cy="150" r="134" fill="none" stroke="#1e232b" stroke-width="18"/>'+
+        '<circle id="ppLuk" cx="150" cy="150" r="134" fill="none" stroke="'+(koniec ? '#ccff00' : '#00e5ff')+'" stroke-width="18" '+
+          'stroke-linecap="round" stroke-dasharray="842" stroke-dashoffset="0"/></svg>'+
+        '<div class="pp-czas"><b class="num" id="ppCzas">'+(koniec ? 'Start' : fmtTime(left))+'</b>'+
+          '<span>'+(koniec ? 'idź w serię' : 'z '+fmtTime(T_LEN))+'</span></div></div>'+
+      '<div class="pp-ctrl">'+
+        (koniec ? '<button class="acc" onclick="stopTimer()">Do serii</button>'
+                : '<button onclick="addTime(-15)">−15 s</button><button onclick="addTime(30)">+30 s</button>'+
+                  '<button onclick="stopTimer()">Pomiń</button>')+
+      '</div>'+
+      (wszystko ? '' :
+      '<div class="pp-nast"><small>NASTĘPNA SERIA · '+(robocze(e.sets).length + 1)+' Z '+planowaneSerie(e)+'</small>'+
+        '<div class="t"><div>'+esc(e.name)+'</div><b class="num">'+
+          (nastW !== '' && +nastW ? esc(fmtKg(+nastW))+' × ' : '')+esc(nastR)+'</b></div></div>')+
+      '<div class="pp-reszta">'+
+        '<div><b class="num">'+setCount(SES)+'</b><span>z '+plan+' serii</span></div>'+
+        '<div><b class="num">~'+Math.round(zostalo * minNaSerie(SES.day))+'</b><span>min do końca</span></div>'+
+        '<div><b class="num">'+cwDalej+'</b><span>'+(cwDalej === 1 ? 'ćwiczenie' : 'ćw.')+' do końca</span></div>'+
+      '</div>'+
+      '<button class="pp-schowaj" onclick="PRZERWA_SCHOWANA=true;malujPrzerwePelna();renderSession()">Schowaj — licznik zostaje na dole</button>';
+  }
+  if(!koniec){
+    const cz = document.getElementById('ppCzas'), luk = document.getElementById('ppLuk');
+    if(cz) cz.textContent = fmtTime(left);
+    if(luk && luk.style) luk.style.strokeDashoffset = 842 * (1 - Math.max(0, Math.min(1, left / (T_LEN || 1))));
+  }
+}
+
 /* podpowiedź „co założyć na sztangę" pod polem ciężaru */
 /* Czy to w ogole sztanga. Maszyny i wyciagi maja wlasne stosy, hantle sa
    parami — w obu przypadkach rozklad na talerze jest bez znaczenia. */
@@ -8559,6 +9194,19 @@ function raportSesji(w, opcje){
   return h;
 }
 
+/* Konfetti z samego CSS: kilkadziesiąt prostokątów spada raz (animacja
+   bez powtórzeń) i znika. Przy „ogranicz ruch" w iOS nie ma go wcale. */
+function konfettiHtml(n){
+  const kol = ['#ccff00', '#00e5ff', '#ff8a3d', '#ffffff', '#ff3366'];
+  let h = '';
+  for(let k = 0; k < n; k++){
+    const x = (k * 37 + 11) % 100, op = (k * 53) % 100 / 100;
+    h += '<i style="left:' + x + '%;background:' + kol[k % kol.length] +
+      ';animation-duration:' + (2.2 + op * 1.8).toFixed(2) + 's;animation-delay:' + (op * 0.9).toFixed(2) + 's"></i>';
+  }
+  return '<div class="konfetti" aria-hidden="true">' + h + '</div>';
+}
+
 function renderSummary(){
   if(!OSTATNI){ setSub('hub'); return; }
   const {wpis, rekordy, poprz}=OSTATNI;
@@ -8566,29 +9214,55 @@ function renderSummary(){
   const pv=poprz?Math.round(vol(poprz)):0;
   const zmiana = pv ? Math.round((v/pv-1)*100) : null;
 
-  let h='<div class="donebox">'+
-    '<div class="dtitle">Trening zapisany</div>'+
-    '<div class="dsub">'+wpis.day+' — '+esc(dayName2(wpis.day))+'</div>'+
-    '<div class="dstats">'+
-      '<div><b>'+c+'</b><span>serii</span></div>'+
-      '<div><b>'+v.toLocaleString('pl')+'</b><span>kg objętości</span></div>'+
-      (wpis.dur?'<div><b>'+wpis.dur+'</b><span>minut</span></div>':'')+
-    '</div></div>';
+  /* EKRAN KOŃCA TRENINGU (111) — z makiety zatwierdzonej przez Filipa
+     23 października („zrób ekran końca treningu z rekordami i konfetti").
+     Medal, cztery liczby, rekordy na górze i następny dzień. Konfetti leci
+     RAZ, przy pierwszym narysowaniu — `renderSummary` odpala się drugi raz
+     po wysyłce na serwer i nie może wtedy strzelać od nowa. Gęstsze, gdy
+     padł rekord. Raport sesji, lista ćwiczeń i stan synchronizacji zostają
+     pod spodem bez zmian. */
+  const konfetti = !OSTATNI.pokazane ? konfettiHtml(rekordy.length ? 34 : 16) : '';
+  OSTATNI.pokazane = true;
+  const ton = v >= 1000 ? fmtKg(Math.round(v / 100) / 10) + ' t' : v + ' kg';
+  let h = konfetti +
+    '<div class="km-gw"><div class="km-medal'+(rekordy.length ? ' rek' : '')+'">'+(rekordy.length ? '🏆' : '✓')+'</div>'+
+      '<div class="km-t">Trening zrobiony</div>'+
+      '<div class="km-s">'+wpis.day+' · '+esc(krotkaNazwaDnia(wpis.day))+' · '+
+        esc(dayName(wpis.date))+', '+plDate(wpis.date)+' · '+esc(silowniaKrotko(wpis))+'</div></div>'+
+    '<div class="km-staty">'+
+      '<div><b>'+(wpis.dur || '—')+'</b><span>MINUT</span></div>'+
+      '<div><b>'+c+'</b><span>SERII</span></div>'+
+      '<div><b>'+ton+'</b><span>TONAŻ</span></div>'+
+      '<div'+(rekordy.length ? ' class="acc"' : '')+'><b>'+rekordy.length+'</b><span>'+
+        (rekordy.length === 1 ? 'REKORD' : 'REKORDÓW')+'</span></div>'+
+    '</div>';
 
   if(zmiana!==null)
-    h+='<div class="tip '+(zmiana>=0?'ok':'warn')+'">Objętość '+
-      (zmiana>=0?'wyższa o '+zmiana+'%':'niższa o '+Math.abs(zmiana)+'%')+
-      ' niż przy poprzednim dniu '+wpis.day+' ('+plDate(poprz.date)+', '+
+    h+='<div class="km-por '+(zmiana>=0?'ok':'warn')+'">Objętość '+
+      (zmiana>=0?'<b>+'+zmiana+'%</b>':'<b>−'+Math.abs(zmiana)+'%</b>')+
+      ' wobec poprzedniego dnia '+wpis.day+' ('+plDate(poprz.date)+', '+
       pv.toLocaleString('pl')+' kg).</div>';
 
   if(rekordy.length){
-    h+='<h2>Rekordy życiowe</h2>';
-    h+=rekordy.map(r=>'<div class="prcard"><div class="prn">'+esc(r.name)+'</div>'+
-      '<div class="prv">'+esc(fmtSet(r.set, r.name))+'</div>'+
-      '<div class="prw">'+(r.stary
-        ? 'Poprzedni: '+esc(fmtSet(r.stary, r.name))+' z '+plDate(r.poprz)+
-          ' · szacowany 1RM '+fmtKg(e1rm(r.stary,r.name))+' → '+fmtKg(e1rm(r.set,r.name))+' kg'
-        : 'Pierwszy zapisany wynik w tym ćwiczeniu')+'</div></div>').join('');
+    h+='<div class="hsek"><span>NOWE REKORDY</span></div>';
+    h+=rekordy.map(r=>'<div class="km-rek"><i>⚡</i><div>'+esc(r.name)+
+      '<small>'+(r.stary
+        ? 'było '+esc(krotkaSeria(r.stary, r.name))+' ('+plDate(r.poprz)+') · 1RM '+
+          fmtKg(e1rm(r.stary,r.name))+' → '+fmtKg(e1rm(r.set,r.name))+' kg'
+        : 'pierwszy zapisany wynik')+'</small></div>'+
+      '<b>'+esc(krotkaSeria(r.set, r.name))+'</b></div>').join('');
+  }
+
+  /* Następny dzień z planu, który `finishSession` przeliczył przed chwilą. */
+  const nx = DB.nastepny;
+  if(nx && nx.dzien && PLAN[nx.dzien]){
+    const opis = String(PLAN[nx.dzien].name || '').split(' — ')[1] || '';
+    h+='<div class="hsek"><span>NASTĘPNY</span></div>'+
+      '<div class="card km-nast" onclick="otworzDzienWPlanie(\''+nx.dzien+'\')"><div>'+
+        '<div class="t">'+nx.dzien+' · '+esc(krotkaNazwaDnia(nx.dzien))+'</div>'+
+        '<div class="s">'+esc(opis)+'</div></div>'+
+        (nx.data ? '<span class="km-chip">'+(nx.data === today() ? 'dziś' : plDate(nx.data))+'</span>' : '')+
+      '</div>';
   }
 
   h+='<h2>Co zrobiłeś</h2><div class="card">';
@@ -8617,7 +9291,7 @@ function renderSummary(){
       'Ten trening został zapisany na telefonie, ale <b>nie trafił na serwer</b> — '+
       'trener go nie zobaczy. Włącz ją w Danych → Serwer, albo wyślij ręcznie przez iCloud.</div>'+
       '<button class="btn" onclick="exportData()">Wyślij do iCloud</button>';
-  h+='<button class="btn ghost sm" style="margin-top:9px" onclick="OSTATNI=null;setSub(\'hub\');setTimeout(applyUpdateIfIdle,600)">Gotowe</button>';
+  h+='<button class="km-gotowe" onclick="OSTATNI=null;setSub(\'hub\');setTimeout(applyUpdateIfIdle,600)">GOTOWE</button>';
   document.getElementById('sumBody').innerHTML=h;
 }
 
@@ -9000,6 +9674,7 @@ function paint(){
      przed oczami. */
   if(left > 0 && left <= 2 && document.visibilityState === 'visible') przerwaSerwer(null);
   if(left<=0) finishRest();
+  else malujPrzerwePelna();
 }
 function finishRest(){
   clearInterval(TICK); TICK=null;
@@ -9012,13 +9687,21 @@ function finishRest(){
   /* Ekran jest przed oczami — push z serwera byłby tylko echem. */
   if(document.visibilityState === 'visible') przerwaSerwer(null);
   setTimeout(()=>{ if(!TICK) stopTimer(); },12000);
+  malujPrzerwePelna();
 }
-function addTime(s){ if(!TICK){ startTimer(s); return; } T_END+=s*1000; T_LEN+=s; paint(); przerwaSerwer(T_END); }
+/* −15 s z trybu skupienia (109): przerwa nie może zejść poniżej 5 sekund
+   od teraz, a ujemny czas nie startuje nowego licznika. */
+function addTime(s){
+  if(!TICK){ if(s > 0) startTimer(s); return; }
+  if(s < 0) s = Math.max(s, -Math.max(0, (T_END - Date.now()) / 1000 - 5));
+  T_END+=s*1000; T_LEN=Math.max(5, T_LEN+s); PPRZ_KLUCZ=null; paint(); przerwaSerwer(T_END);
+}
 function stopTimer(){
   clearInterval(TICK); TICK=null;
   if(T_END > Date.now()) przerwaSerwer(null);   /* przerwane przed końcem — odwołaj push */
   try{ localStorage.removeItem(TIMKEY); }catch(e){}
   const b=document.getElementById('tbar'); b.classList.remove('on'); b.classList.remove('done'); wakeOff();
+  malujPrzerwePelna();
 }
 function beep(){
   try{
