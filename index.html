@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<meta name="theme-color" content="#0f1520">
+<meta name="theme-color" content="#070b18">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Trening</title>
@@ -23,19 +23,27 @@
    Zmienne zostaly te same, wiec caly plik dalej czyta `var(--acc)` i nie
    trzeba bylo dotykac zadnej logiki. Zmienily sie wylacznie wartosci:
 
-   - akcent z zieleni na limonke #CCFF00 — ta sama rola („w normie / zrobione /
+   - akcent z zieleni na limonke #7c9cff — ta sama rola („w normie / zrobione /
      zrob to"), tylko mocniejsza na ciemnym tle i czytelna katem oka,
    - doszedl cyjan #00E5FF jako kolor TELEMETRII: timer, tetno, zegary.
      Rozdzielenie jest celowe — limonka znaczy „dzialaj", cyjan „patrz",
    - czerwien przesunieta na #FF3366, bo stara gubila sie przy limonce,
    - tlo #0D0F12 zamiast granatowego: na OLED-zie iPhone'a czern jest
      wygaszonym pikselem, wiec karty odcinaja sie bez zadnej ramki. */
+/* PALETA „NOCNY GRANAT" (114). Filip wybrał ją 23 października z trzech
+   wariantów makiety v2 (makieta/makieta-v2.html, zrzuty makieta/zrzuty/v2/):
+   „biorę paletę B (Nocny granat)". Limonka i cyjan z Kinetic Obsidian
+   przeszły na niebieski akcent i miętę; pomarańcz dnia nóg na ciepły
+   piasek. Tło granatowe, nie czarne — karty odcinają się kolorem, a nie
+   ramką. Ciemny tekst na akcencie zostaje (zmienna --on-acc). Opis
+   poprzedniej palety wyżej zostaje jako historia decyzji. */
 :root{
-  --bg:#0d0f12; --card:#161a1f; --card2:#1e232b; --line:rgba(255,255,255,.08);
-  --txt:#ffffff; --dim:#9ba3af; --dim2:#525b6a;
-  --acc:#ccff00; --acc2:#abd600; --on-acc:#0d0f12;
-  --ok:#ccff00; --warn:#ffc53d; --bad:#ff3366; --run:#7c5cff;
-  --info:#00e5ff; --cyan:#00e5ff;
+  --bg:#070b18; --card:#111a31; --card2:#18233f; --line:rgba(140,170,255,.10);
+  --txt:#f3f6ff; --dim:#9aa7c7; --dim2:#4b5878;
+  --acc:#7c9cff; --acc2:#5f7fe8; --on-acc:#070b18;
+  --ok:#5ef2c7; --warn:#ffc53d; --bad:#ff5c8a; --run:#b98cff;
+  --info:#5ef2c7; --cyan:#5ef2c7; --warm:#ffb86b;
+  --glow:rgba(124,156,255,.45);
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
 *{box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -57,7 +65,7 @@ button,.hub,.rpeb,.btn{transition:transform .12s,filter .12s}
 
 /* Świeżo dodana seria błyska na zielono — to jedyne potwierdzenie, jakie
    naprawdę jest potrzebne: „zapisało się". */
-@keyframes blysk{0%{background:rgba(204,255,0,.30)}100%{background:transparent}}
+@keyframes blysk{0%{background:rgba(124,156,255,.30)}100%{background:transparent}}
 .srow.nowa{animation:blysk .55s ease-out}
 
 body{margin:0;padding:0;background:var(--bg);color:var(--txt);
@@ -291,7 +299,7 @@ h2:first-child{margin-top:0}
   font-style:normal;display:flex;align-items:center;justify-content:center;
   font-variant-numeric:tabular-nums}
 .serie i.ok{background:rgba(61,220,132,.22);color:#7df0b0}
-.serie i.warn{background:rgba(255,138,61,.22);color:#ffb782}
+.serie i.warn{background:rgba(255,184,107,.22);color:#ffb782}
 .serie i.bad{background:rgba(229,72,77,.24);color:#ff9ea0}
 .serie i u{position:absolute;right:3px;top:2px;font-size:7.5px;opacity:.75;
   text-decoration:none;font-weight:600}
@@ -447,7 +455,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 
 .empty{text-align:center;color:var(--dim);padding:34px 20px;font-size:14px;line-height:1.5}
 .note{font-size:12px;color:var(--dim);line-height:1.45}
-.tip{background:rgba(74,158,255,.09);border-left:3px solid var(--acc);
+.tip{background:rgba(124,156,255,.09);border-left:3px solid var(--acc);
   padding:11px 13px;border-radius:0 10px 10px 0;font-size:12.5px;
   color:#bcd4f0;line-height:1.5;margin-bottom:11px}
 .tip.warn{background:rgba(255,179,64,.09);border-left-color:var(--warn);color:#ffdca8}
@@ -484,7 +492,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .sgt{display:inline-block;font-size:10px;font-weight:800;padding:3px 7px;
   border-radius:6px;margin-top:7px;letter-spacing:.4px}
 .sgt.up{background:rgba(62,207,142,.16);color:var(--ok)}
-.sgt.hold{background:rgba(74,158,255,.16);color:var(--acc)}
+.sgt.hold{background:rgba(124,156,255,.16);color:var(--acc)}
 .sgt.down{background:rgba(255,107,107,.16);color:var(--bad)}
 .sgt.new{background:rgba(139,155,180,.16);color:var(--dim)}
 .sgt.coach{background:rgba(185,140,255,.18);color:var(--run)}
@@ -498,7 +506,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .wstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:12px}
 .wd{background:var(--card);border:1px solid var(--line);border-radius:10px;
   padding:7px 2px 6px;text-align:center}
-.wd.t{background:rgba(74,158,255,.16);border-color:var(--acc)}
+.wd.t{background:rgba(124,156,255,.16);border-color:var(--acc)}
 .wd.r{background:rgba(185,140,255,.14);border-color:var(--run)}
 .wd.now{box-shadow:0 0 0 1.5px var(--txt) inset}
 .wd.fut{opacity:.42}
@@ -513,10 +521,10 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .exacts{display:flex;gap:7px;margin:10px 0 4px}
 .mini{background:var(--card2);border:1px solid var(--line);border-radius:8px;
   padding:7px 11px;font-size:12px;font-weight:650;color:var(--acc);flex:1}
-.wu{background:rgba(74,158,255,.08);border-radius:8px;padding:7px 10px;
+.wu{background:rgba(124,156,255,.08);border-radius:8px;padding:7px 10px;
   font-size:11.5px;color:#bcd4f0;margin-bottom:8px;line-height:1.45}
-.wubtn{display:block;width:100%;margin-top:7px;background:rgba(74,158,255,.18);
-  border:1px solid rgba(74,158,255,.4);border-radius:7px;padding:7px;
+.wubtn{display:block;width:100%;margin-top:7px;background:rgba(124,156,255,.18);
+  border:1px solid rgba(124,156,255,.4);border-radius:7px;padding:7px;
   font-size:11.5px;font-weight:700;color:var(--acc)}
 .srow.rek .sn{background:var(--ok);color:#04211a;font-weight:800}
 .cwnota{font-size:11.5px;color:var(--dim);padding:7px 10px;margin:2px 0 8px;border-radius:9px;
@@ -607,7 +615,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .lgnd i.over{background:var(--run)}
 .lgnd i.none{background:var(--line)}
 .lgnd i.swieze{background:#e5484d}
-.lgnd i.schodzi{background:#ff8a3d}
+.lgnd i.schodzi{background:#ffb86b}
 .lgnd i.prawie{background:#ffc53d}
 .lgnd i.gotowe{background:var(--ok)}
 .lgnd i.nigdy{background:var(--line)}
@@ -669,7 +677,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   border-radius:999px;padding:8px 12px;font-size:12.5px;font-weight:700;
   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip small{color:var(--dim);font-weight:600;margin-left:5px}
-.chip.on{background:rgba(204,255,0,.15);border-color:var(--acc);color:var(--acc)}
+.chip.on{background:rgba(124,156,255,.15);border-color:var(--acc);color:var(--acc)}
 
 
 /* ============================================================
@@ -703,12 +711,12 @@ h2{font-size:11px}
 .card,.ex,.hub{margin-bottom:13px}
 .card{-webkit-backdrop-filter:none;backdrop-filter:none}
 .dzien{border-radius:24px}
-.ex.done{border-color:rgba(204,255,0,.45)}
+.ex.done{border-color:rgba(124,156,255,.45)}
 
 /* --- przyciski: pigulki --- */
 .btn{border-radius:999px;background:var(--acc);color:var(--on-acc);
   padding:15px;font-weight:800;letter-spacing:.02em;
-  box-shadow:0 0 24px -6px rgba(204,255,0,.45)}
+  box-shadow:0 0 24px -6px rgba(124,156,255,.45)}
 .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.12);
   color:var(--dim);box-shadow:none}
 .btn.sm{padding:12px}
@@ -725,8 +733,8 @@ h2{font-size:11px}
 
 /* --- RPE: rzad pigulek --- */
 .rpeb{border-radius:16px;background:var(--card2);border:1px solid var(--line)}
-.rpeb.on{background:rgba(204,255,0,.15);border-color:var(--acc);color:var(--acc);
-  box-shadow:0 0 18px -6px rgba(204,255,0,.6)}
+.rpeb.on{background:rgba(124,156,255,.15);border-color:var(--acc);color:var(--acc);
+  box-shadow:0 0 18px -6px rgba(124,156,255,.6)}
 
 /* --- pola liczbowe: ciemniejsze niz karta, jak w makiecie --- */
 .step button{background:var(--card2);color:var(--acc);border-color:var(--line)}
@@ -739,19 +747,19 @@ h2{font-size:11px}
 /* --- TELEMETRIA JEST CYJANOWA, NIE LIMONKOWA.
        Limonka znaczy „zrob to", cyjan „popatrz na to". Timer odpoczynku
        nie jest wezwaniem do dzialania — jest zegarem, wiec zmienia kolor. --- */
-.tbar{background:var(--cyan);color:#001b1f;border-radius:24px;
-  box-shadow:0 0 26px -6px rgba(0,229,255,.55)}
+.tbar{background:var(--cyan);color:#04201a;border-radius:24px;
+  box-shadow:0 0 26px -6px rgba(94,242,199,.55)}
 .tbar.done{background:var(--acc);color:var(--on-acc);
-  box-shadow:0 0 26px -6px rgba(204,255,0,.6)}
+  box-shadow:0 0 26px -6px rgba(124,156,255,.6)}
 .tbtn{background:rgba(0,0,0,.18)}
 
 /* --- nawigacja: szklana, aktywna pozycja swieci --- */
-nav{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
+nav{background:rgba(7,11,24,.92);-webkit-backdrop-filter:blur(16px);
   backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.07)}
 nav button{letter-spacing:.08em;text-transform:uppercase;font-size:9.5px}
 nav button.on{color:var(--acc)}
-nav button.on svg{filter:drop-shadow(0 0 7px rgba(204,255,0,.55))}
-header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
+nav button.on svg{filter:drop-shadow(0 0 7px rgba(124,156,255,.55))}
+header{background:rgba(7,11,24,.92);-webkit-backdrop-filter:blur(16px);
   backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.07)}
 
 /* --- ramki informacyjne ---
@@ -778,9 +786,9 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
        W makiecie przyciski pomocnicze („Dodaj cwiczenie") sa cyjanowe:
        przezroczyste tlo, cyjanowa ramka i tekst. Limonka zostaje wylacznie
        dla akcji glownej, zeby na ekranie swiecila jedna rzecz naraz. --- */
-.wu{background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.16);
+.wu{background:rgba(94,242,199,.07);border:1px solid rgba(94,242,199,.16);
   border-radius:16px;color:#c8e9ee;padding:10px 12px}
-.wubtn{background:rgba(0,229,255,.10);border:1.5px solid rgba(0,229,255,.40);
+.wubtn{background:rgba(94,242,199,.10);border:1.5px solid rgba(94,242,199,.40);
   border-radius:999px;color:var(--cyan);padding:11px;font-size:12.5px;
   letter-spacing:.02em}
 .srow.wus .sn{color:var(--cyan)}
@@ -790,7 +798,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
        sluzy rozpoznaniu dnia. Ale akcja glowna ma byc w kazdym dniu tym samym
        kolorem, inaczej „zielony przycisk" przestaje cokolwiek znaczyc. --- */
 .dzien .start{background:var(--acc);color:var(--on-acc);
-  box-shadow:0 0 28px -6px rgba(204,255,0,.5)}
+  box-shadow:0 0 28px -6px rgba(124,156,255,.5)}
 
 /* --- kafelki z pierscieniem: etykieta w wersalikach pod spodem --- */
 .kafel2 .etyk{font-size:10px;letter-spacing:.09em;margin-top:6px}
@@ -799,7 +807,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
    ============================================================ */
 /* --- pasek tygodnia: kolor partii, krótka nazwa, da się dotknąć --- */
 .wd{border-radius:14px;padding:8px 2px 7px;min-height:62px}
-.wd.t{background:var(--wdt,rgba(204,255,0,.12));border-color:var(--wd,var(--acc));cursor:pointer}
+.wd.t{background:var(--wdt,rgba(124,156,255,.12));border-color:var(--wd,var(--acc));cursor:pointer}
 .wd.t .wdc{color:var(--wd,var(--acc))}
 .wd.r{cursor:pointer}
 .wd.now{box-shadow:0 0 0 1.5px var(--txt) inset}
@@ -873,12 +881,12 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 .sk-seg i{display:block;height:6px;border-radius:99px;background:var(--acc)}
 .sk-seg{position:relative}
 .sk-seg::before{content:'';position:absolute;left:0;right:0;top:8px;height:6px;border-radius:99px;background:var(--card2);z-index:-1}
-.sk-seg.teraz::before{background:rgba(204,255,0,.28)}
+.sk-seg.teraz::before{background:rgba(124,156,255,.28)}
 .sk-segi{position:relative;z-index:0}
 .sk-postep small{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);font-weight:600;margin-top:2px}
 .sk-ik{width:46px;height:46px;border-radius:15px;background:var(--card);display:flex;align-items:center;justify-content:center;flex:none;color:var(--txt)}
 .sk-ik svg{width:22px;height:22px}
-.sk-pokaz{width:100%;height:44px;border-radius:14px;background:rgba(0,229,255,.12);color:var(--cyan);font-weight:700;margin-bottom:12px}
+.sk-pokaz{width:100%;height:44px;border-radius:14px;background:rgba(94,242,199,.12);color:var(--cyan);font-weight:700;margin-bottom:12px}
 
 .sk-cw{animation:skWejdz .3s cubic-bezier(.2,.8,.2,1)}
 @keyframes skWejdz{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
@@ -887,7 +895,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 .sk-cel{font-size:15px;color:var(--dim);font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .sk-cel b{color:var(--txt)}
 .sk-tag{font-size:11px;font-weight:800;padding:4px 8px;border-radius:8px;background:var(--card2);color:var(--dim)}
-.sk-tag.acc{background:rgba(204,255,0,.14);color:var(--acc)}
+.sk-tag.acc{background:rgba(124,156,255,.14);color:var(--acc)}
 .sk-why{font-size:13px;color:var(--dim);margin-top:8px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
 .sk-why.on{-webkit-line-clamp:unset;display:block}
 .sk-kropki{display:flex;gap:8px;margin:14px 0 4px;flex-wrap:wrap}
@@ -895,7 +903,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 .sk-kropki span.zrob{background:var(--acc);border-color:var(--acc);color:var(--on-acc)}
 .sk-kropki span.teraz{border-color:var(--acc);color:var(--acc)}
 .sk-chipy{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.sk-chip{font-size:13px;font-weight:700;padding:7px 10px;border-radius:10px;background:rgba(204,255,0,.10);color:var(--txt);border:1px solid rgba(204,255,0,.25)}
+.sk-chip{font-size:13px;font-weight:700;padding:7px 10px;border-radius:10px;background:rgba(124,156,255,.10);color:var(--txt);border:1px solid rgba(124,156,255,.25)}
 .sk-chip.wu{background:var(--card2);border-color:transparent;color:var(--dim)}
 
 .sk-duze{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
@@ -929,7 +937,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 .sk-cw .sk-wielki{position:sticky;bottom:10px;z-index:5}
 .sk-wielki{width:100%;height:68px;margin-top:16px;border-radius:24px;background:var(--acc);color:var(--on-acc);
   font-size:19px;font-weight:900;letter-spacing:.03em;display:flex;align-items:center;justify-content:center;gap:12px;
-  box-shadow:0 12px 34px -6px rgba(204,255,0,.4)}
+  box-shadow:0 12px 34px -6px rgba(124,156,255,.4)}
 .sk-wielki:active{transform:scale(.98)}
 .sk-wielki svg{width:26px;height:26px}
 .sk-nawi{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 6px;font-size:12.5px;color:var(--dim2);font-weight:600}
@@ -940,8 +948,8 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 
 .sk-koniec{text-align:center;padding:26px 4px 6px}
 .sk-medal{width:88px;height:88px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(circle at 35% 30%,#efff9e,var(--acc) 55%,#8fb300);color:var(--on-acc);font-size:40px;font-weight:900;
-  box-shadow:0 0 0 10px rgba(204,255,0,.12),0 0 60px rgba(204,255,0,.35)}
+  background:radial-gradient(circle at 35% 30%,#c9d6ff,var(--acc) 55%,#4d6be0);color:var(--on-acc);font-size:40px;font-weight:900;
+  box-shadow:0 0 0 10px rgba(124,156,255,.12),0 0 60px rgba(124,156,255,.35)}
 .sk-koniec h2{font-size:26px;font-weight:900;letter-spacing:-.03em;text-transform:none;color:var(--txt)}
 /* Rozgrzewka ogólna ma sens przed pierwszą serią; potem w trybie skupienia
    tylko spycha kartę w dół. W liście zostaje jak była. */
@@ -963,14 +971,14 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 /* przerwa na cały ekran */
 .pprz{display:none;position:fixed;inset:0;z-index:80;flex-direction:column;align-items:center;overflow-y:auto;
   padding:calc(env(safe-area-inset-top,0px) + 26px) 16px calc(var(--safe-b) + 20px);
-  background:radial-gradient(90% 60% at 50% 34%,rgba(0,229,255,.10),rgba(13,15,18,0) 70%),var(--bg)}
+  background:radial-gradient(90% 60% at 50% 34%,rgba(94,242,199,.10),rgba(7,11,24,0) 70%),var(--bg)}
 .pprz.on{display:flex;animation:skCien .25s}
 .pp-nag{font-size:12px;font-weight:800;letter-spacing:.16em;color:var(--dim)}
 .pp-zapis{font-size:14px;color:var(--dim);margin-top:6px}
 .pp-zapis b{color:var(--acc)}
 .pp-ring{position:relative;width:min(290px,76vw);aspect-ratio:1;margin:22px 0 10px}
 .pp-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-.pp-ring circle#ppLuk{transition:stroke-dashoffset .25s linear;filter:drop-shadow(0 0 10px rgba(0,229,255,.45))}
+.pp-ring circle#ppLuk{transition:stroke-dashoffset .25s linear;filter:drop-shadow(0 0 10px rgba(94,242,199,.45))}
 .pp-czas{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .pp-czas b{font-size:72px;font-weight:900;letter-spacing:-.04em}
 .pp-czas span{color:var(--dim);font-size:14px;font-weight:600}
@@ -996,7 +1004,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 .hsek span:last-child{color:var(--dim2);letter-spacing:.06em}
 #s-hub .wstrip{margin-bottom:6px}
 .nowaw{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:12px;
-  padding:10px 14px;border-radius:14px;background:rgba(204,255,0,.08);border:1px solid rgba(204,255,0,.22);
+  padding:10px 14px;border-radius:14px;background:rgba(124,156,255,.08);border:1px solid rgba(124,156,255,.22);
   color:var(--dim);font-size:13px;text-align:left}
 .nowaw b{color:var(--acc)}
 .nowaw > b{font-weight:800;letter-spacing:.06em}
@@ -1024,10 +1032,10 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 @media (prefers-reduced-motion: reduce){.konfetti{display:none}}
 .km-gw{text-align:center;margin:18px 0 4px}
 .km-medal{width:92px;height:92px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(circle at 35% 30%,#efff9e,var(--acc) 55%,#8fb300);color:var(--on-acc);font-size:42px;font-weight:900;
-  box-shadow:0 0 0 10px rgba(204,255,0,.12),0 0 60px rgba(204,255,0,.35);animation:kmPuls 2.4s ease-in-out 3}
+  background:radial-gradient(circle at 35% 30%,#c9d6ff,var(--acc) 55%,#4d6be0);color:var(--on-acc);font-size:42px;font-weight:900;
+  box-shadow:0 0 0 10px rgba(124,156,255,.12),0 0 60px rgba(124,156,255,.35);animation:kmPuls 2.4s ease-in-out 3}
 .km-medal.rek{font-size:44px}
-@keyframes kmPuls{50%{box-shadow:0 0 0 18px rgba(204,255,0,.05),0 0 80px rgba(204,255,0,.45)}}
+@keyframes kmPuls{50%{box-shadow:0 0 0 18px rgba(124,156,255,.05),0 0 80px rgba(124,156,255,.45)}}
 .km-t{font-size:30px;font-weight:900;letter-spacing:-.03em}
 .km-s{color:var(--dim);margin-top:4px;font-size:14px}
 .km-staty{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
@@ -1039,7 +1047,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 .km-por.ok b{color:var(--acc)}
 .km-por.warn b{color:var(--warn)}
 .km-rek{display:flex;align-items:center;gap:12px;margin-bottom:8px;padding:13px 15px;border-radius:20px;font-weight:700;
-  background:linear-gradient(90deg,rgba(204,255,0,.16),rgba(204,255,0,.03));border:1px solid rgba(204,255,0,.35)}
+  background:linear-gradient(90deg,rgba(124,156,255,.16),rgba(124,156,255,.03));border:1px solid rgba(124,156,255,.35)}
 .km-rek i{font-style:normal;font-size:22px}
 .km-rek div{flex:1;min-width:0}
 .km-rek small{display:block;color:var(--dim);font-weight:500;font-size:12.5px;margin-top:2px}
@@ -1049,7 +1057,7 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 .km-nast .s{color:var(--dim);font-size:13px;margin-top:2px}
 .km-chip{font-size:12px;font-weight:800;padding:6px 10px;border-radius:99px;background:var(--acc);color:var(--on-acc);white-space:nowrap}
 .km-gotowe{width:100%;height:64px;margin-top:16px;border-radius:20px;background:var(--acc);color:var(--on-acc);
-  font-size:18px;font-weight:900;letter-spacing:.04em;box-shadow:0 10px 30px -6px rgba(204,255,0,.4)}
+  font-size:18px;font-weight:900;letter-spacing:.04em;box-shadow:0 10px 30px -6px rgba(124,156,255,.4)}
 
 /* przewijanie zostaje w okienku, nie przechodzi na stronę pod spodem (112) */
 .sk-arkusz,.pprz,.modal,.sheet{overscroll-behavior:contain}
@@ -1058,6 +1066,88 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 /* w trybie skupienia otwarta wyszukiwarka zastępuje kartę ćwiczenia */
 #s-ses.skup.dodaj .sk-cw{display:none}
 #s-ses.skup #dodajBox:not(:empty){margin-top:4px}
+
+/* =========================================================
+   ANIMACJE I PŁYWAJĄCY PASEK ZAKŁADEK (114) — makieta v2
+   ========================================================= */
+nav{position:relative;margin:0 12px calc(var(--safe-b) + 8px);border-radius:24px;
+  border:1px solid var(--line)!important;padding:6px;
+  background:rgba(17,26,49,.82)!important;box-shadow:0 14px 34px rgba(0,0,0,.45)}
+nav button{position:relative;z-index:1;border-radius:18px;transition:color .3s}
+.navk{position:absolute;top:6px;bottom:6px;left:6px;width:calc((100% - 12px)/4);border-radius:18px;
+  background:rgba(124,156,255,.16);transition:transform .45s cubic-bezier(.3,1.3,.5,1);z-index:0}
+@keyframes wejdz114{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes luk114{from{stroke-dasharray:0 999}}
+.wejscie > *, .wejscie > .sub.on > *, .wejscie #coachBox > *, .wejscie #reportBody > *{
+  animation:wejdz114 .5s cubic-bezier(.2,.8,.2,1) both}
+.wejscie > *:nth-child(2), .wejscie #coachBox > *:nth-child(2), .wejscie > .sub.on > *:nth-child(2){animation-delay:.05s}
+.wejscie > *:nth-child(3), .wejscie #coachBox > *:nth-child(3), .wejscie > .sub.on > *:nth-child(3){animation-delay:.10s}
+.wejscie > *:nth-child(4), .wejscie #coachBox > *:nth-child(4), .wejscie > .sub.on > *:nth-child(4){animation-delay:.15s}
+.wejscie > *:nth-child(5), .wejscie #coachBox > *:nth-child(5), .wejscie > .sub.on > *:nth-child(5){animation-delay:.20s}
+.wejscie > *:nth-child(6), .wejscie #coachBox > *:nth-child(6), .wejscie > .sub.on > *:nth-child(6){animation-delay:.25s}
+.wejscie > *:nth-child(n+7), .wejscie #coachBox > *:nth-child(n+7), .wejscie > .sub.on > *:nth-child(n+7){animation-delay:.30s}
+.wejscie .pierscien .luk{animation:luk114 1s .25s cubic-bezier(.3,.7,.2,1) both}
+@media (prefers-reduced-motion: reduce){
+  .wejscie *, .navk{animation:none!important;transition:none!important}
+}
+
+/* trzy pierścienie w rzędzie (114) */
+.krata.trzy{grid-template-columns:repeat(3,1fr);gap:8px}
+.krata.trzy .kafel2{padding:12px 4px 10px;border-radius:20px}
+.krata.trzy .pierscien{width:70px;height:70px}
+.wejscie #reportBody > *:nth-child(2){animation-delay:.05s}
+.wejscie #reportBody > *:nth-child(3){animation-delay:.10s}
+.wejscie #reportBody > *:nth-child(4){animation-delay:.15s}
+.wejscie #reportBody > *:nth-child(5){animation-delay:.20s}
+.wejscie #reportBody > *:nth-child(n+6){animation-delay:.25s}
+
+/* Dziennik (114, makieta v2) */
+.dzg{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:16px;margin-bottom:12px}
+.dzg .pierscien{width:104px;height:104px;flex:none;margin:0}
+.dzg .t{font-size:20px;font-weight:900;letter-spacing:-.02em}
+.dzg .p{font-size:13px;color:var(--dim);margin-top:4px;line-height:1.4}
+.dzg .z{display:inline-block;margin-top:9px;font-size:11.5px;font-weight:700;color:var(--cyan);
+  background:rgba(94,242,199,.12);padding:5px 10px;border-radius:99px}
+.stp .spark{display:block;width:100%;height:30px;margin-top:8px}
+.stp .tr{font-size:11.5px;font-weight:700;margin-top:3px;color:var(--dim)}
+.stp .tr.dol{color:var(--bad)}
+.stp .tr.gor{color:var(--cyan)}
+.wejscie .stp .spark polyline{stroke-dasharray:300;animation:linia114 1.2s .3s ease-out both}
+@keyframes linia114{from{stroke-dashoffset:300}to{stroke-dashoffset:0}}
+
+/* Raport (114, makieta v2) */
+.segm.pig{display:grid;grid-template-columns:repeat(5,1fr);gap:0;position:relative;padding:4px}
+.segm.pig .segk{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/5);border-radius:999px;
+  background:var(--acc);transition:transform .45s cubic-bezier(.3,1.3,.5,1);z-index:0}
+.segm.pig button{position:relative;z-index:1;transition:color .3s}
+.segm.pig button.on{background:transparent!important;color:var(--on-acc)}
+.wykresboj svg{width:100%;height:auto;display:block;overflow:visible}
+.wykresboj .os{font-size:10px;fill:var(--dim2)}
+.wykresboj .leg{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:10px}
+.wykresboj .leg span{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)}
+.wykresboj .leg b{color:var(--txt)}
+.wykresboj .leg i{width:10px;height:10px;border-radius:3px;display:block}
+.wejscie .wykresboj polyline{stroke-dasharray:900;animation:linia114b 1.4s .2s ease-out both}
+@keyframes linia114b{from{stroke-dashoffset:900}to{stroke-dashoffset:0}}
+
+/* Karta skupienia ciaśniej (114): pływający pasek zakładek jest wyższy od
+   starego, więc bez tego przyklejony „Seria zrobiona" zasłaniał rząd RPE
+   na ekranie 390×844 — a RPE jest od 113 obowiązkowe przy każdej serii. */
+.sk-cw h2{font-size:27px;margin:4px 0 4px}
+.sk-why{-webkit-line-clamp:1;margin-top:6px}
+.sk-kropki{margin:10px 0 2px}
+.sk-kropki span{width:30px;height:30px}
+.sk-duze{margin-top:10px}
+.sk-licz{padding:8px 8px 8px}
+.sk-licz input{font-size:46px;margin:0 0 2px}
+.sk-pm button{height:42px}
+.sk-tal{margin-top:8px;padding:6px 12px}
+.sk-tal svg{height:32px}
+.sk-ost{margin-top:8px}
+.sk-rpe{margin-top:10px}
+.sk-rpe button{height:46px}
+.sk-wielki{height:62px;margin-top:12px}
+.sk-gora{margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -1183,6 +1273,8 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 
 <!-- ================= DZIENNIK ================= -->
 <div class="view" id="v-daily">
+  <!-- karta gotowości na górze Dziennika (114, makieta v2) — renderGotowoscDnia() -->
+  <div id="dzGotowosc"></div>
   <!-- Cztery linijki wykladu o tym, skad biora sie dane, stały tu codziennie.
        Przeczytac warto raz; potem to juz tylko przewijanie. Zostaje jedno
        zdanie i przycisk, a pelne wyjasnienie chowa sie pod znakiem zapytania. -->
@@ -1365,6 +1457,8 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 </div>
 
 <nav>
+  <!-- pigułka przesuwana pod aktywną zakładką (114) — ustawia ją go() -->
+  <span class="navk" id="navK" aria-hidden="true"></span>
   <button class="on" data-v="train" onclick="go('train')">
     <svg viewBox="0 0 24 24"><path d="M6.5 6.5h11v11h-11z"/><path d="M3 9v6M21 9v6M6.5 12h11"/></svg>Trening</button>
   <button data-v="daily" onclick="go('daily')">
@@ -2545,7 +2639,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '113';
+const WERSJA = '114';
 const WERSJA_DATA = '2026-10-23';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -5166,7 +5260,7 @@ function renderKolejne(s){
   if(!dni.length) return '';
   return '<div class="dalej">' + dni.map((x, i) => {
     if(!x.dzien)
-      return '<div class="dk wolne" style="--dzien-a:#4a9eff;--dzien-t:rgba(74,158,255,.13)">'+
+      return '<div class="dk wolne" style="--dzien-a:#4a9eff;--dzien-t:rgba(124,156,255,.13)">'+
         '<div class="de">'+x.etyk+'</div>'+ sylwetkaMini(null) +
         '<div class="dn">Wolne</div><div class="dl">regeneracja</div></div>';
     const b = barwaDnia(x.dzien);
@@ -5458,12 +5552,12 @@ function odradzamDzis(){
    Pull cyjan, nogi pomarancz, gora fiolet: cztery odcinki kola barw, ktore
    na czerni rozroznia sie katem oka, bez czytania litery dnia. */
 const BARWY_DNI = {
-  push: {a:'#ccff00', t:'rgba(204,255,0,.12)'},
-  pull: {a:'#00e5ff', t:'rgba(0,229,255,.13)'},
-  nogi: {a:'#ff8a3d', t:'rgba(255,138,61,.15)'},
+  push: {a:'#7c9cff', t:'rgba(124,156,255,.12)'},
+  pull: {a:'#5ef2c7', t:'rgba(94,242,199,.13)'},
+  nogi: {a:'#ffb86b', t:'rgba(255,184,107,.15)'},
   /* Dzien „gora" laczy push i pull, wiec nie moze pozyczyc koloru zadnego
      z nich — inaczej w pasku tygodnia dwa rozne dni wygladalyby tak samo. */
-  gora: {a:'#a78bfa', t:'rgba(167,139,250,.15)'}
+  gora: {a:'#ff8fd1', t:'rgba(167,139,250,.15)'}
 };
 function barwaDnia(d){
   const g = (PLAN[d] || {}).grp;
@@ -5606,7 +5700,7 @@ function renderDzis(){
      „zrobione" ma pierwszeństwo, dlatego to sprawdzenie jest po niej. */
   const prz = przerwaOtwarta();
   if(prz)
-    return '<div class="dzien" style="--dzien-a:#4a9eff;--dzien-t:rgba(74,158,255,.13)">'+
+    return '<div class="dzien" style="--dzien-a:#4a9eff;--dzien-t:rgba(124,156,255,.13)">'+
       '<div class="gora">'+ sylwetkaMini(null) +
         '<div class="tresc">'+
           '<div class="hm" style="letter-spacing:1.4px;font-size:9.5px">PRZERWA</div>'+
@@ -5640,7 +5734,7 @@ function renderDzis(){
     const dalej = s.blok ? (suggestNext(true) || {}) : {};
     /* Dzień wolny: nic dziś nie ruszasz, więc sylwetka jest cała szara.
        To nie jest brak danych — to jest odpowiedź. */
-    return '<div class="dzien" style="--dzien-a:#4a9eff;--dzien-t:rgba(74,158,255,.13)">'+
+    return '<div class="dzien" style="--dzien-a:#4a9eff;--dzien-t:rgba(124,156,255,.13)">'+
       '<div class="gora">'+ sylwetkaMini(null) +
         '<div class="tresc">'+
           '<div class="hm" style="letter-spacing:1.4px;font-size:9.5px">PLAN NA DZIŚ</div>'+
@@ -6866,6 +6960,8 @@ function go(v){
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
   document.getElementById('v-'+v).classList.add('on');
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+  const nk = document.getElementById('navK');
+  if(nk && nk.style) nk.style.transform = 'translateX(' + (['train','daily','report','data'].indexOf(v) * 100) + '%)';
   scrollTop();
   const T={train:'Trening',daily:'Dziennik',report:'Raport',data:'Dane'};
   document.getElementById('hTitle').textContent = T[v];
@@ -6875,6 +6971,42 @@ function go(v){
   if(v==='data') renderData();
   if(v==='train') renderSub();
   if(v !== 'train') zapiszHistorie();
+  wejscie(document.getElementById('v-'+v));
+}
+
+/* ANIMACJA WEJŚCIA (114). Z makiety v2, którą Filip zatwierdził
+   23 października („pododawać tam jakieś fajne animacje"). Karty wjeżdżają
+   po kolei, liczby nabijają się od zera, pierścienie rysują się od zera —
+   ale TYLKO przy wejściu na zakładkę albo ekran. `renderHub` i inne
+   przerysowują się przy każdym dotknięciu kafelka, a animacja co dotknięcie
+   byłaby męcząca. Klasa `.wejscie` żyje 900 ms i znika. Przy „Ogranicz
+   ruch" w iOS CSS wyłącza wszystko (prefers-reduced-motion). */
+let WEJSCIE_T = null;
+function wejscie(el){
+  if(!el || !el.classList) return;
+  el.classList.remove('wejscie');
+  void el.offsetWidth;                     /* restart animacji CSS */
+  el.classList.add('wejscie');
+  clearTimeout(WEJSCIE_T);
+  WEJSCIE_T = setTimeout(() => el.classList.remove('wejscie'), 900);
+  nabijLiczby(el);
+}
+/* Liczby całkowite w <b> i w tekście pierścieni nabijają się od zera.
+   Tylko czyste liczby („78", „12") — „T10", „6,9 t" czy „~70" zostają. */
+function nabijLiczby(root){
+  if(typeof requestAnimationFrame !== 'function' || !root || !root.querySelectorAll) return;
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const el = [...root.querySelectorAll('b, svg text')]
+    .filter(x => /^[0-9]{1,4}$/.test((x.textContent || '').trim()) && !x.closest('button, input, .sk-licz'))
+    .slice(0, 40);
+  if(!el.length) return;
+  const cel = el.map(x => +x.textContent.trim()), t0 = performance.now(), czas = 800;
+  const krok = t => {
+    const p = Math.min(1, (t - t0) / czas), e = 1 - Math.pow(1 - p, 3);
+    el.forEach((x, k) => { x.textContent = String(Math.round(cel[k] * e)); });
+    if(p < 1) requestAnimationFrame(krok);
+  };
+  requestAnimationFrame(krok);
 }
 function setSub(s){
   const poprzedni = SUB;
@@ -6886,6 +7018,7 @@ function setSub(s){
   scrollTop();
   if(s !== 'hub' && poprzedni !== s) zapiszHistorie();
   renderSub();
+  if(poprzedni !== s) wejscie(document.getElementById('s-'+s));
 }
 function goHome(){
   if(SUB==='ses' && SES && setCount(SES)>0){
@@ -7053,7 +7186,7 @@ function pierscien(wart, maks, kolor, dol){
   return '<svg viewBox="0 0 100 100" class="pierscien">'+
     '<circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" stroke-width="9"/>'+
     '<circle cx="50" cy="50" r="40" fill="none" stroke="'+kolor+'" stroke-width="9" '+
-      'stroke-dasharray="'+(proc*obw).toFixed(1)+' '+obw.toFixed(1)+'" '+
+      'stroke-dasharray="'+(proc*obw).toFixed(1)+' '+obw.toFixed(1)+'" style="--l:'+(proc*obw).toFixed(1)+'" class="luk" '+
       'stroke-linecap="round" transform="rotate(-90 50 50)"/>'+
     '<text x="50" y="48" text-anchor="middle" font-size="25" font-weight="800" '+
       'fill="var(--txt)">'+esc(String(wart))+'</text>'+
@@ -7095,6 +7228,19 @@ function kafelKalorii(){
   return '<div class="kafel2" onclick="przelaczBialko()">'+
     pierscien(kcal, cel.kcal, kolor, '/'+cel.kcal+' kcal')+
     '<div class="etyk">KALORIE</div></div>';
+}
+
+/* TRZECI PIERŚCIEŃ: BIAŁKO (114). Makieta v2 ma trzy małe pierścienie
+   w rzędzie — gotowość, kalorie, białko — zamiast dwóch dużych. Białko
+   wróciło na pierścień, bo od 110 jego słupek jest schowany pod
+   dotknięciem, a to ono decyduje, czy praca z siłowni się przekłada. */
+function kafelBialka(){
+  const cel = celeMakro(), m = makroDnia();
+  const b = Math.round(m.bialko || 0), c = cel.b.min || 0;
+  const kolor = b >= c * 0.9 ? 'var(--ok)' : b >= c * 0.5 ? 'var(--warn)' : 'var(--warm)';
+  return '<div class="kafel2" onclick="przelaczBialko()">'+
+    pierscien(b, c, kolor, '/'+c+' g')+
+    '<div class="etyk">BIAŁKO</div></div>';
 }
 
 /* TRZY SŁUPKI ZAMIAST DWUDZIESTU OŚMIU.
@@ -7324,7 +7470,7 @@ function renderHub(){
     bezpieczneHtml('renderWeekStrip', () => { const t = renderWeekStrip();
       document.getElementById('weekStrip').innerHTML = ''; return t; }) +
     komunikatyHub(syncBox) +
-    '<div class="krata">' + kafelGotowosc() + kafelKalorii() + '</div>' +
+    '<div class="krata trzy">' + kafelGotowosc() + kafelKalorii() + kafelBialka() + '</div>' +
     (BIALKO_ROZW ? bezpieczneHtml('kafelMakro', kafelMakro) : '') +
     bezpieczneHtml('kafelRegeneracja', () => kafelRegeneracja(s)) +
     /* Rozwinięcie musi wyjść ZARAZ POD kafelkiem, który dotknąłeś. Wersja 40
@@ -8256,8 +8402,8 @@ function malujPrzerwePelna(){
       '<div class="pp-nag">'+(koniec ? 'KONIEC PRZERWY' : 'PRZERWA')+'</div>'+
       (ost ? '<div class="pp-zapis">Zapisane: <b>'+esc(fmtSet(ost, cwT.name))+'</b> ✓</div>' : '')+
       '<div class="pp-ring"><svg viewBox="0 0 300 300">'+
-        '<circle cx="150" cy="150" r="134" fill="none" stroke="#1e232b" stroke-width="18"/>'+
-        '<circle id="ppLuk" cx="150" cy="150" r="134" fill="none" stroke="'+(koniec ? '#ccff00' : '#00e5ff')+'" stroke-width="18" '+
+        '<circle cx="150" cy="150" r="134" fill="none" stroke="#18233f" stroke-width="18"/>'+
+        '<circle id="ppLuk" cx="150" cy="150" r="134" fill="none" stroke="'+(koniec ? '#7c9cff' : '#5ef2c7')+'" stroke-width="18" '+
           'stroke-linecap="round" stroke-dasharray="842" stroke-dashoffset="0"/></svg>'+
         '<div class="pp-czas"><b class="num" id="ppCzas">'+(koniec ? 'Start' : fmtTime(left))+'</b>'+
           '<span>'+(koniec ? 'idź w serię' : 'z '+fmtTime(T_LEN))+'</span></div></div>'+
@@ -9241,7 +9387,7 @@ function raportSesji(w, opcje){
 /* Konfetti z samego CSS: kilkadziesiąt prostokątów spada raz (animacja
    bez powtórzeń) i znika. Przy „ogranicz ruch" w iOS nie ma go wcale. */
 function konfettiHtml(n){
-  const kol = ['#ccff00', '#00e5ff', '#ff8a3d', '#ffffff', '#ff3366'];
+  const kol = ['#7c9cff', '#5ef2c7', '#ffb86b', '#ffffff', '#ff5c8a'];
   let h = '';
   for(let k = 0; k < n; k++){
     const x = (k * 37 + 11) % 100, op = (k * 53) % 100 / 100;
@@ -11735,17 +11881,78 @@ function wyczyscPoranne(id){
   renderSteppery();
 }
 
+/* WYKRES 7 DNI I PORÓWNANIE ZE ŚREDNIĄ NA KAFELKU (114, makieta v2).
+   Sama liczba „HRV 60" nic nie mówi — mówi „15% poniżej Twojej normy".
+   Norma to poprzednie 21 dni BEZ ocenianego dnia — TEN SAM okres co
+   w `gotowosc`. Pierwsza wersja brała 14 dni i karta gotowości mówiła
+   „HRV 15% poniżej normy", a kafelek pod nią „−12%": dwie liczby o tym
+   samym na jednym ekranie. Linia to 7 ostatnich
+   wpisów do niego włącznie. Kierunek „dobrze" zależy od pomiaru: więcej snu,
+   HRV i Body Battery to lepiej, wyższe tętno spoczynkowe — gorzej, waga
+   jest neutralna. */
+const POLE_KLUCZ = {dSleep:'sleep', dRhr:'rhr', dHrv:'hrv', dBb:'bb', dWeight:'weight'};
+const POLE_KIERUNEK = {sleep:1, rhr:-1, hrv:1, bb:1, weight:0};
+function trendPola(klucz, data){
+  const d = data || today();
+  const seria = DB.daily.filter(x => x.date <= d && x[klucz] != null).slice(-7).map(x => +x[klucz]);
+  const sr = avg(DB.daily.filter(x => x.date < d && x.date >= przesun(d, -21) && x[klucz] != null).map(x => +x[klucz]));
+  const dz = (DB.daily.find(x => x.date === d) || {})[klucz];
+  let opis = '', klasa = 'ok';
+  if(dz != null && sr){
+    const roz = dz - sr, proc = roz / sr;
+    const kier = POLE_KIERUNEK[klucz] || 0;
+    if(Math.abs(proc) < 0.05) opis = 'w normie';
+    else {
+      opis = klucz === 'sleep' || klucz === 'weight'
+        ? (roz > 0 ? '+' : '−') + fmtKg(Math.abs(Math.round(roz * 10) / 10)) + (klucz === 'sleep' ? ' h' : ' kg') + ' od normy'
+        : (roz > 0 ? '+' : '−') + Math.abs(Math.round(proc * 100)) + '% od normy';
+      klasa = kier === 0 ? 'ok' : (roz * kier > 0 ? 'gor' : 'dol');
+    }
+  }
+  return {seria, opis, klasa};
+}
+function liniaSvg(seria, kolor){
+  if(!seria || seria.length < 2) return '';
+  const min = Math.min(...seria), max = Math.max(...seria), r = (max - min) || 1;
+  const pkt = seria.map((v, i) => (i / (seria.length - 1) * 116 + 2).toFixed(1) + ',' + (30 - (v - min) / r * 26).toFixed(1));
+  return '<svg class="spark" viewBox="0 0 120 34" preserveAspectRatio="none"><polyline points="' + pkt.join(' ') +
+    '" fill="none" stroke="' + kolor + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>';
+}
+
+/* Karta gotowości na górze Dziennika: ta sama liczba co na ekranie głównym
+   (`gotowosc`), duży pierścień i dwa najważniejsze powody. */
+function renderGotowoscDnia(){
+  const box = document.getElementById('dzGotowosc');
+  if(!box) return;
+  const el = document.getElementById('dDate');
+  const d = (el && el.value) || today();
+  const g = gotowosc(d);
+  if(g.nieznana){ box.innerHTML = ''; return; }
+  const kolor = g.pkt >= 85 ? 'var(--ok)' : g.pkt >= 55 ? 'var(--warn)' : 'var(--bad)';
+  const tytul = g.pkt >= 85 ? 'Pełna gotowość' : g.pkt >= 55 ? 'Można trenować' : 'Lżejszy dzień';
+  const pow = (g.powody || []).slice(0, 2).map(x => esc(x[1])).join(' · ');
+  box.innerHTML = '<div class="dzg">' + pierscien(g.pkt, 100, kolor, '/100') +
+    '<div><div class="t">' + tytul + '</div>' +
+    '<div class="p">' + (pow || 'Wszystkie poranne liczby w normie.') + '</div>' +
+    '<div class="z">Gotowość ' + (d === today() ? 'na dziś' : 'z ' + plDate(d)) + '</div></div></div>';
+}
+
 function renderSteppery(){
   const box = document.getElementById('stepBox');
   if(!box) return;
+  const dEl = document.getElementById('dDate');
+  const dataDnia = (dEl && dEl.value) || today();
+  const KOLOR = {sleep:'var(--cyan)', rhr:'var(--warm)', hrv:'var(--acc)', bb:'var(--cyan)', weight:'var(--dim)'};
   box.innerHTML = '<div class="steppery">'+ PORANNE_POLA.map(f => {
     const v = document.getElementById(f.id).value;
     const puste = v === '' || v == null;
+    const k = POLE_KLUCZ[f.id], tr = k ? trendPola(k, dataDnia) : null;
     return '<div class="stp'+(puste?' pusty':'')+'">'+
       '<div class="nag">'+esc(f.n)+'</div>'+
       '<div class="val" onclick="wyczyscPoranne(\''+f.id+'\')">'+
         (puste ? '—' : esc(fmtKg(liczba(v))))+
         '<small>'+esc(f.j)+'</small></div>'+
+      (tr ? liniaSvg(tr.seria, KOLOR[k]) + (tr.opis ? '<div class="tr '+tr.klasa+'">'+esc(tr.opis)+'</div>' : '') : '')+
       '<div class="pary">'+
         '<button onclick="krokPoranny(\''+f.id+'\',-1)">−</button>'+
         '<button onclick="krokPoranny(\''+f.id+'\',1)">+</button>'+
@@ -11819,6 +12026,7 @@ function renderDaily(){
     document.getElementById(id).value = ex&&ex[k]!=null ? ex[k] : '';
   });
   renderSteppery();
+  bezpiecznie('renderGotowoscDnia', renderGotowoscDnia);
   const list=DB.daily.slice(-10).reverse();
   const wierszeDni = () => list.map(d=>{
     /* Wpis z samym samopoczuciem i zakwasami wyświetlał się jako „—", bo lista
@@ -12239,10 +12447,10 @@ function bodyMap(cov, tryb){
   '.none polygon{fill:#1c2836}'+
   '.low polygon{fill:#e5484d}'+
   '.ok polygon{fill:#3ddc84}'+
-  '.over polygon{fill:#7c5cff}'+
+  '.over polygon{fill:#b98cff}'+
   /* skala świeżości */
   '.swieze polygon{fill:#e5484d}'+
-  '.schodzi polygon{fill:#ff8a3d}'+
+  '.schodzi polygon{fill:#ffb86b}'+
   '.prawie polygon{fill:#ffc53d}'+
   '.gotowe polygon{fill:#3ddc84}'+
   '.nigdy polygon{fill:#1c2836}'+
@@ -12385,7 +12593,7 @@ function miesienPanel(tryb, cov){
   if(tryb !== 'swiezosc')
     return '<div class="mpanel">' + klucze.map(k => regionSzczegoly(k, cov)).join('') + '</div>';
   const kiedy = d => d === 0 ? 'dzisiaj' : d === 1 ? 'wczoraj' : d + ' dni temu';
-  const BARWA = {swieze:'#e5484d', schodzi:'#ff8a3d', prawie:'#ffc53d', gotowe:'var(--ok)', nigdy:'var(--dim)'};
+  const BARWA = {swieze:'#e5484d', schodzi:'#ffb86b', prawie:'#ffc53d', gotowe:'var(--ok)', nigdy:'var(--dim)'};
   return '<div class="mpanel">' + klucze.map(k => {
     const o = ostatniBodziec(k);
     return '<div class="mrow">'+
@@ -12452,7 +12660,7 @@ function kafelRegeneracja(s){
     werdykt =
       '<div class="regen-k">'+esc(krotkaNazwaDnia(dzien))+' · '+kiedy+'</div>'+
       (najmniej <= 1 ? '<div class="regen-w" style="color:#e5484d">Za wcześnie</div>'
-       : najmniej === 2 ? '<div class="regen-w" style="color:#ff8a3d">Jeszcze schodzi</div>'
+       : najmniej === 2 ? '<div class="regen-w" style="color:#ffb86b">Jeszcze schodzi</div>'
        : '<div class="regen-w" style="color:var(--ok)">Można iść</div>')+
       (opis ? '<div class="regen-d">Przerwa: '+esc(opis)+'.</div>'
             : '<div class="regen-d">Te mięśnie nie były jeszcze trenowane.</div>');
@@ -12596,6 +12804,45 @@ function silaOdPoczatku(){
   out.sort((a, b) => (b.boj - a.boj) || (b.sesje - a.sesje) || a.name.localeCompare(b.name));
   return out;
 }
+/* WSPÓLNY WYKRES GŁÓWNYCH BOJÓW (114, makieta v2). Karty niżej pokazują
+   każdy bój osobno, każdy we własnej skali — tu wszystkie na jednej osi
+   szacowanego 1RM, żeby było widać, który rośnie, a który stoi. Oś X to
+   prawdziwe daty (nie numery sesji): przerwa w treningach ma być widoczna
+   jako przerwa. Kolory nie są kolorami dni — P i W to oba push, więc
+   miałyby ten sam. */
+function wykresBojow(r){
+  const boje = r.filter(x => x.boj && x.pkt && x.pkt.length >= 2);
+  if(!boje.length) return '';
+  const brak = bojePlanu().filter(n => !boje.some(x => x.name === n));
+  const KOL = ['var(--warm)', 'var(--acc)', 'var(--cyan)', '#ff8fd1', 'var(--warn)'];
+  const ms = d => new Date(d + 'T00:00:00').getTime();
+  const wsz = boje.flatMap(x => x.pkt);
+  const t0 = Math.min(...wsz.map(p => ms(p.d))), t1 = Math.max(ms(today()), ...wsz.map(p => ms(p.d)));
+  let lo = Math.min(...wsz.map(p => p.v)), hi = Math.max(...wsz.map(p => p.v));
+  const zapas = Math.max(2, (hi - lo) * 0.12); lo -= zapas; hi += zapas;
+  const W = 340, H = 150, X = t => 8 + (t - t0) / Math.max(1, t1 - t0) * (W - 16), Y = v => 10 + (1 - (v - lo) / (hi - lo)) * (H - 24);
+  const siatka = [0, 0.5, 1].map(f => { const v = lo + (hi - lo) * (1 - f), y = Y(v);
+    return '<line x1="0" y1="'+y.toFixed(1)+'" x2="'+W+'" y2="'+y.toFixed(1)+'" stroke="var(--line)"/>'+
+      '<text x="0" y="'+(y - 4).toFixed(1)+'" class="os">'+Math.round(v)+(f === 0 ? ' kg' : '')+'</text>'; }).join('');
+  const linie = boje.map((x, i) => {
+    const pk = x.pkt.map(p => X(ms(p.d)).toFixed(1) + ',' + Y(p.v).toFixed(1));
+    const ost = pk[pk.length - 1].split(',');
+    return '<polyline points="'+pk.join(' ')+'" fill="none" stroke="'+KOL[i % KOL.length]+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'+
+      '<circle cx="'+ost[0]+'" cy="'+ost[1]+'" r="4.5" fill="'+KOL[i % KOL.length]+'"/>';
+  }).join('');
+  const os = '<text x="8" y="'+(H + 12)+'" class="os">'+plDate(new Date(t0).toISOString().slice(0, 10))+'</text>'+
+    '<text x="'+(W - 8)+'" y="'+(H + 12)+'" class="os" text-anchor="end">'+plDate(today())+'</text>';
+  return '<h2>Główne boje · szacowane 1RM</h2><div class="card wykresboj">'+
+    '<svg viewBox="0 0 '+W+' '+(H + 16)+'">'+siatka+'<g class="linie">'+linie+'</g>'+os+'</svg>'+
+    '<div class="leg">'+boje.map((x, i) => '<span><i style="background:'+KOL[i % KOL.length]+'"></i>'+
+      esc(x.name)+' <b>'+Math.round(x.pkt[x.pkt.length - 1].v)+'</b></span>').join('')+'</div>'+
+    /* Maszyny liczą się osobno dla każdej siłowni (`historia`), więc bój
+       robiony tylko w drugiej znika z wykresu — mówimy, dlaczego, zamiast
+       zostawiać dziurę, która wygląda na zgubione dane. */
+    (brak.length ? '<div class="hm" style="margin-top:8px">Bez dwóch sesji w '+esc(SILOWNIE[silowniaTeraz()].n)+': '+
+      esc(brak.join(', '))+'. Maszyny liczą się osobno dla każdej siłowni.</div>' : '')+'</div>';
+}
+
 function raportSily(){
   const r = silaOdPoczatku();
   if(!r.length || !DB.workouts.length)
@@ -12619,7 +12866,8 @@ function raportSily(){
       '<div><b class="down">'+dol.length+'</b><span>W DÓŁ</span></div>'+
     '</div>'+
     '<div class="hm" style="margin:0 4px 14px">Od '+plDate(pierwsza)+' · '+DB.workouts.length+
-      ' treningów · '+tyg+' tyg. · maszyny: '+SILOWNIE[silowniaTeraz()].n+'</div>';
+      ' treningów · '+tyg+' tyg. · maszyny: '+SILOWNIE[silowniaTeraz()].n+'</div>' +
+    bezpieczneHtml('wykresBojow', () => wykresBojow(r));
 
   const wiersz = x => '<div class="kv"><span class="k" style="color:var(--txt);min-width:0">'+esc(x.name)+
       '<div class="hm" style="margin-top:1px">'+fmtSet(x.pierwszy, x.name)+' → '+fmtSet(x.ostatni, x.name)+'</div></span>'+
@@ -12912,7 +13160,8 @@ function raportDnia(){
    człowiek najczęściej chce wiedzieć, co się właśnie stało, a nie jak
    wyglądała objętość osiem tygodni temu. */
 let RAPORT_SEKCJA = 'teraz';
-function raportSekcja(k){ RAPORT_SEKCJA = k; renderReport(); scrollTop(); }
+var RAPORT_SEK_POPRZ = null;
+function raportSekcja(k){ RAPORT_SEKCJA = k; renderReport(); scrollTop(); wejscie(document.getElementById('v-report')); }
 
 /* JEDNA LINIJKA, DWA RÓŻNE LICZNIKI — i nie dało się tego zauważyć.
 
@@ -12946,9 +13195,13 @@ function renderReport(){
     (stracone > 0 ? '<div class="hm" style="margin-top:4px">W kalendarzu to tydzień '+w+'. '+
       (stracone === 1 ? 'Tydzień' : stracone+' tygodnie')+
       ' bez siłowni nie przesuwa fazy, więc plan liczy '+wPlanu+'.</div>' : '')+'</div>'+
-    '<div class="segm">'+ SEKCJE.map(([k,n]) =>
+    /* Pigułka przesuwa się od poprzedniej sekcji do nowej (114): rysujemy ją
+       w starym miejscu, a po wstawieniu HTML przestawiamy — przejście robi CSS. */
+    '<div class="segm pig"><span class="segk" id="segK" style="transform:translateX('+
+      (Math.max(0, SEKCJE.findIndex(x => x[0] === RAPORT_SEK_POPRZ)) * 100)+'%)"></span>'+ SEKCJE.map(([k,n]) =>
       '<button class="'+(k===sek?'on':'')+'" onclick="raportSekcja(\''+k+'\')">'+n+'</button>').join('') +
     '</div>';
+  const segDo = SEKCJE.findIndex(x => x[0] === sek);
 
   if(sek === 'teraz') h += raportDnia();
   if(sek === 'sila') h += raportSily();
@@ -13221,6 +13474,11 @@ function renderReport(){
      każdej z pięciu sekcji. Odkąd dane idą same na serwer, opisywała krok,
      którego nikt nie robi — a w pustej sekcji była jedyną rzeczą na ekranie. */
   document.getElementById('reportBody').innerHTML=h;
+  RAPORT_SEK_POPRZ = sek;
+  if(typeof requestAnimationFrame === 'function') requestAnimationFrame(() => {
+    const k = document.getElementById('segK');
+    if(k && k.style) k.style.transform = 'translateX(' + (segDo * 100) + '%)';
+  });
 }
 
 /* ============================================================
