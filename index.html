@@ -2328,8 +2328,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '107';
-const WERSJA_DATA = '2026-10-08';
+const WERSJA = '108';
+const WERSJA_DATA = '2026-10-23';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 let DB = null, SES = null, SUB = 'hub';
@@ -4160,7 +4160,10 @@ function przerwaSkala(dni, chora){
 }
 function drabinkaPrzerwy(dni){
   if(dni < 10)  return null;
-  if(dni < 15)  return {s:0.95, why:'Dziesięć dni to jeszcze nie utrata siły — pięć procent w dół wystarczy, żeby pierwsza seria nie zaskoczyła.'};
+  /* „Taka przerwa", nie „dziesięć dni": `dni` to przerwa WZGLĘDNA (po odjęciu
+     normalnego odstępu rotacji), a zdanie stoi zaraz po „Przerwa 14 dni od
+     ostatniego razu" — dwie różne liczby obok siebie wyglądały na błąd (108). */
+  if(dni < 15)  return {s:0.95, why:'Taka przerwa to jeszcze nie utrata siły — pięć procent w dół wystarczy, żeby pierwsza seria nie zaskoczyła.'};
   if(dni < 22)  return {s:0.90, why:'Po dwóch tygodniach wraca głównie wprawa, nie mięśnie. Dziesięć procent w dół i za dwie–trzy sesje jesteś z powrotem.'};
   if(dni < 32)  return {s:0.85, why:'Trzy–cztery tygodnie to już realny spadek. Piętnaście procent w dół, pierwsza sesja ma być rozbiegiem.'};
   if(dni < 60)  return {s:0.75, why:'Ponad miesiąc przerwy. Ćwierć w dół i dwa tygodnie na odbudowę wzorca ruchu, zanim znowu zaczniesz dokładać.'};
@@ -9836,6 +9839,21 @@ function wyluskajPorcje(tekst){
   return l.replace(/^[^:]{0,30}:\*?\s*/, '').replace(/[`*]/g, '').trim();
 }
 
+/* CZY Z ODPOWIEDZI DA SIĘ POLICZYĆ MAKRO — w KAŻDYM z dwóch kształtów.
+
+   Od wersji 62 model oddaje listę `skladniki` z gęstością na 100 g, a sumy
+   liczy `zeSkladnikow`. Sprawdzenie po odpowiedzi zostało jednak stare:
+   `typeof wynik.bialko === 'number'` — a w nowym kształcie pola `bialko`
+   po prostu nie ma. Każda poprawna odpowiedź szła więc do kosza jako
+   „nieudana", druga próba tak samo, i Filip dostawał „nie umiem odczytać".
+   Filip, 23 października: „ten chat wypluwa dobrze ale (…) aplikacja
+   dostaje górę tekstu i nie wie gdzie wstawić finalne cyfry". Z dziennika:
+   17 października spaghetti — dwie poprawne odpowiedzi, zero wpisu.
+   Płaskie sumy (`bialko`) zostają jako kształt awaryjny. */
+function maMakro(w){
+  return !!w && (!!zeSkladnikow(w) || typeof w.bialko === 'number');
+}
+
 async function aiJedzenie(opis, zdjecieBase64){
   let zeZdjecia = '';
 
@@ -9849,7 +9867,7 @@ async function aiJedzenie(opis, zdjecieBase64){
     /* Mocny model obrazowy potrafi oddać gotowy JSON od razu — wtedy nie ma
        po co pytać drugi raz. Sprawdzamy odpowiedź, nie nazwę modelu. */
     const odRazu = aiWyluskajJson(surowe);
-    if(odRazu && typeof odRazu.bialko === 'number') return domknijMakro(odRazu);
+    if(maMakro(odRazu)) return domknijMakro(odRazu);
 
     if(!zeZdjecia)
       throw new Error('Model nie opisał zdjęcia. Napisz w polu wyżej, co to jest.');
@@ -9881,7 +9899,7 @@ async function aiJedzenie(opis, zdjecieBase64){
   /* Jedna ponowna proba, krotsza i ostrzejsza. Modele bywaja gadatliwe
      losowo — druga proba z jawnym „maksymalnie trzy skladniki, sam JSON"
      kosztuje sekunde, a ratuje wpis, ktory inaczej trzeba wklepac recznie. */
-  if(!wynik || typeof wynik.bialko !== 'number'){
+  if(!maMakro(wynik)){
     aiZapisz({co: 'jedzenie-nieudane', pytanie: pytanie.slice(0, 200),
               odpowiedz: (odp.tresc || '').slice(0, 300)});
     odp = await aiZapytaj(
@@ -9895,7 +9913,7 @@ async function aiJedzenie(opis, zdjecieBase64){
 
   aiZapisz({co: 'jedzenie', pytanie: pytanie.slice(0, 200),
             odpowiedz: (odp.tresc || '').slice(0, 300), bialko: wynik && wynik.bialko});
-  if(!wynik || typeof wynik.bialko !== 'number'){
+  if(!maMakro(wynik)){
     /* Komunikat pokazuje POCZATEK tego, co naprawde przyszlo. Bez tego
        „dziwna odpowiedz" nie da sie zdiagnozowac po fakcie — a to jedyna
        informacja, ktora odroznia model gadajacy od modelu niedostepnego. */
