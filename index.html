@@ -1050,6 +1050,14 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
 .km-chip{font-size:12px;font-weight:800;padding:6px 10px;border-radius:99px;background:var(--acc);color:var(--on-acc);white-space:nowrap}
 .km-gotowe{width:100%;height:64px;margin-top:16px;border-radius:20px;background:var(--acc);color:var(--on-acc);
   font-size:18px;font-weight:900;letter-spacing:.04em;box-shadow:0 10px 30px -6px rgba(204,255,0,.4)}
+
+/* przewijanie zostaje w okienku, nie przechodzi na stronę pod spodem (112) */
+.sk-arkusz,.pprz,.modal,.sheet{overscroll-behavior:contain}
+.sk-cien{touch-action:none}
+.sk-arkusz{touch-action:pan-y}
+/* w trybie skupienia otwarta wyszukiwarka zastępuje kartę ćwiczenia */
+#s-ses.skup.dodaj .sk-cw{display:none}
+#s-ses.skup #dodajBox:not(:empty){margin-top:4px}
 </style>
 </head>
 <body>
@@ -1140,6 +1148,10 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
          (iw/ir/irpe) przyjmują wartości z karty, a zapis idzie przez to samo
          addSet. Bloki .tylkoLista chowa CSS, gdy #s-ses ma klasę .skup. -->
     <div id="skupBox"></div>
+    <!-- Wyszukiwarka „Dodaj ćwiczenie" / „Wybierz inne sam" stoi POZA .tylkoLista
+         (112): w trybie skupienia była schowana razem z listą i guziki z „⋯"
+         nie robiły nic widocznego. -->
+    <div id="dodajBox"></div>
     <div class="tylkoLista">
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
       <div style="min-width:0">
@@ -1157,7 +1169,6 @@ header{background:rgba(13,15,18,.92);-webkit-backdrop-filter:blur(16px);
     <div class="tylkoLista">
     <div id="exList"></div>
     <button class="btn ghost sm" onclick="addCustom()" style="margin-bottom:11px">+ Dodaj ćwiczenie</button>
-    <div id="dodajBox"></div>
     <div class="fld" style="margin-bottom:11px">
       <label>Notatka do treningu</label>
       <input type="text" id="sesNote" placeholder="np. bolało kolano, hałas, mało czasu"
@@ -2534,7 +2545,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '111';
+const WERSJA = '112';
 const WERSJA_DATA = '2026-10-23';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -6870,6 +6881,7 @@ function setSub(s){
   SUB=s;
   document.querySelectorAll('.sub').forEach(x=>x.classList.remove('on'));
   document.getElementById('s-'+s).classList.add('on');
+  if(s !== 'ses'){ SKUP_ARKUSZ = false; zablokujTlo(false); }
   document.getElementById('hBack').style.display = s==='hub' ? 'none' : '';
   scrollTop();
   if(s !== 'hub' && poprzedni !== s) zapiszHistorie();
@@ -7969,6 +7981,17 @@ function idzDoCw(i){
 }
 function arkuszSkup(on){ SKUP_ARKUSZ = !!on; renderSession(); }
 
+/* PRZEWIJANIE TŁA POD OKIENKIEM (112). Filip: „jak otworzę tę listę, to
+   czasami zamiast przewijać listę, przewija to, co jest za ekranem".
+   iOS przekazuje ruch palca na stronę pod spodem, gdy lista dojedzie do
+   końca albo gdy palec trafi w przyciemnione tło. Dwie poprawki naraz:
+   `overscroll-behavior: contain` na samych okienkach (CSS) i zatrzymanie
+   przewijania <main> na czas, gdy okienko jest otwarte. */
+function zablokujTlo(on){
+  const m = document.querySelector('main');
+  if(m && m.style) m.style.overflowY = on ? 'hidden' : '';
+}
+
 /* Talerze jako obrazek: gryf i krążki na jednej stronie, kolory jak na
    siłowni (25 czerwony, 20 niebieski, 15 żółty, 10 zielony, 5 biały). */
 function talerzeSvg(w){
@@ -8054,7 +8077,9 @@ function renderSkupienie(){
   if(sesEl && sesEl.classList && sesEl.classList.toggle){
     sesEl.classList.toggle('skup', !!on);
     sesEl.classList.toggle('poSerii', !!(SES && SES.exercises && SES.exercises.some(e => e.sets && e.sets.length)));
+    sesEl.classList.toggle('dodaj', !!DODAJ);
   }
+  zablokujTlo(!!(on && SKUP_ARKUSZ));
   if(!box) return;
   if(!on){ box.innerHTML = ''; return; }
 
@@ -8212,7 +8237,8 @@ function malujPrzerwePelna(){
   const koniec = !TICK && !!bar && !!bar.classList && typeof bar.classList.contains === 'function' && bar.classList.contains('done');
   const widac = SUB === 'ses' && SES && widokSkupienia() && (TICK || koniec) && !PRZERWA_SCHOWANA;
   if(el.classList && el.classList.toggle) el.classList.toggle('on', !!widac);
-  if(!widac){ PPRZ_KLUCZ = null; return; }
+  if(!widac){ PPRZ_KLUCZ = null; if(!SKUP_ARKUSZ) zablokujTlo(false); return; }
+  zablokujTlo(true);
 
   const left = Math.max(0, (T_END - Date.now()) / 1000);
   const klucz = T_LEN + ':' + (koniec ? 'k' : 'b');
@@ -8702,6 +8728,12 @@ function addCustom(){
   zbierzWpisane();
   DODAJ = DODAJ ? null : {szukaj: ''};
   renderSession();
+  /* Od 112 wyszukiwarka stoi nad listą, a guzik pod nią — trzeba do niej
+     podjechać, inaczej dotknięcie wygląda na martwe. */
+  if(DODAJ) setTimeout(() => {
+    const el = document.getElementById('dodajBox');
+    if(el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 60);
 }
 function zamknijDodaj(){ DODAJ = null; renderSession(); }
 
@@ -9754,7 +9786,7 @@ function openTimer(){
     perm==='granted' ? 'Powiadomienie wyskoczy przy zgaszonym ekranie — o ile aplikacja jest dodana do ekranu głównego.'
     : perm==='denied' ? 'Powiadomienia zablokowane — zostaje dźwięk. Na iPhonie wibracji nie ma w ogóle.'
     : 'Zgódź się na powiadomienia, żeby dostać sygnał przy zgaszonym ekranie.';
-  document.getElementById('tModal').classList.add('on'); askNotify();
+  document.getElementById('tModal').classList.add('on'); zablokujTlo(true); askNotify();
 }
 function renderPresets(cur){
   document.getElementById('tPresets').innerHTML = PRESETS.map(p=>
@@ -9765,7 +9797,7 @@ function customBump(d){
   const el=document.getElementById('tCustom');
   el.value=Math.max(5,(parseInt(el.value)||90)+d); renderPresets(parseInt(el.value));
 }
-function closeTimer(){ document.getElementById('tModal').classList.remove('on'); }
+function closeTimer(){ document.getElementById('tModal').classList.remove('on'); zablokujTlo(false); }
 function applyTimer(){
   const v=Math.max(5,parseInt(document.getElementById('tCustom').value)||90);
   DB.settings.rest=v; save(); closeTimer(); startTimer(v);
