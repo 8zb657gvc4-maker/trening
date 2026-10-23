@@ -2645,7 +2645,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '115';
+const WERSJA = '116';
 const WERSJA_DATA = '2026-10-23';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -3599,14 +3599,53 @@ function weekNo(dateStr){
    Kalendarzowy `weekNo()` zostaje bez zmian — to jest metryczka historii
    („T3" przy treningu z 17 sierpnia ma znaczyć trzeci tydzień kalendarza,
    inaczej stare wpisy zmieniałyby opis wstecz). O fazie decyduje `tydzienPlanu()`. */
+/* PAMIĘĆ LICZBY TRENINGÓW W TYGODNIU (116).
+
+   `zDeloadu` pyta o tydzień planu dla KAŻDEGO treningu z historii, a każde
+   takie pytanie przechodziło całą historię raz na każdy tydzień. Przy dwóch
+   latach (400 treningów) zbudowanie pięciu dni trwało 2,4 s na Macu — na
+   telefonie kilka razy dłużej — i test chaosu co trzeci raz przekraczał próg.
+   Profil: 96% czasu w `zDeloadu` → `tydzienPlanu` → `przesun`.
+
+   Liczba treningów w danym tygodniu zależy wyłącznie od dat i od daty
+   startu, więc liczymy ją raz i trzymamy, dopóki te się nie zmienią.
+   Podpis to data startu, liczba treningów i skrót WSZYSTKICH dat — także
+   zmiana daty w miejscu, bez dodania ani usunięcia, unieważnia pamięć.
+   Okna tygodni liczone jak dotąd przez `przesun` (dni kalendarza), nie
+   przez dzielenie milisekund, które myli się przy zmianie czasu. */
+let TP_PAMIEC = {podpis: null, tyg: new Map()};
+function podpisHistorii(){
+  const w = DB.workouts || [];
+  let h = 0;
+  for(let i = 0; i < w.length; i++){
+    const d = String(w[i].date || '');
+    for(let j = 0; j < d.length; j++) h = (h * 31 + d.charCodeAt(j)) | 0;
+  }
+  return (DB.settings && DB.settings.start) + '|' + w.length + '|' + h;
+}
+/* Podpis liczymy RAZ na pytanie o tydzień planu (`odswiezPamiecTygodni`),
+   nie raz na każdy tydzień — inaczej sam podpis kosztowałby więcej niż
+   to, co oszczędza (pierwsza wersja: 4,1 s zamiast 2,4). */
+function odswiezPamiecTygodni(){
+  const p = podpisHistorii();
+  if(TP_PAMIEC.podpis !== p) TP_PAMIEC = {podpis: p, tyg: new Map()};
+}
+function treningowWTygodniu(w){
+  if(TP_PAMIEC.tyg.has(w)) return TP_PAMIEC.tyg.get(w);
+  const od = przesun(DB.settings.start, (w - 1) * 7);
+  const doo = przesun(DB.settings.start, w * 7 - 1);
+  const n = (DB.workouts || []).filter(x => x.date >= od && x.date <= doo).length;
+  TP_PAMIEC.tyg.set(w, n);
+  return n;
+}
+
 function tydzienPlanu(ref){
   ref = ref || today();
   const kal = weekNo(ref);
   let licz = 0;
+  odswiezPamiecTygodni();
   for(let w = 1; w < kal; w++){
-    const od = przesun(DB.settings.start, (w - 1) * 7);
-    const doo = przesun(DB.settings.start, w * 7 - 1);
-    const n = (DB.workouts || []).filter(x => x.date >= od && x.date <= doo).length;
+    const n = treningowWTygodniu(w);
     licz += n >= 2 ? 1 : n >= 1 ? 0.5 : 0;
   }
   const zHistorii = Math.min(kal, Math.floor(licz) + 1);
