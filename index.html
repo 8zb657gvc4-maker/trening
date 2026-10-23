@@ -2225,14 +2225,20 @@ const DOMYSLNY_PLAN = {
        czyli tyle, ile trzeba, zeby nie stracic, i ani serii wiecej.
        Nogi sa raz w tygodniu, wiec dwie serie to CALY tygodniowy bodziec
        na kazda z dwoch glow. Trzecia seria kosztuje niecale trzy minuty. */
+    /* OD 115: ŁYDKI 2+2. Dzień N zajmował 88–111 minut przy założonych ~70
+       (tempo na nogach 4,8–6,3 min na serię). Filip wybrał 23 października
+       z trzech wariantów: „łydki 2+2". `pokrycie.js`: obie głowy 2,0 przy
+       normie 2–8 — z powrotem na dolnej granicy, ale w normie; dwugłowe bez
+       zmian (wariant z cięciem drugiego uginania odpadł, bo spychał
+       dwugłowe od biodra pod normę na 6 tygodni z rzędu). Dzień N: 16 serii. */
     {id:'N6', lab:'Łydki — brzuchaty (stojąc)', upadek:true,
      pool:['Wspięcia na palce stojąc','Wspięcia na palce jednonóż'],
-     t:['3×15','3×12-15','2×15','3×12-15'],
-     s:[3,3,2,3], rr:[[15,15],[12,15],[15,15],[12,15]]},
+     t:['2×15','2×12-15','2×15','2×12-15'],
+     s:[2,2,2,2], rr:[[15,15],[12,15],[15,15],[12,15]]},
     {id:'N7', lab:'Łydki — płaszczkowaty (siedząc)', upadek:true,
      pool:['Wspięcia na palce siedząc','Wspięcia siedząc z obciążeniem'],
-     t:['3×15','3×15-20','2×15','3×15-20'],
-     s:[3,3,2,3], rr:[[15,15],[15,20],[15,15],[15,20]]}
+     t:['2×15','2×15-20','1×15','2×15-20'],
+     s:[2,2,1,2], rr:[[15,15],[15,20],[15,15],[15,20]]}
   ]},
 
   /* Osiem slotow, ale nie po trzy serie kazdy: przy trzech wychodzilo 24
@@ -2639,7 +2645,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '114';
+const WERSJA = '115';
 const WERSJA_DATA = '2026-10-23';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -4753,6 +4759,12 @@ function suggestLoadRdzen(name, slot, phase, tydzien){
   if(!last) return {w:null, r:mn, sets, tag:'new',
     why: L.time
       ? 'Pierwszy raz w tym planie. Trzymaj '+mn+' s na stronę — tak, żeby dało się wytrzymać jeszcze ok. 10 s dłużej.'
+      /* „Wspięcia siedząc z obciążeniem" ma `bw`, bo da się je zrobić też
+         z plecakiem w domu — ale na siłowni „zrób na masie własnej" przy
+         ćwiczeniu, które w nazwie ma obciążenie, było bez sensu (przegląd
+         23 października). Nazwa mówi o ciężarze, więc mówimy o ciężarze. */
+      : (L.bw && /obciąż/i.test(name))
+      ? 'Pierwszy raz w tym planie. Połóż na kolanach hantel albo talerz i dobierz go tak, żeby po '+mn+' powt. zostały 2–3 w zapasie.'
       : L.bw
       ? 'Pierwszy raz w tym planie. Zrób '+mn+' powt. na masie własnej i zostaw 2–3 w zapasie.'
       : 'Pierwszy raz w tym planie. Dobierz ciężar tak, żeby po '+mn+' powt. zostały jeszcze 3–4 w zapasie.'};
@@ -6622,6 +6634,23 @@ function zakwasyDnia(day, data){
   return z[grp] || 0;
 }
 
+/* Dni z bojami, które bez pilnowania wypadały z rotacji (115), i próg. */
+const BOJ_CZEKA_DNI = ['W', 'M'];
+const BOJ_CZEKA_PO = 12;
+function glownyBojDnia(d){
+  const sl = ((PLAN[d] || {}).slots || []).find(x => x.fixed && x.lab === 'Główny bój');
+  return sl ? sl.fixed : (PLAN[d] || {}).name || d;
+}
+/* Komunikat na głównej: który bój czeka i ile dni (115). */
+function bojeCzekaja(){
+  const ref = today();
+  return BOJ_CZEKA_DNI.filter(d => ORDER.includes(d)).map(d => {
+    const x = DB.workouts.filter(y => y.day === d).slice(-1)[0];
+    const dni = x ? Math.round((new Date(ref+'T00:00:00') - new Date(x.date+'T00:00:00'))/864e5) : null;
+    return {d, dni, boj: glownyBojDnia(d)};
+  }).filter(x => x.dni != null && x.dni >= BOJ_CZEKA_PO);
+}
+
 function suggestNext(naJutro){
   /* `naJutro` pozwala zaplanować sesję z wyprzedzeniem, zaraz po zakończeniu
      dzisiejszej — inaczej funkcja zawsze odpowiadałaby „dziś już trenowałeś".
@@ -6825,6 +6854,26 @@ function suggestNext(naJutro){
     }
   }
   if(!day){ day = dozwolone[0]; luzniej = PASY.length - 1; }
+
+  /* BÓJ CZEKA (115). W i M niosą wyciskanie żołnierskie i martwy ciąg,
+     a w danych wypadały z rotacji: 23 października W nie było 18 dni, M 16,
+     przy P i G co 3–4 dni — Filip sam przestawiał dzień, a zasada zaległości
+     wyżej brała PIERWSZY zaległy w kolejce (N, 13 dni). Filip wybrał:
+     „przypomnienie — gdy W albo M nie było ponad 12 dni, ekran główny mówi
+     to wprost i proponuje ten dzień zamiast kolejnego z rotacji".
+     Nie po tygodniowej przerwie (rotacja i tak startuje od nowa), nie dla
+     dnia, który był wczoraj tą samą partią albo boli, i tylko gdy bój czeka
+     DŁUŻEJ niż dzień z rotacji — inaczej nogi wypadałyby w nieskończoność. */
+  if(!odNowa && day && BOJ_CZEKA_DNI.indexOf(day) < 0){
+    const czeka = BOJ_CZEKA_DNI.filter(d => dozwolone.includes(d) && dniOd(d) >= BOJ_CZEKA_PO &&
+        dniOd(d) < 999 && dniOd(d) > dniOd(day) && !yest.includes(PLAN[d].grp) && !bolace(PLAN[d].grp))
+      .sort((a, b) => dniOd(b) - dniOd(a));
+    if(czeka.length){
+      const z = day; day = czeka[0];
+      pominiete.length = 0;
+      pominiete.push([z, 'ustępuje, bo ' + day + ' (' + glownyBojDnia(day) + ') czeka ' + dniOd(day) + ' dni']);
+    }
+  }
   clash = luzniej >= PASY.length - 1;   /* dzień po dniu ta sama partia */
   cand = kolejka;
 
@@ -7498,6 +7547,10 @@ function komunikatyHub(syncBox){
   const kom = [];
   if(dl){ const m = dl.match(/<b>([^<]+)<[/]b>/); kom.push({t: m ? m[1] : 'Deload', h: dl}); }
   if(syncBox){ const m = syncBox.match(/<b>([^<]+)<[/]b>/); kom.push({t: m ? m[1] : 'Synchronizacja', h: syncBox}); }
+  /* 115: bój, który czeka 12 dni i dłużej, mówi o tym wprost */
+  bojeCzekaja().forEach(b => kom.push({t: b.boj + ' czeka ' + b.dni + ' dni',
+    h: '<div class="tip warn"><b>' + esc(b.boj) + ' czeka ' + b.dni + ' dni</b> (dzień ' + b.d + '). ' +
+       'Silnik wstawi ten dzień przed kolejny z rotacji, jeśli nic temu nie przeszkadza.</div>'}));
   if(!kom.length) return '';
   return zwijka('komunikaty', 'Komunikaty', esc(kom.map(k => k.t).join(' · ')), kom.length,
     () => kom.map(k => k.h).join(''));
@@ -7838,14 +7891,15 @@ function renderKorekta(){
     '<div class="note" style="margin-top:8px">Główny bój zostaje bez zmian — jego już nie ruszamy '+
     'w trakcie. Zmiana dotyczy tylko ćwiczeń, których jeszcze nie zacząłeś.</div></div>';
 
-  /* Zdanie od modelu dochodzi PÓŹNIEJ i tylko podmienia opis powodu.
-     Ramka, liczby i przyciski są już na ekranie — jeśli sieć nie odpowie
-     albo model się pomyli, nie stanie się nic poza tym, że zostanie
-     zdanie z silnika. Nic tu na model nie czeka. */
-  if(aiDostepne()) aiKomentarzSesji().then(zdanie => {
-    const p = document.getElementById('korektaPowod');
-    if(zdanie && p) p.textContent = zdanie;
-  }).catch(() => {});
+  /* Zdanie od modelu dochodziło PÓŹNIEJ i podmieniało opis powodu.
+     OD 115 TEGO NIE ROBIMY. Filtr nazw i liczb (`aiKomentarzSesji`) łapał
+     zmyślone ciężary, ale nie bzdury bez liczb — z dziennika: „Dzisiaj robisz
+     deload, bo masz lepszy dzień w Smithu skośnym" (19.10), „zwiększamy
+     wyciskanie hantli skos o 2,5 kg" przy dipach (5.10). Zdanie z silnika
+     mówi to samo i zawsze jest prawdziwe. Filip, 23 października, na
+     propozycję „zostawić samo zdanie z silnika": „robimy wszystko po kolei".
+     `aiKomentarzSesji` zostaje w pliku (z filtrem i testami) na wypadek
+     mocniejszego darmowego modelu. */
 }
 
 /* Sesja skrócona przez gotowość musi to POWIEDZIEĆ, i to na górze ekranu.
@@ -13335,7 +13389,12 @@ function renderReport(){
     h+='<h2>Na co zwrócić uwagę</h2>'+flags.map(f=>'<div class="tip '+f[0]+'">'+f[1]+'</div>').join('');
 
   const weeks=[];
-  for(let i=1;i<=Math.min(8,w);i++){
+  /* OSIEM OSTATNICH tygodni, nie osiem PIERWSZYCH (115). Pętla szła
+     `i=1..min(8,w)`, więc od dziewiątego tygodnia kalendarza wykres stał
+     w miejscu: 23 października (tydzień 12) kończył się na T8 sprzed
+     miesiąca, a słupek „w toku" nie pojawiał się wcale. Wyglądało to na
+     prawdziwe dane, tylko stare. */
+  for(let i=Math.max(1,w-7);i<=w;i++){
     const ww=DB.workouts.filter(x=>inWeek(x.date,i));
     if(ww.length) weeks.push([i,ww.length,Math.round(ww.reduce((a,x)=>a+vol(x),0))]);
   }
@@ -13357,7 +13416,7 @@ function renderReport(){
       })+
       '<div class="hm" style="margin-top:6px">'+
         (sr ? 'Przerywana linia to średnia z zamkniętych tygodni. '+
-              'Niebieski słupek to tydzień w toku — jeszcze niepełny.'
+              'Miętowy słupek to tydzień w toku — jeszcze niepełny.'
             : 'Za mało zamkniętych tygodni na średnią.')+
       '</div></div>';
   }
