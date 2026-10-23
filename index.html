@@ -1148,6 +1148,40 @@ nav button{position:relative;z-index:1;border-radius:18px;transition:color .3s}
 .sk-rpe button{height:46px}
 .sk-wielki{height:62px;margin-top:12px}
 .sk-gora{margin-bottom:8px}
+
+/* =========================================================
+   PRZEJŚCIA I ANIMOWANA KARTA DNIA (117) — makieta v2
+   ========================================================= */
+@keyframes wjazdP117{from{opacity:.2;transform:translateX(34px)}to{opacity:1;transform:none}}
+@keyframes wjazdL117{from{opacity:.2;transform:translateX(-34px)}to{opacity:1;transform:none}}
+.wjazd-p{animation:wjazdP117 .38s cubic-bezier(.2,.8,.2,1) both}
+.wjazd-l{animation:wjazdL117 .38s cubic-bezier(.2,.8,.2,1) both}
+
+/* Karta dnia: poświata w kolorze dnia krąży powoli po górnej części karty.
+   Sam obrót (transform) — kompozytor robi to bez przeliczania strony, więc
+   nie zjada baterii; poza ekranem głównym karta ma display:none i staje. */
+.dzien .gora{overflow:hidden;isolation:isolate}
+.dzien .gora::after{content:'';position:absolute;inset:-60%;z-index:0;pointer-events:none;
+  background:conic-gradient(from 0deg,transparent 0 68%,var(--dzien-a) 80%,transparent 92%);
+  opacity:.16;animation:obrot117 10s linear infinite}
+.dzien .gora > *{z-index:1}
+.dzien .tresc{z-index:2}
+@keyframes obrot117{to{transform:rotate(1turn)}}
+/* Sylwetka oddycha — ledwo, żeby karta żyła, a nie migała. */
+.dzien .sylw{animation:oddech117 3.6s ease-in-out infinite}
+@keyframes oddech117{0%,100%{opacity:.68}50%{opacity:.9}}
+/* Błysk przesuwa się po przycisku co kilka sekund — jedyne miejsce
+   na ekranie, które ma przyciągać wzrok. */
+.dzien .start{position:relative;overflow:hidden}
+.dzien .start::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:40%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);
+  animation:blysk117 3.4s 1.2s ease-in-out infinite}
+@keyframes blysk117{0%{left:-60%}40%,100%{left:130%}}
+
+@media (prefers-reduced-motion: reduce){
+  .wjazd-p,.wjazd-l,.dzien .gora::after,.dzien .sylw,.dzien .start::after{animation:none!important}
+  .dzien .start::after{display:none}
+}
 </style>
 </head>
 <body>
@@ -2645,7 +2679,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '116';
+const WERSJA = '117';
 const WERSJA_DATA = '2026-10-23';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -7044,7 +7078,26 @@ function wstecz(){
   return false;
 }
 
+/* PRZEJŚCIA MIĘDZY EKRANAMI (117). Filip: „zrób przejścia między ekranami
+   i animowaną kartę dnia z makiety". Zakładki wjeżdżają z tej strony, po
+   której stoją w pasku (Raport z prawej, gdy idziesz z Treningu; z lewej,
+   gdy wracasz). Ekrany w Treningu (plan, sesja, historia) wjeżdżają
+   z prawej, a powrót na ekran główny — z lewej, jak w aplikacjach iOS.
+   Klasa żyje 450 ms; przy „Ogranicz ruch" CSS jej nie animuje. */
+const ZAKLADKI = ['train','daily','report','data'];
+let ZAKLADKA_TERAZ = 'train';
+function wjazd(el, zPrawej){
+  if(!el || !el.classList) return;
+  el.classList.remove('wjazd-p', 'wjazd-l');
+  void el.offsetWidth;
+  el.classList.add(zPrawej ? 'wjazd-p' : 'wjazd-l');
+  setTimeout(() => el.classList.remove('wjazd-p', 'wjazd-l'), 450);
+}
+
 function go(v){
+  const zPrawej = ZAKLADKI.indexOf(v) >= ZAKLADKI.indexOf(ZAKLADKA_TERAZ);
+  const zmiana = v !== ZAKLADKA_TERAZ;
+  ZAKLADKA_TERAZ = v;
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
   document.getElementById('v-'+v).classList.add('on');
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
@@ -7059,6 +7112,7 @@ function go(v){
   if(v==='data') renderData();
   if(v==='train') renderSub();
   if(v !== 'train') zapiszHistorie();
+  if(zmiana) wjazd(document.getElementById('v-'+v), zPrawej);
   wejscie(document.getElementById('v-'+v));
 }
 
@@ -7106,7 +7160,10 @@ function setSub(s){
   scrollTop();
   if(s !== 'hub' && poprzedni !== s) zapiszHistorie();
   renderSub();
-  if(poprzedni !== s) wejscie(document.getElementById('s-'+s));
+  if(poprzedni !== s){
+    wjazd(document.getElementById('s-'+s), s !== 'hub');
+    wejscie(document.getElementById('s-'+s));
+  }
 }
 function goHome(){
   if(SUB==='ses' && SES && setCount(SES)>0){
