@@ -2545,7 +2545,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '112';
+const WERSJA = '113';
 const WERSJA_DATA = '2026-10-23';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -8377,6 +8377,17 @@ function wpiszJakOstatnio(i){
 }
 
 function prefill(e,f){
+  /* RPE NIE DZIEDZICZY SIĘ TAKŻE MIĘDZY SERIAMI (113).
+
+     Wersja 67 zdjęła dziedziczenie z poprzedniego TRENINGU, ale w obrębie
+     ćwiczenia RPE dalej przechodziło z serii na serię. W danych widać było
+     tego skutek: od 17 września 162 z 279 serii z RPE 6, zwykle w ciągu
+     „6, 6, 10" — hack squat 80×8 trzy razy po RPE 6, choć trzecia seria przy
+     tym samym ciężarze nie może być równie lekka jak pierwsza. Silnik czytał
+     to jako zapas i na tej podstawie dokładał ciężar. Filip, 23 października:
+     „zrób RPE bez dziedziczenia z poprzedniej serii". Jedno dotknięcie na
+     serię kosztuje mniej niż liczba, która wygląda na dane. */
+  if(f === 'rpe') return '';
   if(e.sets.length) return e.sets[e.sets.length-1][f] ?? '';
   /* RPE PIERWSZEJ SERII ZOSTAJE PUSTE.
 
@@ -8453,10 +8464,11 @@ function addSet(i, rozgrzewka){
   const r=parseInt(document.getElementById('ir'+i).value)||0;
   const rpe=parseFloat(document.getElementById('irpe'+i).value)||null;
   if(!r){ toast('Wpisz liczbę powtórzeń'); return; }
-  /* Pierwsza seria robocza bez RPE to cwiczenie bez punktu odniesienia —
-     nastepnym razem nie ma z czego policzyc ciezaru. Kolejne serie moga
-     odziedziczyc wartosc z poprzedniej, bo ta byla juz swiadomie wybrana. */
-  if(!rozgrzewka && !rpe && !e.sets.some(x => !x.wu)){
+  /* Seria robocza bez RPE to seria bez punktu odniesienia — nastepnym
+     razem nie ma z czego policzyc ciezaru. Do 112 pytalismy tylko przy
+     pierwszej, a kolejne dziedziczyly wartosc; od 113 nic sie nie dziedziczy,
+     wiec pytamy przy kazdej (patrz `prefill`). */
+  if(!rozgrzewka && !rpe){
     toast('Zaznacz RPE — od niego zależy następny ciężar');
     return;
   }
