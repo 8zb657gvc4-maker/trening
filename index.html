@@ -2115,15 +2115,21 @@ const DOMYSLNY_PLAN = {
     {id:'P1', lab:'Główny bój', fixed:'Wyciskanie leżąc',
      t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×4-6 RPE8'],
      s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[4,6]]},
+    /* OD 122 GÓRA KLATKI PRZED BARKAMI. Filip, 25 października: „chyba nie
+       ma sensu, że mam barki na początku treningu… lepiej, żeby była góra
+       klatki". Po wyciskaniu leżąc przód barku jest już zmęczony; gdy po nim
+       szło wyciskanie nad głowę, skos dostawał barki „na resztkach", a skos
+       ma być główną pracą dla górnej klatki. Teraz: leżąc → skos → barki.
+       Numery slotów zostają (historia odwołuje się do P2 i P3). */
+    {id:'P3', lab:'Klatka — góra',
+     pool:['Wyciskanie hantli, skos','Wyciskanie sztangą, skos','Brama dół→góra'],
+     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
     /* Zolnierskie zostaja w puli, ale nie jako pierwsze: dwa ciezkie
        wyciskania ze sztangi w jednym dniu to byl najciezszy punkt planu. */
     {id:'P2', lab:'Bark — wyciskanie',
      pool:['Wyciskanie hantli nad głowę','Arnold press','Wyciskanie żołnierskie'],
      t:['3×10 RPE6','3×8-10 RPE7','2×10 RPE5','3×8-10 RPE8'],
-     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
-    {id:'P3', lab:'Klatka — góra',
-     pool:['Wyciskanie hantli, skos','Wyciskanie sztangą, skos','Brama dół→góra'],
-     t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
     {id:'P4', lab:'Bark — bok', upadek:true,
      pool:['Unoszenie hantli bokiem','Unoszenie bokiem na wyciągu','Unoszenie bokiem na maszynie'],
@@ -2315,11 +2321,22 @@ const DOMYSLNY_PLAN = {
     /* Zolnierskie wracaja tu na sztange. W dniu P sa na hantlach przy RPE 7,
        czyli lzejsze — kazdy z dwoch dni push ma dokladnie jedno ciezkie
        wyciskanie, a nie dwa w jednej sesji. */
-    {id:'W1', lab:'Główny bój', fixed:'Wyciskanie żołnierskie',
+    /* OD 122 BÓJ DNIA W TO SMITH SKOŚNY, A BARKI IDĄ DRUGIE, HANTLAMI.
+       Filip, 25 października: „wprowadź obie zmiany: w P góra klatki przed
+       barkami, w W Smith skośny jako bój i barki hantlami jako drugie".
+       Dane: wyciskanie żołnierskie sztangą jako bój było w W raz (20.09),
+       potem szło na Smithie, hantlach albo maszynie; Smith skośny 5.10
+       i 19.10, 60 kg × 8. `pokrycie.js`, 12 tygodni: góra klatki 5,2 → 6,3
+       i stabilnie (najsłabszy tydzień 3,6 → 6,0), środek klatki 9,2 → 8,3
+       (bez nadmiaru), przód barku 9,5 → 9,8 (za zgodą jak dotąd) — wszystko
+       w normie. Wariant bez wyciskania na barki w W odpadł: środek klatki
+       11,6 i 3 tygodnie ponad normą. Smith to maszyna — historia osobno dla
+       każdej siłowni. Numery slotów W1/W2 zostają. */
+    {id:'W1', lab:'Główny bój', fixed:'Smith skośny',
      t:['3×8 RPE6','3×6-8 RPE8','2×8 RPE5','3×5-6 RPE8'],
      s:[3,3,2,3], rr:[[8,8],[6,8],[8,8],[5,6]]},
-    {id:'W2', lab:'Klatka — nacisk hantlami',
-     pool:['Wyciskanie hantlami płasko','Wyciskanie hantli, skos'],
+    {id:'W2', lab:'Bark — wyciskanie',
+     pool:['Wyciskanie hantli nad głowę','Arnold press'],
      t:['3×10 RPE6','3×8-10 RPE8','2×10 RPE5','3×8-10 RPE8'],
      s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[8,10]]},
     /* Dolna czesc klatki ma znow dipy w tym samym dniu, wiec ten slot wraca
@@ -2716,7 +2733,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '121';
+const WERSJA = '122';
 const WERSJA_DATA = '2026-10-25';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
