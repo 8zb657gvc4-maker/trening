@@ -8,7 +8,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Trening</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>">
+<!-- Ikona (118): iPhone bierze ikonę ekranu głównego wyłącznie z
+     apple-touch-icon i wyłącznie jako PNG — SVG z manifestu ignoruje.
+     Źródło: ikona.svg, PNG renderuje narzedzia/ikony.js. -->
+<link rel="apple-touch-icon" href="ikona-180.png">
+<link rel="icon" type="image/svg+xml" href="ikona.svg">
 <style>
 /* PALETA.
    Tło zeszło głębiej, karty są półprzezroczyste z rozmyciem, a akcent
@@ -2679,7 +2683,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '117';
+const WERSJA = '118';
 const WERSJA_DATA = '2026-10-23';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
