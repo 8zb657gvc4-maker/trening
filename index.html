@@ -1660,6 +1660,8 @@ const DOMYSLNA_LIB = {
 
   /* --- ramiona --- */
   'Prostowanie ramion wyciąg':   {inc:2.5, mus:{triceps_bocz:1, triceps_dluga:.3, triceps_przysr:.7}},
+  'Prostowanie jednorącz na wyciągu': {inc:2.5, stos:'brama', strona:'rękę', mus:{triceps_bocz:1, triceps_dluga:.3, triceps_przysr:.7},
+                                  cue:'Uchwyt na górnym bloczku, jedna ręka. Łokieć przyklejony do boku, wyprost do końca.'},
   'Francuskie zza głowy':        {inc:2.5, mus:{triceps_dluga:1, triceps_bocz:.5, triceps_przysr:.4},
                                   cue:'Ramię nad głową rozciąga głowę długą — bez tej pozycji jej nie ruszysz.'},
   'Prostowanie zza głowy wyciąg':{inc:2.5, stos:'brama', mus:{triceps_dluga:1, triceps_bocz:.4, triceps_przysr:.4}},
@@ -1670,6 +1672,17 @@ const DOMYSLNA_LIB = {
                                   cue:'Oparcie trzyma łokcie w miejscu — dlatego da się tu dołożyć ciężar, którego wyciąg nie utrzyma w tej samej pozycji.'},
   'Uginanie ramion':             {inc:2.5, mus:{biceps_dluga:.9, biceps_krotka:.9, ramienny:.4, przedramie:.3}},
   'Uginanie młotkowe':           {hantle:true, inc:2.5, mus:{ramienny:1, biceps_dluga:.5, biceps_krotka:.3, przedramie:1}},
+  /* WARIANTY NA BRAMIE (121). Filip, 25 października: „jak mam uginanie
+     młotkowe, to albo idę na hantle, albo robię na bramie z warkoczem; tak
+     samo spider curl mogę zamienić na [uginanie] na bramie jednorącz — ale
+     jak klikam zamień ćwiczenie, to wyskakuje mi zupełnie co innego".
+     Tych ćwiczeń w bibliotece nie było, więc zamiennik nie miał ich skąd
+     wziąć. Młotkowe na wyciągu ma TEN SAM rozkład co młotkowe hantlami —
+     to ten sam ruch, inny sprzęt, i tak go traktuje `zamiennikDla`. */
+  'Uginanie młotkowe na wyciągu': {inc:2.5, stos:'brama', mus:{ramienny:1, biceps_dluga:.5, biceps_krotka:.3, przedramie:1},
+                                  cue:'Lina (warkocz) na dolnym bloczku, kciuki do góry. Łokcie przy tułowiu, ruch tylko w łokciu.'},
+  'Uginanie jednorącz na wyciągu': {inc:2.5, stos:'brama', strona:'rękę', mus:{biceps_krotka:.9, biceps_dluga:.8, ramienny:.3},
+                                  cue:'Uchwyt na dolnym bloczku bramy, jedna ręka. Łokieć nie ucieka do przodu — pełny wyprost na dole.'},
   'Uginanie na modlitewniku':    {inc:2.5, mus:{biceps_krotka:1, biceps_dluga:.4, ramienny:.4}},
   'Uginanie na wyciągu':         {inc:2.5, stos:'brama', mus:{biceps_dluga:.9, biceps_krotka:.8, ramienny:.3}},
   /* Filip, 30 września: uginanie ramion zamienić na spider curl — na
@@ -2194,7 +2207,7 @@ const DOMYSLNY_PLAN = {
      t:['3×12','3×10-12','2×12','3×8-10'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[8,10]]},
     {id:'G6', lab:'Mięsień ramienny', upadek:true,
-     pool:['Uginanie młotkowe','Uginanie odwrotne'],
+     pool:['Uginanie młotkowe','Uginanie młotkowe na wyciągu','Uginanie odwrotne'],
      t:['3×12','3×10-12','2×12','3×10-12'],
      s:[3,3,2,3], rr:[[12,12],[10,12],[12,12],[10,12]]}
   ]},
@@ -2703,8 +2716,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '120';
-const WERSJA_DATA = '2026-10-23';
+const WERSJA = '121';
+const WERSJA_DATA = '2026-10-25';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 let DB = null, SES = null, SUB = 'hub';
@@ -8924,13 +8937,33 @@ function zamiennikDla(e, pominiete){
   const wSesji = SES.exercises.map(x => x.name);
   const zakaz = ZAMIENNIK_NIE_W_DNIU[SES.day] || [];
   const odpada = n => pominiete.includes(n) || wSesji.includes(n) || isSkipped(n) || zakaz.includes(n);
+  const kand = podobneCwiczenia(e, odpada);
+  /* TEN SAM RUCH NA INNYM SPRZĘCIE IDZIE PRZED PULĄ (121). Do 120 pierwszy
+     był wariant z puli slotu, więc przy zajętych hantlach do młotkowego
+     aplikacja dawała „Uginanie odwrotne" — inny akcent, choć obok stała
+     brama z liną. Rozkład mięśni zgodny w ≥ 95% to ten sam ruch —
+     ALE TYLKO PRZY IZOLACJI (slot `upadek` albo ćwiczenie spoza planu).
+     Przy wielostawowych podobny rozkład nie znaczy podobnego ruchu:
+     test złapał „Wypychanie nogami → Przysiad na suwnicy Smitha". Tam pula
+     slotu, ułożona pod plan, dalej idzie pierwsza. */
+  const izolacja = !sl || !!sl.upadek;
+  const tenSam = izolacja && kand.find(x => x.sc >= 0.95);
+  if(tenSam) return tenSam.n;
   const zPuli = ((sl && sl.pool) || e.pool || []).find(n => LIB[n] && !odpada(n));
   if(zPuli) return zPuli;
+  return kand.length ? kand[0].n : null;
+}
+
+/* Podobne ćwiczenia z biblioteki, od najbliższego — wspólne dla „Zajęte —
+   zamień" (pierwsze z listy) i dla listy „Wybierz inne sam" (cała lista). */
+function podobneCwiczenia(e, odpada){
+  odpada = odpada || (() => false);
+  const sl = (e.slot && typeof e.slot === 'object') ? e.slot : slotById(e.slot);
   /* Wzorzec to ćwiczenie, które miało być robione; gdy ma własną nazwę
      spoza biblioteki, bierzemy pierwsze z puli slotu. */
   const wzor = LIB[e.name] ? e.name
     : (sl ? [sl.fixed].concat(sl.pool || []).find(n => n && LIB[n]) : null);
-  if(!wzor) return null;
+  if(!wzor) return [];
   const W = LIB[wzor];
   const glowny = Object.entries(W.mus || {}).sort((a, b) => b[1] - a[1])[0][0];
   const kand = Object.keys(LIB)
@@ -8949,7 +8982,7 @@ function zamiennikDla(e, pominiete){
     .map(n => ({n, sc: podobienstwoCw(wzor, n)}))
     .filter(x => x.sc >= 0.6)
     .sort((a, b) => b.sc - a.sc || a.n.localeCompare(b.n, 'pl'));
-  return kand.length ? kand[0].n : null;
+  return kand;
 }
 function zajeteCw(i){
   const e = SES && SES.exercises[i];
@@ -9115,6 +9148,36 @@ function zamknijDodaj(){ DODAJ = null; renderSession(); }
    odpowiedź na „co najlepiej dziś dorzucić" ma dwie części: najpierw to,
    co pasuje do dzisiejszego dnia, potem to, czego brakuje w ogóle.
    Przy wpisanym szukaniu obie znikają — wtedy liczy się nazwa, nie ranking. */
+/* FILTR PO PARTII, NIE PO GRUPIE (121). Filip: „jak chcę zamienić ćwiczenie,
+   to mam zakładkę tylko Ręce czy jakoś tak, nie mogę zaznaczyć samego
+   bicepsu albo tricepsu". Przyciski brały grupy z REG („Ramiona" = biceps,
+   triceps i przedramiona razem). Teraz każda partia osobno, a ćwiczenie
+   trafia do partii swojego GŁÓWNEGO mięśnia (największa waga w `mus`) —
+   wyciskanie leżąc jest w Klatce, nie w Tricepsie. */
+const FILTRY_PARTII = [
+  {n:'Klatka',      r:['klatka_gora','klatka_srodek','klatka_dol']},
+  {n:'Plecy',       r:['plecy_pion','plecy_poziom','plecy_gora']},
+  {n:'Barki',       r:['bark_przod','bark_bok','bark_tyl']},
+  {n:'Biceps',      r:['biceps_dluga','biceps_krotka','ramienny']},
+  {n:'Triceps',     r:['triceps_dluga','triceps_bocz','triceps_przysr']},
+  {n:'Przedramiona',r:['przedramie']},
+  {n:'Czworogłowe', r:['czworoglowe','udo_proste']},
+  {n:'Tył uda',     r:['dwuglowe','dwuglowe_kol']},
+  {n:'Pośladki',    r:['posladki','posladki_sr']},
+  {n:'Łydki',       r:['lydki_stoj','lydki_sied']},
+  {n:'Brzuch',      r:['brzuch','skosne','glebokie']},
+  {n:'Dół pleców',  r:['prostowniki']}
+];
+function glownyMiesien(n){
+  const m = Object.entries((LIB[n] || {}).mus || {}).sort((a, b) => b[1] - a[1])[0];
+  return m ? m[0] : null;
+}
+function wybierzPartie(n){
+  if(!DODAJ) return;
+  DODAJ.partia = DODAJ.partia === n ? null : n;
+  renderDodaj();
+}
+
 function kandydaciDoDodania(){
   const juz = new Set((SES && SES.exercises || []).map(e => kluczNazwy(e.name)));
   const brak = brakiRegionow();
@@ -9123,6 +9186,16 @@ function kandydaciDoDodania(){
   const wolne = Object.keys(LIB)
     .filter(n => !LIB[n].stare && LIB[n].mus && !isSkipped(n) && !juz.has(kluczNazwy(n)))
     .map(n => ({n, w: potrzebaCwiczenia(n, brak), ost: lastFor(n)}));
+
+  /* wybrana partia: tylko ćwiczenia, których GŁÓWNY mięsień do niej należy;
+     wpisany tekst dodatkowo zawęża po nazwie */
+  const partia = DODAJ && DODAJ.partia && FILTRY_PARTII.find(f => f.n === DODAJ.partia);
+  if(partia){
+    return {szukane: wolne
+      .filter(x => partia.r.indexOf(glownyMiesien(x.n)) >= 0)
+      .filter(x => !q || kluczNazwy(x.n).indexOf(q) >= 0)
+      .sort((a, b) => a.n.localeCompare(b.n, 'pl'))};
+  }
 
   /* SZUKANIE PO MIESNIU, NIE TYLKO PO NAZWIE.
 
@@ -9158,9 +9231,20 @@ function kandydaciDoDodania(){
     .forEach(n => dnia.add(n)));
 
   const wg = (a, b) => (b.w - a.w) || a.n.localeCompare(b.n, 'pl');
+  /* W ZAMIANIE NAJPIERW PODOBNE (121). „Wybierz inne sam" przy zamianie
+     pokazywało to samo co „Dodaj ćwiczenie" — co pasuje do dnia i czego
+     brakuje — więc przy spider curlu na górze stały wyciskania. Teraz na
+     górze to, co robi tę samą robotę, od najbliższego (`podobneCwiczenia`). */
+  const zam = DODAJ && DODAJ.zamiast != null && SES && SES.exercises[DODAJ.zamiast];
+  const podobne = zam
+    ? podobneCwiczenia(zam, n => juz.has(kluczNazwy(n)) || isSkipped(n)).slice(0, 10)
+        .map(x => wolne.find(w => w.n === x.n)).filter(Boolean)
+    : [];
+  const wPodobnych = new Set(podobne.map(x => x.n));
   return {
-    doDnia: wolne.filter(x => dnia.has(x.n)).sort(wg),
-    brakujace: wolne.filter(x => !dnia.has(x.n)).sort(wg).slice(0, 12)
+    podobne,
+    doDnia: wolne.filter(x => dnia.has(x.n) && !wPodobnych.has(x.n)).sort(wg),
+    brakujace: wolne.filter(x => !dnia.has(x.n) && !wPodobnych.has(x.n)).sort(wg).slice(0, 12)
   };
 }
 
@@ -9186,7 +9270,9 @@ function renderDodajListe(){
         'Możesz dopisać własne przyciskiem niżej.</div>';
     return;
   }
+  const zam = DODAJ && DODAJ.zamiast != null && SES && SES.exercises[DODAJ.zamiast];
   el.innerHTML =
+    (k.podobne && k.podobne.length ? naglowek('PODOBNE DO: ' + esc(zam ? zam.name : '').toUpperCase()) + k.podobne.map(poz).join('') : '') +
     (k.doDnia.length ? naglowek('DO DZISIEJSZEGO DNIA') + k.doDnia.map(poz).join('') : '') +
     (k.brakujace.length ? naglowek('NAJBARDZIEJ BRAKUJE (14 DNI)') + k.brakujace.map(poz).join('') : '');
 }
@@ -9233,9 +9319,10 @@ function renderDodaj(){
     /* Przyciski grup — bo szukanie dziala, tylko trzeba wiedziec, ze dziala.
        „Brzuch" jednym dotknieciem rozwiazuje dokladnie ten przypadek,
        ktory Filip zglosil. */
-    '<div class="chipy">'+ grupyMiesni().map(g =>
-      '<button class="chip'+(teraz === kluczNazwy(g) ? ' on' : '')+'" '+
-      'onclick="szukajGrupy(\''+esc(g).replace(/'/g,"\\'")+'\')">'+esc(g)+'</button>').join('') +
+    /* od 121 partie, nie grupy z REG — patrz FILTRY_PARTII */
+    '<div class="chipy">'+ FILTRY_PARTII.map(f =>
+      '<button class="chip'+(DODAJ.partia === f.n ? ' on' : '')+'" '+
+      'onclick="wybierzPartie(\''+f.n+'\')">'+esc(f.n)+'</button>').join('') +
     '</div>'+
     '<div id="dodajLista"></div>'+
     '<div style="display:flex;gap:8px;margin-top:11px">'+
