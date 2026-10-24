@@ -1400,6 +1400,7 @@ nav button{position:relative;z-index:1;border-radius:18px;transition:color .3s}
     </label>
     <button class="btn sm" onclick="srvZapiszUstawienia()">Zapisz ustawienia</button>
     <button class="btn ghost sm" style="margin-top:9px" onclick="srvSync()">Synchronizuj teraz</button>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="srvPrzywroc()">Przywróć historię z serwera</button>
     <div class="note" style="margin-top:11px">Token zostaje w telefonie i nie trafia do eksportu.</div>
     <div id="pushBox" style="margin-top:13px"></div>
   </div>
@@ -2683,7 +2684,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '118';
+const WERSJA = '119';
 const WERSJA_DATA = '2026-10-23';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
@@ -2885,6 +2886,45 @@ function srvUrl(zasob, unikat){
 }
 function srvNaglowki(dodatkowe){
   return Object.assign({'Authorization': 'Bearer ' + SRV.token}, dodatkowe || {});
+}
+
+/* PRZYWRÓCENIE HISTORII Z SERWERA (119).
+
+   Telefon wysyła na serwer CAŁY stan (`srvPush`), ale z powrotem pobierał
+   tylko kanał trenera — Garmin, plan, uwagi (`srvPull`). Historii treningów
+   z serwera nie dało się odzyskać. Wyszło przy nowej ikonie (118): iOS
+   pokazuje ją dopiero po ponownym dodaniu aplikacji do ekranu głównego,
+   a usunięcie aplikacji kasuje jej localStorage — jedyną drogą powrotu był
+   plik z iCloud. Teraz po ponownym dodaniu wystarczy wpisać adres i token
+   i dotknąć „Przywróć historię z serwera".
+
+   Zawsze SCALANIE (`mergeDB`, to samo co przy pliku), nigdy zastąpienie:
+   nic, co jest w telefonie, nie znika. Przed zapisem pytamy, ile przybędzie. */
+async function srvPrzywroc(){
+  if(!srvGotowy()){ toast('Najpierw wpisz adres serwera i token, potem „Zapisz ustawienia"'); return false; }
+  let d;
+  try{
+    const r = await fetch(srvUrl('dane'), {headers: srvNaglowki({'Accept':'application/json'})});
+    if(r.status === 404){ toast('Na serwerze nie ma jeszcze kopii'); return false; }
+    if(!r.ok) throw new Error('status ' + r.status);
+    d = await r.json();
+  } catch(e){ toast('Nie udało się pobrać z serwera: ' + (e.message || e)); return false; }
+  if(!d || !Array.isArray(d.workouts)){ toast('Kopia na serwerze ma zły format'); return false; }
+  ['workouts','daily','runs','measures','questions','pain','skip'].forEach(k => { if(!Array.isArray(d[k])) d[k] = []; });
+  d.runs.forEach((x, i) => { if(!x.id) x.id = 'r' + x.date + '_' + i; });
+  d.workouts.forEach((x, i) => { if(!x.id) x.id = 'w' + x.date + '_' + (x.day || 'x') + '_' + i; });
+  delete d.meta;
+  const scalony = mergeDB(DB, d);
+  const noweT = scalony.workouts.length - DB.workouts.length;
+  const noweD = scalony.daily.length - DB.daily.length;
+  if(noweT <= 0 && noweD <= 0){ toast('Telefon ma już wszystko, co jest na serwerze'); return false; }
+  if(!confirm('Na serwerze: ' + d.workouts.length + ' treningów, ' + d.daily.length + ' wpisów dziennych.\n\n' +
+      'Dopisać do telefonu ' + Math.max(0, noweT) + ' treningów i ' + Math.max(0, noweD) + ' wpisów?\n' +
+      'Nic, co jest teraz w telefonie, nie zniknie.')) return false;
+  DB = scalony;
+  save(); renderData(); renderSub();
+  toast('Przywrócono: +' + Math.max(0, noweT) + ' treningów');
+  return true;
 }
 
 /* wysyłka stanu — po każdym zakończonym treningu i ręcznie */
