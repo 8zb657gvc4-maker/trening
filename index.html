@@ -1710,7 +1710,10 @@ const DOMYSLNA_LIB = {
   'Wykroki chodzone':            {hantle:true, inc:2.5, strona:'nogę', mus:{czworoglowe:.7, udo_proste:.3, posladki:1, posladki_sr:.4}},
   'Prostowanie nóg':             {inc:2.5, mus:{czworoglowe:1, udo_proste:1}},
   'Martwy ciąg klasyczny':       {inc:5,   mus:{posladki:1, posladki_sr:.2, prostowniki:1, dwuglowe:.8, dwuglowe_kol:.1, plecy_gora:.4, glebokie:.5}},
-  'Martwy ciąg rumuński':        {inc:5,   mus:{dwuglowe:1, dwuglowe_kol:.2, posladki:.8, prostowniki:.6}},
+  /* posladki_sr .2 od 120 — tak jak w klasycznym. W obu ruchach pośladkowy
+     średni trzyma miednicę jako stabilizator; brak go tutaj był luką
+     w mapowaniu, którą odsłoniła zamiana boju dnia M (test „ZERO SERII"). */
+  'Martwy ciąg rumuński':        {inc:5,   mus:{dwuglowe:1, dwuglowe_kol:.2, posladki:.8, posladki_sr:.2, prostowniki:.6}},
   'Uginanie nóg leżąc':          {inc:2.5, mus:{dwuglowe_kol:1, dwuglowe:.3}},
   'Uginanie nóg siedząc':        {inc:2.5, mus:{dwuglowe_kol:1, dwuglowe:.2},
                                   cue:'Wersja siedząca rozciąga dwugłowe mocniej niż leżąca.'},
@@ -2336,9 +2339,25 @@ const DOMYSLNY_PLAN = {
   ]},
 
   M: { name:'Pull — martwy ciąg, biceps', grp:'pull', slots:[
-    {id:'M1', lab:'Główny bój', fixed:'Martwy ciąg klasyczny',
-     t:['3×5 RPE6','3×5 RPE7','2×5 RPE5','3×3-5 RPE8'],
-     s:[3,3,2,3], rr:[[5,5],[5,5],[5,5],[3,5]]},
+    /* OD 120: GŁÓWNY BÓJ DNIA M TO MARTWY CIĄG RUMUŃSKI, NIE KLASYCZNY.
+       Filip, 24 października: „ja bym wywalił martwy ciąg, ale nie wiem,
+       czy to jest dobre". Klasyczny zrobił w całej historii DWA razy
+       (16.09: 60×10, 29.09: 70×5); 7.10 w Well dzień M poszedł bez niego.
+       `pokrycie.js`, 12 tygodni:
+         – bez zamiany: dwugłowe od biodra 1,6 (norma 4–12), pośladkowy
+           wielki 2,6 (4–14) — oba pod normą 10 tygodni z rzędu,
+           prostowniki ~0. Wyrzucenie bez zamiany odpadło.
+         – ławka rzymska: dwugłowe od biodra 2,9 — dalej pod normą.
+         – rumuński: dwugłowe od biodra 4,9 (było 4,2 i na granicy),
+           pośladkowy 5,3, prostowniki 2,2 (dolna granica).
+       Filip: „tak, zamień martwy ciąg klasyczny na rumuński jako główny bój
+       dnia M". Rumuński mniej obciąża kręgosłup (ciężar niższy, bez startu
+       z podłogi) i domyka tył uda, który od wypadnięcia hip thrusta (85)
+       i rumuńskiego z dnia A był najsłabszym punktem planu. Klasyczny
+       zostaje w bibliotece i w historii pod swoją nazwą. */
+    {id:'M1', lab:'Główny bój', fixed:'Martwy ciąg rumuński',
+     t:['3×10 RPE6','3×8-10 RPE7','2×10 RPE5','3×6-8 RPE8'],
+     s:[3,3,2,3], rr:[[10,10],[8,10],[10,10],[6,8]]},
     {id:'M2', lab:'Ciąg poziomy',
      pool:['Wiosłowanie na maszynie','Wiosłowanie na wyciągu'],
      t:['3×12 RPE6','3×10-12 RPE8','2×12 RPE5','3×10-12 RPE8'],
@@ -2684,7 +2703,7 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '119';
+const WERSJA = '120';
 const WERSJA_DATA = '2026-10-23';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
