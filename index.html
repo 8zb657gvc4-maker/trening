@@ -433,6 +433,18 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .tprog{position:absolute;left:0;bottom:0;height:3px;background:rgba(0,0,0,.28);
   border-radius:0 0 13px 13px;transition:width 1s linear}
 
+/* WYBÓR SIŁOWNI NA CAŁY EKRAN (123) — dwa wielkie pola, nie da się przeoczyć. */
+.silek{display:none;position:fixed;inset:0;z-index:95;background:var(--bg);flex-direction:column;gap:14px;
+  padding:calc(30px + env(safe-area-inset-top, 0px)) 16px calc(18px + var(--safe-b))}
+.silek-h{font-size:27px;font-weight:800;color:var(--txt);text-align:center;letter-spacing:-.01em}
+.silek-s{font-size:14px;color:var(--dim);text-align:center;margin-top:-8px}
+.silek-b{flex:1;min-height:120px;border-radius:26px;border:2px solid var(--line);background:var(--card);
+  color:var(--txt);font:inherit;font-size:30px;font-weight:800;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.silek-b:active{transform:scale(.98)}
+.silek-b.ost{border-color:var(--acc);background:var(--card2)}
+.silek-b .o{font-size:12.5px;font-weight:700;color:var(--acc);letter-spacing:.1em;text-transform:uppercase}
+.silek-x{background:none;border:none;color:var(--dim);font:inherit;font-size:15px;padding:10px}
 .modal{position:fixed;inset:0;z-index:90;background:rgba(6,10,16,.72);
   display:none;align-items:flex-end;justify-content:center}
 .modal.on{display:flex}
@@ -1243,7 +1255,6 @@ nav button{position:relative;z-index:1;border-radius:18px;transition:color .3s}
   <!-- WYBOR DNIA -->
   <div class="sub" id="s-pick">
     <h2>Wybierz dzień</h2>
-    <div id="silowniaPick"></div>
     <div class="dgrid" id="dayBtns"></div>
   </div>
 
@@ -2599,9 +2610,99 @@ function obciazenieSportem(region, dni){
   }, 0);
 }
 
-/* Ile pracy poszło wczoraj w partię, którą chcemy dziś trenować. */
+/* ============================================================
+   BIEG JAKO OBCIĄŻENIE NÓG (123)
+
+   Filip, 1 listopada: „w ciągu tygodnia dużo biegam … teraz to mnie bardzo
+   bolą nogi i nie zrobię normalnego treningu". Do 122 aplikacja patrzyła
+   wyłącznie na WCZORAJSZY bieg i dopisywała do dnia nóg uwagę — a dzień nóg
+   i tak przychodził po kolei, z pełnymi ciężarami, choćby w nogach siedziało
+   pół maratonu z przedwczoraj i cztery godziny biegania z tygodnia.
+
+   Teraz każda aktywność, która rusza nogi (bieg, rower, w mniejszym stopniu
+   pływanie i reszta), zostawia w nich ślad. Ślad wygasa przez trzy dni,
+   a osobno liczy się cały tydzień — bo przy kilku biegach w tygodniu nogi
+   nie dochodzą do siebie między nimi, nawet jeśli żaden nie był ciężki.
+
+   Jednostka ta sama co w `kolizjaSportu`: SPORTY.nogi × godziny. Bieg
+   spokojny 60 min = 0,5; interwały 60 min = 1. Długi bieg (powyżej 75 min)
+   liczy się mocniej niż proporcjonalnie — uszkodzenia ekscentryczne
+   czworogłowych i łydek rosną z czasem szybciej niż liniowo.
+
+   Skutki są trzy i każdy jest napisany na ekranie:
+   1. świeży ciężki bieg (≥ NOGI_CIEZKO) — aplikacja proponuje górę zamiast
+      nóg, jeśli jakiś dzień góry jest wolny; nogi nie wypadają z rotacji,
+      tylko czekają do następnego treningu;
+   2. dzień nóg po bieganiu jest lżejszy — kara schodzi do gotowości
+      w `dostosuj`, czyli ciężar w dół i niższy sufit RPE, a przy dużej
+      karze mniej ćwiczeń;
+   3. dużo biegania w tygodniu — dzień nóg zostaje, ale lżejszy.
+   ============================================================ */
+const ZANIK_NOG = [1, .8, .45, .2];   /* dziś, wczoraj, przedwczoraj, trzy dni temu */
+const NOGI_CIEZKO = .6;               /* od tego progu proponujemy górę zamiast nóg */
+const NOGI_TYDZIEN = 1.5;             /* tyle w tygodniu nogi znoszą bez skutków dla siłowni */
+/* Mięśnie, które bieg naprawdę męczy — do sylwetki regeneracji. */
+const REGIONY_BIEGU = ['czworoglowe', 'lydki_stoj', 'lydki_sied', 'posladki', 'dwuglowe_kol'];
+
+function nogiZAktywnosci(r){
+  const sp = r && SPORTY[r.type]; if(!sp || !sp.nogi) return 0;
+  const godz = (+r.time || 45) / 60;
+  return sp.nogi * godz * (godz > 1.25 ? 1.2 : 1);
+}
+function opisAktywnosci(r){
+  const sp = SPORTY[r.type] || {n: 'Aktywność'};
+  return sp.n.toLowerCase() + (r.dist ? ' ' + r.dist + ' km' : r.time ? ' ' + Math.round(r.time) + ' min' : '');
+}
+function kiedyDni(w){ return w <= 0 ? 'dziś' : w === 1 ? 'wczoraj' : w === 2 ? 'przedwczoraj' : w + ' dni temu'; }
+
+/* Stan nóg po aktywnościach na dzień `ref` (domyślnie dziś). */
+function nogiPoBiegach(ref){
+  ref = ref || today();
+  const t0 = new Date(ref + 'T00:00:00');
+  let swieze = 0, tydzien = 0, minutBiegu = 0;
+  const co = [];
+  (DB.runs || []).forEach(r => {
+    if(!r || !r.date || r.date > ref) return;
+    const wiek = Math.round((t0 - new Date(r.date + 'T00:00:00')) / 864e5);
+    if(wiek > 6) return;
+    const w = nogiZAktywnosci(r); if(!w) return;
+    tydzien += w;
+    if(czyBieg(r)) minutBiegu += (+r.time || 45);
+    if(wiek < ZANIK_NOG.length){
+      const s = w * ZANIK_NOG[wiek];
+      swieze += s;
+      if(s >= .2) co.push({r, wiek, s});
+    }
+  });
+  co.sort((a, b) => b.s - a.s);
+  const zTygodnia = Math.min(15, Math.max(0, tydzien - NOGI_TYDZIEN) * 10);
+  return {swieze, tydzien, minutBiegu, co,
+    kara: Math.min(35, Math.round(swieze * 18 + zTygodnia)),
+    ciezko: swieze >= NOGI_CIEZKO,
+    duzoWTygodniu: tydzien > NOGI_TYDZIEN,
+    opis: co.slice(0, 2).map(x => opisAktywnosci(x.r) + ' ' + kiedyDni(x.wiek)).join(', ')};
+}
+/* Jedno zdanie o bieganiu z tygodnia, do uwag i powodów. */
+function zdanieTygodniaBiegow(n){
+  if(!n.duzoWTygodniu) return '';
+  const h = Math.round(n.minutBiegu / 6) / 10;
+  return h > 0 ? String(h).replace('.', ',') + ' h biegania w 7 dni' : 'dużo ruchu na nogach w 7 dni';
+}
+
+/* Ile pracy poszło wczoraj w partię, którą chcemy dziś trenować.
+   Od 123 dzień nóg liczy się z `nogiPoBiegach` — trzy dni z wygaszaniem
+   plus cały tydzień — a nie z samego wczoraj. Góra jak dotąd: wczorajsze
+   pływanie albo SUP. */
 function kolizjaSportu(day){
   if(!PLAN[day]) return null;
+  if(PLAN[day].grp === 'nogi'){
+    const n = nogiPoBiegach(today());
+    if(n.kara < 5) return null;
+    const co = n.co.map(x => opisAktywnosci(x.r) + ' ' + kiedyDni(x.wiek));
+    const t = zdanieTygodniaBiegow(n);
+    if(t) co.push(t);
+    return {suma: n.swieze, co, gora: false, kara: n.kara, ciezko: n.ciezko, nogi: n};
+  }
   const wczoraj = (DB.runs || []).filter(r => r.date === przesun(today(), -1));
   if(!wczoraj.length) return null;
   const gora = PLAN[day].grp !== 'nogi';
@@ -2733,8 +2834,8 @@ function planWlasny(){ return !!(DB && DB.plan && !walidujPlan(DB.plan).length);
    („2026-08-06.10") jest długa, obcinała się w widoku i różniła od
    poprzedniej wersji jednym znakiem na końcu — nie dało się na oko
    stwierdzić, czy wgranie zadziałało. Licznik rośnie i widać go od razu. */
-const WERSJA = '122';
-const WERSJA_DATA = '2026-10-25';
+const WERSJA = '123';
+const WERSJA_DATA = '2026-11-14';
 const KEY = 'trening_v1';
 const SESKEY = 'trening_ses';        /* sesja w toku — osobno, zapisywana po każdej serii */
 let DB = null, SES = null, SUB = 'hub';
@@ -3408,6 +3509,13 @@ async function srvPull(cicho){
         zmiany.push('Garmin: '+nowe+' dni'+(uzup?' (+'+uzup+' uzup.)':''));
       }
     }
+    /* Biegi, pływanie, rower i SUP z zegarka (123). */
+    const zZegarka = scalBiegiZZegarka(t.aktywnosci);
+    if(zZegarka.nowe || zZegarka.uzup){
+      zmiany.push('zegarek: ' + zZegarka.nowe + ' aktywn.' + (zZegarka.uzup ? ' (+' + zZegarka.uzup + ' uzup.)' : ''));
+      /* Plan zapisany wczoraj wieczorem nie wiedział o porannym biegu. */
+      przeliczZapisanyPlan();
+    }
     if(t.coach){ DB.coach = t.coach; zmiany.push('uwagi'); }
     /* Kanał trenera jest „lepki" — moja poprawka leży na serwerze, dopóki jej
        nie nadpiszę. Bez zabezpieczenia każde otwarcie aplikacji kasowałoby
@@ -4075,22 +4183,67 @@ function maszynowe(name){
   return !sztangowe(name) || /Wypychanie|Hack/i.test(name);
 }
 function tuSieLiczy(w, name){ return !maszynowe(name) || silowniaTreningu(w) === silowniaTeraz(); }
-function wybierzSilownie(k){
+function wybierzSilownie(k, cicho){
   if(!SILOWNIE[k] || silowniaTeraz() === k) return;
   DB.settings.silownia = k;
   /* Plan na dziś był liczony z historią drugiej siłowni — liczymy od nowa,
      chyba że to plan sprawdzony przez trenera (tego nie ruszamy po cichu). */
-  if(DB.nastepny && !DB.nastepny.sprawdzony) DB.nastepny = planNastepnego();
+  przeliczZapisanyPlan();
   save();
   try { renderSuggest(); } catch(e){}
   try { renderPick(); } catch(e){}
-  toast('Siłownia: ' + SILOWNIE[k].n);
+  if(!cicho) toast('Siłownia: ' + SILOWNIE[k].n);
 }
-function wyborSilowniHtml(){
+
+/* ============================================================
+   WYBÓR SIŁOWNI NA CAŁY EKRAN (123)
+
+   Filip, 1 listopada: „będę potrzebował, żeby wybór siłowni zajmował cały
+   ekran, bo tak jak jest teraz, to ja zapominam tego robić". Dwa małe
+   przyciski nad listą ćwiczeń dało się przeoczyć — i trening z Well Fitness
+   szedł do historii maszyn Silver Gym (tak trafiły tam dwa z końca września),
+   a podpowiedzi ciężarów na maszynach brały liczby z drugiej siłowni.
+
+   Teraz każdy start treningu z ekranu („Zacznij ten trening" i wybór dnia)
+   przechodzi przez pełny ekran z dwoma wielkimi polami. Ostatnia siłownia
+   jest podświetlona, ale i tak trzeba ją dotknąć — to ma być decyzja,
+   a nie domyślna wartość, o której się zapomina. Małe przyciski zniknęły.
+
+   startSession zostaje bez zmian: wołają go testy i wznowienie sesji.
+   ============================================================ */
+function zacznijTrening(day, withSug){
   const t = silowniaTeraz();
-  return '<div class="btn2" style="margin-bottom:10px">' + Object.keys(SILOWNIE).map(k =>
-    '<button class="btn sm' + (k === t ? '' : ' ghost') + '" onclick="wybierzSilownie(\'' + k + '\')">' +
-    SILOWNIE[k].n + '</button>').join('') + '</div>';
+  let el = document.getElementById('silowniaEkran');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'silowniaEkran'; el.className = 'silek';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = '<div class="silek-h">Gdzie dziś trenujesz?</div>' +
+    '<div class="silek-s">' + esc(day + ' — ' + dayName2(day)) + '</div>' +
+    Object.keys(SILOWNIE).map(k =>
+      '<button class="silek-b' + (k === t ? ' ost' : '') + '" onclick="silowniaIStart(\'' + k + '\',\'' +
+        day + '\',' + (withSug ? 'true' : 'false') + ')">' +
+        '<span>' + esc(SILOWNIE[k].n) + '</span>' +
+        (k === t ? '<span class="o">ostatnio</span>' : '') + '</button>').join('') +
+    '<button class="silek-x" onclick="zamknijWyborSilowni()">Anuluj</button>';
+  el.style.display = 'flex';
+}
+function zamknijWyborSilowni(){
+  const el = document.getElementById('silowniaEkran');
+  if(el) el.style.display = 'none';
+}
+function silowniaIStart(k, day, withSug){
+  if(!SILOWNIE[k] || !PLAN[day]) { zamknijWyborSilowni(); return; }
+  /* Niezakończony trening pytamy TU, przed zmianą siłowni — silowniaTeraz()
+     w trakcie sesji zwraca siłownię tamtej sesji, więc nowa nie dałaby się
+     wybrać, dopóki stara wisi w pamięci. */
+  if(SES && setCount(SES) > 0 &&
+     !confirm('Masz niezakończony trening '+SES.day+' z '+setCount(SES)+' seriami. Porzucić go i zacząć nowy?')) return;
+  zamknijWyborSilowni();
+  if(SES) clearSes();
+  wybierzSilownie(k, true);
+  startSession(day, withSug);
 }
 
 function lastFor(name, pomijajDeload, wszedzie){
@@ -5484,8 +5637,9 @@ function otworzDzienWPlanie(d){
   setSub('plan');
 }
 
-function planNastepnego(){
-  const s = suggestNext(true);
+function planNastepnego(naprzod){
+  /* bez argumentu: jutro (po treningu); liczba: tyle dni od dziś (123) */
+  const s = suggestNext(naprzod == null ? true : naprzod);
   if(s.rest || !s.day) return null;
   const items = buildDay(s.day, s.phase, s.week, true);
   return {
@@ -6534,6 +6688,19 @@ function przeterminowany(n){
       'bo nic w międzyczasie nie zrobiłeś.'].concat(n.uwagi || [])});
 }
 
+/* Przelicza zapisany plan aplikacji NA TEN SAM DZIEŃ, na który był liczony
+   (123). Do 122 zmiana siłowni wołała planNastepnego() — czyli plan na JUTRO —
+   także rano, gdy zapisany plan był na dziś. Teraz to samo robi poranny bieg
+   z zegarka, więc data musi zostać ta sama. Planu sprawdzonego przez trenera
+   nie ruszamy po cichu. */
+function przeliczZapisanyPlan(){
+  const n = DB.nastepny;
+  if(!n || n.sprawdzony || !n.data || n.data < today()) return false;
+  const ile = Math.round((new Date(n.data+'T00:00:00') - new Date(today()+'T00:00:00')) / 864e5);
+  DB.nastepny = planNastepnego(ile);
+  return true;
+}
+
 function planDoPokazania(){
   const n = przeterminowany(DB.nastepny);
   return (n && n.cwiczenia && n.data >= today()) ? zastosujGotowosc(n) : null;
@@ -6601,7 +6768,11 @@ function dostosuj(lista, day){
   if(dms >= 3) pkt -= 25;
   else if(dms === 2) pkt -= 12;
   else if(dms === 1) pkt -= 4;
-  pkt -= karaSportu(day).pkt;
+  const ks = karaSportu(day);
+  pkt -= ks.pkt;
+  /* Gdy to bieganie najbardziej ściąga dzień w dół, to ono jest powodem
+     na ekranie — „niska gotowość" przy świetnym śnie nic by nie mówiło. */
+  const powodSportu = ks.pkt >= 8 ? ks.powod : null;
 
   /* Progi dobrane tak, żeby odpowiadały skali, którą stosowałem ręcznie:
      sen 6–6,5 h to zejście o kilka procent bez skracania sesji, sen poniżej
@@ -6653,7 +6824,7 @@ function dostosuj(lista, day){
     z: lista.length, na: przyciete.length, pkt, sufit,
     wyciete: lista.slice(przyciete.length).map(x => x.name),
     powod: (dms >= 2 ? 'zakwasy w trenowanej partii'
-                     : (g.powody[0] ? g.powody[0][1] : 'niska gotowość'))
+                     : powodSportu || (g.powody[0] ? g.powody[0][1] : 'niska gotowość'))
   } : null;
 
   return Object.assign(przyciete.map(x => {
@@ -6665,7 +6836,7 @@ function dostosuj(lista, day){
     return {...x, sug: {...x.sug, w, sufitRpe: sufit, tag: 'down',
       why: 'Gotowość '+pkt+'/100 — '+(w !== x.sug.w ? 'ciężar w dół o '+
            Math.round((1-skala)*100)+'%. ' : '')+'Sufit RPE '+sufit+'. '+
-           (g.powody[0] ? g.powody[0][1]+'.' : '')}};
+           (powodSportu ? powodSportu + '.' : g.powody[0] ? g.powody[0][1]+'.' : '')}};
   }), {skrot: przyciete.skrot});
 }
 /* ============================================================
@@ -6787,6 +6958,8 @@ function gotowosc(data){
 function karaSportu(day){
   const k = kolizjaSportu(day);
   if(!k) return {pkt: 0, powod: null};
+  /* nogi: kara policzona już w nogiPoBiegach, opis zawiera „kiedy" */
+  if(k.kara != null) return {pkt: k.kara, powod: k.co.join(', ') + ' — nogi mają już swoje'};
   const kara = Math.min(15, Math.round(k.suma * 14));
   return {pkt: kara, powod: k.co.join(', ') + ' wczoraj — ' +
     (k.gora ? 'obręcz barkowa i plecy mają już swoje' : 'nogi mają już swoje')};
@@ -6913,6 +7086,8 @@ function suggestNext(naJutro){
 
   const zakw = (DB.daily.find(x => x.date === ref) || {}).zakwasy || {};
   const bolace = g => (g === 'nogi' ? (zakw.nogi || 0) : (zakw.gora || 0)) >= 2;
+  /* Nogi po bieganiu (123) — liczone na dzień, który planujemy. */
+  const poBiegu = nogiPoBiegach(ref);
 
   /* „Świeży" liczymy w dniach, nie w tygodniu planu. Granica tygodnia biegnie
      od daty startu, więc bywa w środę — i wtedy trening zrobiony cztery dni
@@ -7013,6 +7188,14 @@ function suggestNext(naJutro){
       if(pas.doba && yest.includes(PLAN[d].grp)){
         pominiete.push([d, 'wczoraj szła ta sama partia']); continue;
       }
+      /* Świeży ciężki bieg: nogi ustępują dniowi góry, jeśli jakiś jest wolny.
+         Ten sam pas co zakwasy — przy braku innego dnia nogi wracają, a lżejsze
+         ciężary załatwia `dostosuj`. */
+      if(pas.zakwasy && PLAN[d].grp === 'nogi' && poBiegu.ciezko &&
+         dozwolone.some(x => PLAN[x].grp !== 'nogi' && !yest.includes(PLAN[x].grp) && !bolace(PLAN[x].grp))){
+        pominiete.push([d, 'nogi po bieganiu (' + poBiegu.opis + ') — przesuwam je na następny trening']);
+        continue;
+      }
       if(pas.zakwasy && bolace(PLAN[d].grp) && dozwolone.some(x => x !== d && wolny(x))){
         pominiete.push([d, 'mocne zakwasy w tej partii']); continue;
       }
@@ -7087,17 +7270,23 @@ function suggestNext(naJutro){
   const ac = rl(7), ch = rl(28)/4;
   if(ch>0 && ac/ch > 1.5)
     notes.push(['warn','Objętość biegowa z tego tygodnia to '+Math.round(ac/ch*100)+'% Twojej średniej z miesiąca. Powyżej 150% ryzyko kontuzji wyraźnie rośnie — rozważ skrócenie kolejnego biegu.']);
-  const runY = DB.runs.filter(r=>r.date===przesun(ref,-1) && czyBieg(r));
-  if(runY.length && PLAN[day].grp==='nogi'){
-    const hard = runY.some(r=>r.type==='jakość'||r.type==='test');
-    notes.push([hard?'warn':'', 'Wczoraj '+(hard?'bieg jakościowy':'bieg spokojny')+
-      (runY[0].dist?' ('+runY[0].dist+' km)':'')+', a dziś nogi. '+
-      (hard?'Przysiad prawdopodobnie będzie słabszy — nie interpretuj tego jako regresu. Możesz zamienić dziś na dzień góry.'
-           :'Spokojny bieg nie powinien przeszkodzić.')]);
+  /* Nogi po bieganiu (123). Zastępuje uwagę „wczoraj bieg", która znała
+     tylko wczoraj i nic nie zmieniała w ciężarach. */
+  if(PLAN[day].grp === 'nogi' && poBiegu.kara >= 5){
+    const tydz = zdanieTygodniaBiegow(poBiegu);
+    notes.push([poBiegu.ciezko || poBiegu.kara >= 15 ? 'warn' : '',
+      'W nogach siedzi bieganie: ' + [poBiegu.opis, tydz].filter(Boolean).join(', ') + '. ' +
+      'Dzień nóg lżejszy — ciężary w dół, sufit RPE niżej' +
+      (poBiegu.kara >= 20 ? ', mniej ćwiczeń' : '') + '. ' +
+      'Słabszy przysiad to zmęczenie po bieganiu, nie regres.']);
+  } else if(PLAN[day].grp !== 'nogi' && poBiegu.ciezko &&
+            pominiete.some(x => PLAN[x[0]] && PLAN[x[0]].grp === 'nogi')){
+    notes.push(['', 'Nogi po bieganiu (' + poBiegu.opis + '), więc dziś góra. ' +
+      'Nogi czekają na następny trening.']);
   }
 
   const ks0 = kolizjaSportu(day);
-  if(ks0) notes.push([ks0.suma > .8 ? 'warn' : '',
+  if(ks0 && ks0.gora) notes.push([ks0.suma > .8 ? 'warn' : '',
     ks0.co.join(', ') + ' wczoraj. ' + (ks0.gora
       ? 'Plecy i obręcz barkowa mają już swoje — dzisiejsze ciągnięcie wyjdzie słabiej, '+
         'i to nie jest regres. Zejdź o jeden stopień RPE.'
@@ -7792,13 +7981,11 @@ function delWorkout(id){
    WYBÓR DNIA
    ============================================================ */
 function renderPick(){
-  const ws = document.getElementById('silowniaPick');
-  if(ws) ws.innerHTML = wyborSilowniHtml();
   const s=suggestNext();
   document.getElementById('dayBtns').innerHTML = ORDER.map(k=>{
     const last=DB.workouts.filter(x=>x.day===k).slice(-1)[0];
     const hot=(!s.rest&&s.day===k)?' hot':'';
-    return '<button class="dbtn'+hot+'" onclick="startSession(\''+k+'\',true)">'+
+    return '<button class="dbtn'+hot+'" onclick="zacznijTrening(\''+k+'\',true)">'+
       '<div class="l">'+k+'</div><div class="n">'+PLAN[k].name+'</div>'+
       '<div class="s">'+(hot?'proponowany':(last?'ostatnio '+plDate(last.date):'jeszcze nie robione'))+'</div></button>';
   }).join('');
@@ -7818,7 +8005,6 @@ function renderSuggest(){
     document.getElementById('sugBody').innerHTML=h;
     return;
   }
-  h+=wyborSilowniHtml();
   h+='<div class="tip ok"><b>'+esc(s.head)+'</b><br>'+s.why.map(esc).join('<br>')+'</div>';
   h+=s.notes.filter(n=>n[1]).map(n=>'<div class="tip '+n[0]+'">'+esc(n[1])+'</div>').join('');
 
@@ -7847,7 +8033,7 @@ function renderSuggest(){
       '</div>';
   }).join('');
 
-  h+='<button class="btn ok" style="margin-top:6px" onclick="startSession(\''+s.day+'\',true)">Zacznij ten trening</button>';
+  h+='<button class="btn ok" style="margin-top:6px" onclick="zacznijTrening(\''+s.day+'\',true)">Zacznij ten trening</button>';
   h+='<button class="btn ghost sm" style="margin-top:9px" onclick="openPick()">Wolę wybrać inny dzień</button>';
   h+='<div class="tip" style="margin-top:14px">Główne boje nie rotują — to one mierzą progresję. Akcesoria zmieniają się co '+HOLD+' sesje tak, żeby wyrównać pokrycie regionów. Pełny bilans zobaczysz w zakładce Raport.</div>';
   document.getElementById('sugBody').innerHTML=h;
@@ -10486,6 +10672,7 @@ function renderRun(){
     if(x.time) bits.push(Math.round(x.time)+' min');
     if(pace) bits.push(Math.floor(pace)+':'+String(Math.round((pace%1)*60)).padStart(2,'0')+' /km');
     if(x.hr) bits.push(x.hr+' bpm');
+    if(x.gid) bits.push('z zegarka');
     return '<div class="hist"><div><div class="hd">'+plDate(x.date)+'</div>'+
       '<div class="hm">'+esc(bits.join(' · '))+(x.note?' · '+esc(x.note):'')+'</div></div>'+
       '<button class="sx" onclick="delRun(\''+x.id+'\')">×</button></div>';
@@ -10506,7 +10693,69 @@ function delRun(id){
   const r=DB.runs.find(x=>x.id===id);
   if(!r) return;
   if(!confirm('Usunąć bieg z '+plDate(r.date)+'?')) return;
+  /* Aktywność z zegarka wróciłaby przy najbliższym pobraniu — pamiętamy,
+     że Filip ją skasował świadomie. */
+  if(r.gid){
+    DB.runsUsuniete = Array.isArray(DB.runsUsuniete) ? DB.runsUsuniete : [];
+    if(DB.runsUsuniete.indexOf(String(r.gid)) < 0) DB.runsUsuniete.push(String(r.gid));
+  }
   DB.runs=DB.runs.filter(x=>x.id!==id); save(); zsynchronizuj(); renderRun();
+}
+
+/* ============================================================
+   AKTYWNOŚCI Z ZEGARKA (123)
+
+   Filip, 1 listopada: „da się zrobić, żeby apka pobierała bieganie
+   z zegarka". Worker trzy razy rano pobiera z Garmin Connect listę
+   aktywności i dokleja ją do kanału trenera jako `aktywnosci`; tu każda
+   staje się zwykłym wpisem w DB.runs — z tym samym kształtem co wpis
+   ręczny, więc plan biegowy, ACWR, kolizje i nogi po bieganiu działają
+   na nich bez żadnych wyjątków.
+
+   Rodzaj biegu rozstrzyga efekt treningowy z zegarka: beztlenowy ≥ 2
+   (interwały, przebieżki) albo tlenowy ≥ 4,2 (tempo) to „jakość", reszta
+   to bieg spokojny. Długi spokojny bieg ma zwykle tlenowy 3,5–4 i nie
+   powinien liczyć się jak interwały — jego długość załatwia nogiZAktywnosci.
+
+   Bez duplikatów z trzech stron: ten sam identyfikator Garmina wchodzi
+   raz; ręczny wpis z tego samego dnia i rodzaju (dystans w granicach 15%)
+   dostaje tylko brakujące liczby; skasowana aktywność nie wraca.
+   ============================================================ */
+function rodzajZGarmina(a){
+  if(a.rodzaj === 'bieg') return ((+a.tea || 0) >= 2 || (+a.te || 0) >= 4.2) ? 'jakość' : 'Z2';
+  return SPORTY[a.rodzaj] ? a.rodzaj : 'inne';
+}
+function biegZGarmina(a){
+  const b = {id: 'g' + a.gid, gid: String(a.gid), date: a.date, type: rodzajZGarmina(a),
+    dist: a.dist > 0 ? a.dist : null, time: a.time > 0 ? a.time : null, hr: a.hr > 0 ? a.hr : null,
+    note: null, zegarek: true};
+  if(a.te > 0) b.te = a.te;
+  if(a.load > 0) b.load = a.load;
+  return b;
+}
+function scalBiegiZZegarka(lista){
+  const wynik = {nowe: 0, uzup: 0};
+  if(!Array.isArray(lista) || !lista.length) return wynik;
+  DB.runs = Array.isArray(DB.runs) ? DB.runs : [];
+  const usuniete = Array.isArray(DB.runsUsuniete) ? DB.runsUsuniete : [];
+  const rodzina = r => czyBieg(r) ? 'bieg' : r.type;
+  lista.forEach(a => {
+    if(!a || a.gid == null || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(a.date || ''))) return;
+    const gid = String(a.gid);
+    if(usuniete.indexOf(gid) >= 0 || DB.runs.some(r => r.gid === gid)) return;
+    const b = biegZGarmina(a);
+    const reczny = DB.runs.find(r => !r.gid && r.date === b.date && rodzina(r) === rodzina(b) &&
+      (!r.dist || !b.dist || Math.abs(r.dist - b.dist) <= Math.max(1, b.dist * .15)));
+    if(reczny){
+      reczny.gid = gid;
+      ['dist', 'time', 'hr', 'te', 'load'].forEach(k => { if(reczny[k] == null && b[k] != null) reczny[k] = b[k]; });
+      wynik.uzup++;
+      return;
+    }
+    DB.runs.push(b); wynik.nowe++;
+  });
+  if(wynik.nowe) DB.runs.sort((a, b) => a.date.localeCompare(b.date));
+  return wynik;
 }
 
 
@@ -12546,6 +12795,15 @@ function swiezoscRegionow(){
       });
     });
   });
+  /* 123: bieg też jest bodźcem dla nóg — po godzinie biegania czworogłowe
+     i łydki są „świeżo ruszone" tak samo jak po przysiadach. Próg 0,25 to
+     mniej więcej pół godziny spokojnego biegu; krótszy trucht nie zapala. */
+  (DB.runs || []).forEach(r => {
+    if(!r || !r.date || nogiZAktywnosci(r) < .25) return;
+    const dni = Math.round((new Date(today()+'T00:00:00') - new Date(r.date+'T00:00:00')) / 864e5);
+    if(dni < 0) return;
+    REGIONY_BIEGU.forEach(k => { if(REG[k] && dni < wynik[k]) wynik[k] = dni; });
+  });
   return wynik;
 }
 
@@ -12873,6 +13131,16 @@ function regionSzczegoly(k, cov){
    `swiezoscRegionow` (co najmniej pół serii), więc obie funkcje zawsze
    mówią o tym samym treningu. */
 function ostatniBodziec(region){
+  const sil = ostatniBodziecSilownia(region);
+  if(REGIONY_BIEGU.indexOf(region) < 0) return sil;
+  /* Ten sam próg co w swiezoscRegionow — obie funkcje mówią o tym samym. */
+  const bieg = (DB.runs || []).filter(r => r && r.date && r.date <= today() && nogiZAktywnosci(r) >= .25)
+    .sort((a, b) => a.date.localeCompare(b.date)).slice(-1)[0];
+  if(!bieg || (sil && sil.data >= bieg.date)) return sil;
+  return {data: bieg.date, cw: [opisAktywnosci(bieg).replace(/^./, c => c.toUpperCase())],
+    dni: Math.round((new Date(today()+'T00:00:00') - new Date(bieg.date+'T00:00:00')) / 864e5)};
+}
+function ostatniBodziecSilownia(region){
   for(let i = (DB.workouts || []).length - 1; i >= 0; i--){
     const w = DB.workouts[i];
     if(w.date > today()) continue;
